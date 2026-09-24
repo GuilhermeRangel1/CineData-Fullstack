@@ -27,6 +27,8 @@ significa apenas a primeira versão da API; não acrescenta nenhuma funcionalida
 | `GET` | `/api/v1/filmes/{filme_id}` | Consulta detalhes do filme | `200 OK` |
 | `PATCH` | `/api/v1/filmes/{filme_id}` | Atualiza parcialmente um filme | `200 OK` |
 | `DELETE` | `/api/v1/filmes/{filme_id}` | Remove um filme | `204 No Content` |
+| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Consulta o histórico de avaliações | `200 OK` |
+| `POST` | `/api/v1/filmes/{filme_id}/avaliacoes` | Adiciona uma avaliação | `201 Created` |
 
 ### Catálogo
 
@@ -64,14 +66,17 @@ Resposta paginada:
 }
 ```
 
-## Próximas rotas
+### Avaliações
 
-Estas rotas serão implementadas nos próximos fluxos da atividade:
+`POST /api/v1/filmes/{filme_id}/avaliacoes` recebe `nome`, `nota` e
+`comentario`. A nota é um número entre `0` e `10`, inclusive. A inclusão cria
+o item no histórico e atualiza a quantidade e a média do filme na mesma
+transação. Para preservar o consolidado importado pelos CSVs, a nova média é
+ponderada pela quantidade já registrada no resumo do filme.
 
-| Método | Rota | Finalidade | Sucesso |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Consultar avaliações | `200 OK` |
-| `POST` | `/api/v1/filmes/{filme_id}/avaliacoes` | Adicionar avaliação | `201 Created` |
+`GET /api/v1/filmes/{filme_id}/avaliacoes` retorna o histórico disponível, da
+avaliação mais recente para a mais antiga. Ambas as rotas retornam `404` quando
+o filme não existe.
 
 ## Erros
 

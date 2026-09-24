@@ -8,13 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.schemas import Pagina
 from app.db.session import get_db
 from app.movies.schemas import (
+    AvaliacaoCriacao,
+    AvaliacaoLeitura,
     ConsultaCatalogo,
     FilmeAtualizacao,
     FilmeCriacao,
     FilmeDetalhe,
     FilmeResumo,
 )
-from app.movies.services import CatalogoFilmesService, GestaoFilmesService
+from app.movies.services import AvaliacoesService, CatalogoFilmesService, GestaoFilmesService
 
 movies_router = APIRouter(prefix="/filmes", tags=["filmes"])
 
@@ -37,6 +39,31 @@ async def listar_filmes(
     """Lista filmes segundo a convenção pública do catálogo."""
 
     return await CatalogoFilmesService(session).listar(consulta)
+
+
+@movies_router.get("/{filme_id}/avaliacoes", response_model=list[AvaliacaoLeitura])
+async def listar_avaliacoes(
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> list[AvaliacaoLeitura]:
+    """Lista o histórico de avaliações de um filme, da mais recente à mais antiga."""
+
+    return await AvaliacoesService(session).listar(filme_id)
+
+
+@movies_router.post(
+    "/{filme_id}/avaliacoes",
+    response_model=AvaliacaoLeitura,
+    status_code=status.HTTP_201_CREATED,
+)
+async def criar_avaliacao(
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
+    dados: AvaliacaoCriacao,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AvaliacaoLeitura:
+    """Registra uma avaliação e atualiza a média pública do filme."""
+
+    return await AvaliacoesService(session).criar(filme_id, dados)
 
 
 @movies_router.get("/{filme_id}", response_model=FilmeDetalhe)

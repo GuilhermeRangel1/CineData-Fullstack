@@ -16,9 +16,12 @@ from app.movies.models import (
     DimGenre,
     DimMovie,
     DimPerson,
+    DimReview,
+    MovieReview,
     PersonType,
 )
 from app.movies.schemas import (
+    AvaliacaoCriacao,
     AvaliacaoLeitura,
     ConsultaCatalogo,
     DesempenhoFilme,
@@ -121,6 +124,88 @@ class CatalogoFilmesService:
             ],
             nota_media=resumo.nota_media_usuarios if resumo else None,
             quantidade_avaliacoes=resumo.qtd_avaliacoes_usuarios if resumo else 0,
+        )
+
+
+class AvaliacoesService:
+    """Coordena o histórico e o resumo público de avaliações de filmes."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def listar(self, filme_id: str) -> list[AvaliacaoLeitura]:
+        """Retorna o histórico em ordem cronológica reversa e determinística."""
+
+        await self._obter_filme(filme_id)
+        avaliacoes = await self._session.scalars(
+            select(MovieReview)
+            .join(MovieReview.movie)
+            .where(DimMovie.id_filme == filme_id)
+            .order_by(MovieReview.created_at.desc(), MovieReview.sk_movie_review_id.desc())
+        )
+        return [self._para_leitura(avaliacao) for avaliacao in avaliacoes]
+
+    async def criar(self, filme_id: str, dados: AvaliacaoCriacao) -> AvaliacaoLeitura:
+        """Insere uma avaliação e atualiza seu agregado na mesma transação."""
+
+        filme = await self._obter_filme(filme_id)
+        try:
+            avaliacao = MovieReview(
+                sk_movie_id=filme.sk_movie_id,
+                nome=dados.nome,
+                nota=dados.nota,
+                comentario=dados.comentario,
+            )
+            self._session.add(avaliacao)
+            await self._session.flush()
+
+            resumo = filme.reviews_summary
+            if resumo is None:
+                resumo = DimReview(
+                    sk_movie_id=filme.sk_movie_id,
+                    qtd_avaliacoes_usuarios=1,
+                    nota_media_usuarios=dados.nota,
+                )
+                self._session.add(resumo)
+            else:
+                quantidade_anterior = resumo.qtd_avaliacoes_usuarios
+                media_anterior = resumo.nota_media_usuarios or 0
+                resumo.nota_media_usuarios = (
+                    (media_anterior * quantidade_anterior) + dados.nota
+                ) / (quantidade_anterior + 1)
+                resumo.qtd_avaliacoes_usuarios = quantidade_anterior + 1
+
+            await self._session.commit()
+            await self._session.refresh(avaliacao)
+        except IntegrityError as error:
+            await self._session.rollback()
+            logger.warning("Cadastro de avaliação interrompido por conflito de integridade.")
+            raise FilmeConflitoError from error
+        except SQLAlchemyError as error:
+            await self._session.rollback()
+            logger.error("Cadastro de avaliação interrompido por falha de persistência.")
+            raise FilmePersistenceError from error
+
+        return self._para_leitura(avaliacao)
+
+    async def _obter_filme(self, filme_id: str) -> DimMovie:
+        filme = await self._session.scalar(
+            select(DimMovie)
+            .where(DimMovie.id_filme == filme_id)
+            .options(selectinload(DimMovie.reviews_summary))
+        )
+        if filme is None:
+            raise FilmeNaoEncontradoError
+        return filme
+
+    @staticmethod
+    def _para_leitura(avaliacao: MovieReview) -> AvaliacaoLeitura:
+        return AvaliacaoLeitura(
+            id=avaliacao.sk_movie_review_id,
+            nome=avaliacao.nome,
+            nota=avaliacao.nota,
+            comentario=avaliacao.comentario,
+            criada_em=avaliacao.created_at,
         )
 
 

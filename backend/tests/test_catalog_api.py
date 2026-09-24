@@ -250,6 +250,83 @@ async def test_movie_detail_endpoint_returns_not_found_for_unknown_movie(
     }
 
 
+async def test_reviews_endpoints_create_history_and_keep_average_consistent(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            creation_response = await client.post(
+                "/api/v1/filmes/movie-1/avaliacoes",
+                json={
+                    "nome": "Ana",
+                    "nota": 10,
+                    "comentario": "Uma avaliação excelente.",
+                },
+            )
+            history_response = await client.get("/api/v1/filmes/movie-1/avaliacoes")
+            detail_response = await client.get("/api/v1/filmes/movie-1")
+            catalog_response = await client.get("/api/v1/filmes")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert creation_response.status_code == 201
+    created = creation_response.json()
+    assert created["id"]
+    assert created["nota"] == 10
+    assert created["criada_em"]
+    assert history_response.status_code == 200
+    assert [item["nome"] for item in history_response.json()] == ["Ana", "Maria"]
+    assert detail_response.json()["quantidade_avaliacoes"] == 2
+    assert detail_response.json()["nota_media"] == 9.25
+    movie_in_catalog = next(
+        item for item in catalog_response.json()["itens"] if item["id"] == "movie-1"
+    )
+    assert movie_in_catalog["quantidade_avaliacoes"] == 2
+    assert movie_in_catalog["nota_media"] == 9.25
+
+
+async def test_review_endpoints_validate_payload_and_return_not_found(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            invalid_score = await client.post(
+                "/api/v1/filmes/movie-1/avaliacoes",
+                json={"nome": "Ana", "nota": 10.1, "comentario": "Inválida."},
+            )
+            invalid_text = await client.post(
+                "/api/v1/filmes/movie-1/avaliacoes",
+                json={"nome": " ", "nota": 0, "comentario": " "},
+            )
+            missing_movie = await client.get("/api/v1/filmes/inexistente/avaliacoes")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert invalid_score.status_code == 422
+    assert invalid_text.status_code == 422
+    assert invalid_score.json() == {
+        "codigo": "REQUISICAO_INVALIDA",
+        "mensagem": "Dados da requisição são inválidos.",
+    }
+    assert missing_movie.status_code == 404
+    assert missing_movie.json() == {
+        "codigo": "FILME_NAO_ENCONTRADO",
+        "mensagem": "Filme não encontrado.",
+    }
+
+
 async def test_update_movie_endpoint_changes_only_sent_fields_and_relationships(
     catalog_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:

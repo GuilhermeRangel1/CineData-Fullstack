@@ -56,13 +56,13 @@ para sucesso, validação, recurso inexistente e falha transacional relevante.
 
 ## 4. Backend: avaliações e média
 
-- [ ] Implementar a criação e listagem do histórico de avaliações por filme.
-- [ ] Receber, validar e apresentar notas na escala de 0 a 10.
-- [ ] Manter a escala de 0 a 10 de forma consistente entre API, banco e CSVs,
+- [x] Implementar a criação e listagem do histórico de avaliações por filme.
+- [x] Receber, validar e apresentar notas na escala de 0 a 10.
+- [x] Manter a escala de 0 a 10 de forma consistente entre API, banco e CSVs,
       sem alterar os arquivos brutos.
-- [ ] Calcular ou atualizar a média de avaliações com consistência após cada
+- [x] Calcular ou atualizar a média de avaliações com consistência após cada
       inserção, sem divergência entre detalhes e catálogo.
-- [ ] Validar nota, autor e resenha, e manter a integridade referencial ao
+- [x] Validar nota, autor e resenha, e manter a integridade referencial ao
       excluir filmes.
 
 **Critério de saída:** testes cobrem limites de nota na escala de 0 a 10,
