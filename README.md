@@ -40,6 +40,21 @@ Veja as fontes de mídia e os comportamentos do player em
 
 ## Como executar
 
+### Docker Compose
+
+Com Docker Desktop em execução, suba a aplicação completa com:
+
+```powershell
+docker compose up --build
+```
+
+O frontend ficará em `http://localhost:8080`, a API em `http://localhost:8000`
+e o health check em `http://localhost:8000/health`. Na primeira inicialização,
+o container do backend aplica as migrações e executa o seed dos CSVs. O banco
+fica no volume nomeado `cinedata-db`; a carga pode ser repetida sem duplicar
+registros. Para encerrar os containers, use `Ctrl+C` ou `docker compose down`.
+O volume não é removido por `down`, então os dados persistem entre reinícios.
+
 ### Frontend
 
 ```powershell

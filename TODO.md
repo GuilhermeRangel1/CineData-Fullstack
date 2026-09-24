@@ -96,6 +96,8 @@ e banco isolado. A revisão final de entrega permanece na etapa 6.
 
 ## 6. Qualidade, robustez e entrega
 
+- [x] Disponibilizar execução reproduzível com Docker Compose, incluindo frontend,
+      backend, migrações, seed idempotente, health checks e persistência SQLite.
 - [ ] Aumentar a cobertura dos fluxos críticos no backend e no frontend,
       priorizando regras de negócio, falhas e regressões.
 - [ ] Executar lint, typecheck, testes, build do frontend e migrações em uma
