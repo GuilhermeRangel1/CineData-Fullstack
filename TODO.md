@@ -40,10 +40,10 @@ CSVs; a segunda carga não altera contagens ou cria duplicados.
 
 - [x] Implementar criação de filme com título, diretor, ano, gênero e sinopse,
       preservando os relacionamentos do modelo existente.
-- [ ] Implementar catálogo paginado, com ordem determinística e metadados de
+- [x] Implementar catálogo paginado, com ordem determinística e metadados de
       página suficientes para a interface.
-- [ ] Implementar busca textual por título, combinável com a paginação.
-- [ ] Implementar consulta de detalhes com gêneros, pessoas, desempenho,
+- [x] Implementar busca textual por título, combinável com a paginação.
+- [x] Implementar consulta de detalhes com gêneros, pessoas, desempenho,
       avaliações e média.
 - [ ] Implementar atualização parcial e remoção individual, retornando 404 para
       recurso inexistente.

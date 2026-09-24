@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.schemas import Pagina
 from app.db.session import get_db
 from app.movies.schemas import ConsultaCatalogo, FilmeCriacao, FilmeDetalhe, FilmeResumo
-from app.movies.services import CatalogoFilmesService, FilmePersistenceError, GestaoFilmesService
+from app.movies.services import (
+    CatalogoFilmesService,
+    FilmeNaoEncontradoError,
+    FilmePersistenceError,
+    GestaoFilmesService,
+)
 
 movies_router = APIRouter(prefix="/filmes", tags=["filmes"])
 
@@ -37,3 +42,18 @@ async def listar_filmes(
     """Lista filmes segundo a convenção pública do catálogo."""
 
     return await CatalogoFilmesService(session).listar(consulta)
+
+
+@movies_router.get("/{filme_id}", response_model=FilmeDetalhe)
+async def obter_filme(
+    filme_id: str,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> FilmeDetalhe:
+    """Consulta os detalhes completos de um filme pelo seu identificador público."""
+
+    try:
+        return await CatalogoFilmesService(session).obter_detalhe(filme_id)
+    except FilmeNaoEncontradoError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Filme não encontrado."
+        ) from error

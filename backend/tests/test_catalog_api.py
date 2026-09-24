@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from decimal import Decimal
 
 import httpx
 import pytest
@@ -9,7 +10,15 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.movies.models import DimCompany, DimGenre, DimMovie, DimPerson
+from app.movies.models import (
+    DimCompany,
+    DimGenre,
+    DimMovie,
+    DimPerson,
+    DimReview,
+    FactMoviePerformance,
+    MovieReview,
+)
 
 
 @pytest.fixture
@@ -26,15 +35,42 @@ async def catalog_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSes
     async with session_factory() as session:
         drama = DimGenre(nome_genero="Drama")
         ficcao = DimGenre(nome_genero="Ficção científica")
+        diretora = DimPerson(nome_pessoa="Denis Villeneuve", tipo_pessoa="Diretor")
+        atriz = DimPerson(nome_pessoa="Amy Adams", tipo_pessoa="Ator")
+        produtora = DimCompany(nome_produtora="Paramount Pictures")
+        chegada = DimMovie(
+            id_filme="movie-1",
+            titulo="A Chegada",
+            ano_lancamento=2016,
+            genres=[ficcao, drama],
+            people=[diretora, atriz],
+            companies=[produtora],
+            performance=FactMoviePerformance(
+                orcamento_usd=Decimal("47000000"),
+                receita_usd=Decimal("203388186"),
+                lucro_usd=Decimal("156388186"),
+                orcamento_brl=Decimal("147921000"),
+                receita_brl=Decimal("640673785"),
+                lucro_brl=Decimal("492752785"),
+                popularidade=31.5,
+                nota_tmdb=7.6,
+                qtd_tmdb=17200,
+                nota_imdb=7.9,
+                qtd_imdb=780000,
+            ),
+            reviews_summary=DimReview(qtd_avaliacoes_usuarios=1, nota_media_usuarios=8.5),
+            reviews=[
+                MovieReview(
+                    nome="Maria",
+                    nota=8.5,
+                    comentario="Ficção científica envolvente.",
+                )
+            ],
+        )
         session.add_all(
             [
                 DimMovie(id_filme="movie-2", titulo="Zodíaco", ano_lancamento=2007, genres=[drama]),
-                DimMovie(
-                    id_filme="movie-1",
-                    titulo="A Chegada",
-                    ano_lancamento=2016,
-                    genres=[ficcao, drama],
-                ),
+                chegada,
             ]
         )
         await session.commit()
@@ -73,8 +109,8 @@ async def test_catalog_endpoint_uses_service_with_stable_pagination(
     }
     assert len(payload["itens"]) == 1
     assert payload["itens"][0]["id"] == "movie-1"
-    assert payload["itens"][0]["nota_media"] is None
-    assert payload["itens"][0]["quantidade_avaliacoes"] == 0
+    assert payload["itens"][0]["nota_media"] == 8.5
+    assert payload["itens"][0]["quantidade_avaliacoes"] == 1
     assert [genero["nome"] for genero in payload["itens"][0]["generos"]] == [
         "Drama",
         "Ficção científica",
@@ -101,6 +137,112 @@ async def test_catalog_endpoint_returns_public_error_for_invalid_pagination(
         "codigo": "REQUISICAO_INVALIDA",
         "mensagem": "Dados da requisição são inválidos.",
     }
+
+
+async def test_catalog_endpoint_combines_case_insensitive_search_and_pagination(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async with catalog_session_factory() as session:
+        session.add(DimMovie(id_filme="movie-3", titulo="Chegada Final", ano_lancamento=2024))
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/v1/filmes",
+                params={"busca": "CHEGADA", "pagina": 2, "tamanho_pagina": 1},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "itens": [
+            {
+                "id": "movie-3",
+                "titulo": "Chegada Final",
+                "ano_lancamento": 2024,
+                "url_poster": None,
+                "generos": [],
+                "nota_media": None,
+                "quantidade_avaliacoes": 0,
+            }
+        ],
+        "meta": {
+            "pagina": 2,
+            "tamanho_pagina": 1,
+            "total_itens": 2,
+            "total_paginas": 2,
+        },
+    }
+
+
+async def test_movie_detail_endpoint_returns_full_loaded_data(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/filmes/movie-1")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["id"] == "movie-1"
+    assert payload["nota_media"] == 8.5
+    assert payload["quantidade_avaliacoes"] == 1
+    assert [genero["nome"] for genero in payload["generos"]] == ["Drama", "Ficção científica"]
+    assert {(pessoa["nome"], pessoa["papel"]) for pessoa in payload["pessoas"]} == {
+        ("Denis Villeneuve", "Diretor"),
+        ("Amy Adams", "Ator"),
+    }
+    assert payload["produtoras"][0]["nome"] == "Paramount Pictures"
+    assert payload["desempenho"] == {
+        "orcamento_usd": 47000000.0,
+        "receita_usd": 203388186.0,
+        "lucro_usd": 156388186.0,
+        "orcamento_brl": 147921000.0,
+        "receita_brl": 640673785.0,
+        "lucro_brl": 492752785.0,
+        "popularidade": 31.5,
+        "nota_tmdb": 7.6,
+        "quantidade_tmdb": 17200,
+        "nota_imdb": 7.9,
+        "quantidade_imdb": 780000,
+    }
+    assert payload["avaliacoes"][0]["nome"] == "Maria"
+    assert payload["avaliacoes"][0]["nota"] == 8.5
+    assert payload["avaliacoes"][0]["criada_em"]
+
+
+async def test_movie_detail_endpoint_returns_not_found_for_unknown_movie(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/filmes/inexistente")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
 
 
 async def test_create_movie_endpoint_persists_required_relationships(
@@ -147,8 +289,8 @@ async def test_create_movie_endpoint_persists_required_relationships(
     async with catalog_session_factory() as session:
         assert await session.scalar(select(func.count()).select_from(DimMovie)) == 3
         assert await session.scalar(select(func.count()).select_from(DimGenre)) == 3
-        assert await session.scalar(select(func.count()).select_from(DimPerson)) == 3
-        assert await session.scalar(select(func.count()).select_from(DimCompany)) == 1
+        assert await session.scalar(select(func.count()).select_from(DimPerson)) == 5
+        assert await session.scalar(select(func.count()).select_from(DimCompany)) == 2
 
 
 async def test_create_movie_endpoint_rejects_incomplete_payload(

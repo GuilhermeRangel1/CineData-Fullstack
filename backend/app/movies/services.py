@@ -10,9 +10,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.schemas import MetadadosPagina, Pagina
-from app.movies.models import DimCompany, DimGenre, DimMovie, DimPerson, PersonType
+from app.movies.models import (
+    DimCompany,
+    DimGenre,
+    DimMovie,
+    DimPerson,
+    PersonType,
+)
 from app.movies.schemas import (
+    AvaliacaoLeitura,
     ConsultaCatalogo,
+    DesempenhoFilme,
     FilmeCriacao,
     FilmeDetalhe,
     FilmeResumo,
@@ -75,6 +83,25 @@ class CatalogoFilmesService:
             ),
         )
 
+    async def obter_detalhe(self, filme_id: str) -> FilmeDetalhe:
+        """Retorna um filme completo, carregando relações sem consultas N+1."""
+
+        filme = await self._session.scalar(
+            select(DimMovie)
+            .where(DimMovie.id_filme == filme_id)
+            .options(
+                selectinload(DimMovie.genres),
+                selectinload(DimMovie.people),
+                selectinload(DimMovie.companies),
+                selectinload(DimMovie.performance),
+                selectinload(DimMovie.reviews_summary),
+                selectinload(DimMovie.reviews),
+            )
+        )
+        if filme is None:
+            raise FilmeNaoEncontradoError
+        return GestaoFilmesService._para_detalhe(filme)
+
     @staticmethod
     def _escapar_like(valor: str) -> str:
         return valor.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
@@ -133,7 +160,7 @@ class GestaoFilmesService:
             logger.warning("Não foi possível cadastrar filme por uma falha de persistência.")
             raise FilmePersistenceError from error
 
-        return self._para_detalhe(filme)
+        return await CatalogoFilmesService(self._session).obter_detalhe(filme.id_filme)
 
     async def _obter_ou_criar_generos(self, nomes: list[str]) -> list[DimGenre]:
         generos: list[DimGenre] = []
@@ -168,6 +195,8 @@ class GestaoFilmesService:
 
     @staticmethod
     def _para_detalhe(filme: DimMovie) -> FilmeDetalhe:
+        resumo = filme.reviews_summary
+        desempenho = filme.performance
         return FilmeDetalhe(
             id=filme.id_filme,
             titulo=filme.titulo,
@@ -177,8 +206,8 @@ class GestaoFilmesService:
                 GeneroResumo(id=genero.sk_genre_id, nome=genero.nome_genero)
                 for genero in filme.genres
             ],
-            nota_media=None,
-            quantidade_avaliacoes=0,
+            nota_media=resumo.nota_media_usuarios if resumo else None,
+            quantidade_avaliacoes=resumo.qtd_avaliacoes_usuarios if resumo else 0,
             data_lancamento=filme.data_lancamento,
             duracao_minutos=filme.duracao_minutos,
             status_filme=filme.status_filme,
@@ -197,10 +226,47 @@ class GestaoFilmesService:
                 ProdutoraResumo(id=produtora.sk_company_id, nome=produtora.nome_produtora)
                 for produtora in filme.companies
             ],
-            desempenho=None,
-            avaliacoes=[],
+            desempenho=(
+                DesempenhoFilme(
+                    orcamento_usd=float(desempenho.orcamento_usd)
+                    if desempenho.orcamento_usd is not None
+                    else None,
+                    receita_usd=float(desempenho.receita_usd)
+                    if desempenho.receita_usd is not None
+                    else None,
+                    lucro_usd=float(desempenho.lucro_usd),
+                    orcamento_brl=float(desempenho.orcamento_brl)
+                    if desempenho.orcamento_brl is not None
+                    else None,
+                    receita_brl=float(desempenho.receita_brl)
+                    if desempenho.receita_brl is not None
+                    else None,
+                    lucro_brl=float(desempenho.lucro_brl),
+                    popularidade=desempenho.popularidade,
+                    nota_tmdb=desempenho.nota_tmdb,
+                    quantidade_tmdb=desempenho.qtd_tmdb,
+                    nota_imdb=desempenho.nota_imdb,
+                    quantidade_imdb=desempenho.qtd_imdb,
+                )
+                if desempenho
+                else None
+            ),
+            avaliacoes=[
+                AvaliacaoLeitura(
+                    id=avaliacao.sk_movie_review_id,
+                    nome=avaliacao.nome,
+                    nota=avaliacao.nota,
+                    comentario=avaliacao.comentario,
+                    criada_em=avaliacao.created_at,
+                )
+                for avaliacao in filme.reviews
+            ],
         )
 
 
 class FilmePersistenceError(Exception):
     """Falha controlada de persistência durante uma escrita de filme."""
+
+
+class FilmeNaoEncontradoError(Exception):
+    """Filme solicitado não existe no catálogo."""
