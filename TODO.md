@@ -38,7 +38,7 @@ CSVs; a segunda carga não altera contagens ou cria duplicados.
 
 ## 3. Backend: catálogo e gestão de filmes
 
-- [ ] Implementar criação de filme com título, diretor, ano, gênero e sinopse,
+- [x] Implementar criação de filme com título, diretor, ano, gênero e sinopse,
       preservando os relacionamentos do modelo existente.
 - [ ] Implementar catálogo paginado, com ordem determinística e metadados de
       página suficientes para a interface.

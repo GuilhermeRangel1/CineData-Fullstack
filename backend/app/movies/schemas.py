@@ -4,13 +4,16 @@ Esses schemas definem a comunicação da API e não expõem os modelos ORM.
 """
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 PapelPessoa = Literal["Ator", "Diretor", "Roteirista"]
 OrdenacaoFilme = Literal["titulo", "ano_lancamento"]
 DirecaoOrdenacao = Literal["asc", "desc"]
+NomeGenero = Annotated[str, Field(min_length=1, max_length=50)]
+NomePessoa = Annotated[str, Field(min_length=1, max_length=255)]
+NomeProdutora = Annotated[str, Field(min_length=1, max_length=255)]
 
 
 class ContratoFilmes(BaseModel):
@@ -64,32 +67,45 @@ class FilmeCriacao(ContratoFilmes):
     titulo: str = Field(min_length=1, max_length=500)
     diretor: str = Field(min_length=1, max_length=255)
     ano_lancamento: int | None = Field(default=None, ge=1888, le=2100)
-    generos: list[str] = Field(min_length=1, max_length=20)
+    generos: list[NomeGenero] = Field(min_length=1, max_length=20)
     sinopse: str | None = Field(default=None, max_length=4000)
     data_lancamento: date | None = None
     duracao_minutos: int | None = Field(default=None, ge=0)
     status_filme: str | None = Field(default=None, max_length=50)
     url_poster: str | None = Field(default=None, max_length=2048)
     url_backdrop: str | None = Field(default=None, max_length=2048)
-    atores: list[str] = Field(default_factory=list, max_length=200)
-    roteiristas: list[str] = Field(default_factory=list, max_length=200)
-    produtoras: list[str] = Field(default_factory=list, max_length=100)
+    atores: list[NomePessoa] = Field(default_factory=list, max_length=200)
+    roteiristas: list[NomePessoa] = Field(default_factory=list, max_length=200)
+    produtoras: list[NomeProdutora] = Field(default_factory=list, max_length=100)
+
+    @field_validator("generos", "atores", "roteiristas", "produtoras")
+    @classmethod
+    def nomes_nao_podem_repetir(cls, valores: list[str]) -> list[str]:
+        """Evita relações duplicadas antes de iniciar a transação."""
+
+        vistos: set[str] = set()
+        for valor in valores:
+            chave = valor.casefold()
+            if chave in vistos:
+                raise ValueError("Uma mesma relação não pode ser informada mais de uma vez.")
+            vistos.add(chave)
+        return valores
 
 
 class FilmeAtualizacao(ContratoFilmes):
     titulo: str | None = Field(default=None, min_length=1, max_length=500)
     diretor: str | None = Field(default=None, min_length=1, max_length=255)
     ano_lancamento: int | None = Field(default=None, ge=1888, le=2100)
-    generos: list[str] | None = Field(default=None, min_length=1, max_length=20)
+    generos: list[NomeGenero] | None = Field(default=None, min_length=1, max_length=20)
     sinopse: str | None = Field(default=None, max_length=4000)
     data_lancamento: date | None = None
     duracao_minutos: int | None = Field(default=None, ge=0)
     status_filme: str | None = Field(default=None, max_length=50)
     url_poster: str | None = Field(default=None, max_length=2048)
     url_backdrop: str | None = Field(default=None, max_length=2048)
-    atores: list[str] | None = Field(default=None, max_length=200)
-    roteiristas: list[str] | None = Field(default=None, max_length=200)
-    produtoras: list[str] | None = Field(default=None, max_length=100)
+    atores: list[NomePessoa] | None = Field(default=None, max_length=200)
+    roteiristas: list[NomePessoa] | None = Field(default=None, max_length=200)
+    produtoras: list[NomeProdutora] | None = Field(default=None, max_length=100)
 
 
 class FilmeResumo(ContratoFilmes):

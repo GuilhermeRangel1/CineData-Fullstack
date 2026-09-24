@@ -18,10 +18,11 @@ significa apenas a primeira versão da API; não acrescenta nenhuma funcionalida
 - Coleções usam paginação e ordenação estável.
 - Erros não expõem SQL, exceções ou caminhos locais.
 
-## Rota disponível
+## Rotas disponíveis
 
 | Método | Rota | Finalidade | Resposta |
 | --- | --- | --- | --- |
+| `POST` | `/api/v1/filmes` | Cadastra filme | `201 Created` |
 | `GET` | `/api/v1/filmes` | Lista o catálogo paginado | `200 OK` |
 
 ### Catálogo
@@ -66,7 +67,6 @@ Estas rotas serão implementadas nos próximos fluxos da atividade:
 
 | Método | Rota | Finalidade | Sucesso |
 | --- | --- | --- | --- |
-| `POST` | `/api/v1/filmes` | Cadastrar filme | `201 Created` |
 | `GET` | `/api/v1/filmes/{filme_id}` | Consultar detalhes | `200 OK` |
 | `PATCH` | `/api/v1/filmes/{filme_id}` | Atualizar filme | `200 OK` |
 | `DELETE` | `/api/v1/filmes/{filme_id}` | Remover filme | `204 No Content` |

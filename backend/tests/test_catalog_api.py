@@ -2,13 +2,14 @@ from collections.abc import AsyncIterator
 
 import httpx
 import pytest
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.movies.models import DimGenre, DimMovie
+from app.movies.models import DimCompany, DimGenre, DimMovie, DimPerson
 
 
 @pytest.fixture
@@ -92,6 +93,83 @@ async def test_catalog_endpoint_returns_public_error_for_invalid_pagination(
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.get("/api/v1/filmes", params={"pagina": 0})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "codigo": "REQUISICAO_INVALIDA",
+        "mensagem": "Dados da requisição são inválidos.",
+    }
+
+
+async def test_create_movie_endpoint_persists_required_relationships(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/filmes",
+                json={
+                    "titulo": "O Filme Criado",
+                    "diretor": "Ana Diretora",
+                    "ano_lancamento": 2025,
+                    "generos": ["Drama", "Mistério"],
+                    "sinopse": "Um filme cadastrado pela API.",
+                    "atores": ["Bruno Ator"],
+                    "roteiristas": ["Carla Roteirista"],
+                    "produtoras": ["Estúdio Local"],
+                },
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["id"].startswith("local-")
+    assert payload["titulo"] == "O Filme Criado"
+    assert {genero["nome"] for genero in payload["generos"]} == {"Drama", "Mistério"}
+    assert {(pessoa["nome"], pessoa["papel"]) for pessoa in payload["pessoas"]} == {
+        ("Ana Diretora", "Diretor"),
+        ("Bruno Ator", "Ator"),
+        ("Carla Roteirista", "Roteirista"),
+    }
+    assert payload["produtoras"] == [
+        {"id": payload["produtoras"][0]["id"], "nome": "Estúdio Local"}
+    ]
+
+    async with catalog_session_factory() as session:
+        assert await session.scalar(select(func.count()).select_from(DimMovie)) == 3
+        assert await session.scalar(select(func.count()).select_from(DimGenre)) == 3
+        assert await session.scalar(select(func.count()).select_from(DimPerson)) == 3
+        assert await session.scalar(select(func.count()).select_from(DimCompany)) == 1
+
+
+async def test_create_movie_endpoint_rejects_incomplete_payload(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/filmes",
+                json={
+                    "titulo": "Sem diretor",
+                    "generos": ["Drama"],
+                    "sinopse": "Este cadastro deve falhar.",
+                },
+            )
     finally:
         app.dependency_overrides.clear()
 

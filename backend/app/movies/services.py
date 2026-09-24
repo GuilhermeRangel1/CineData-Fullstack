@@ -1,14 +1,27 @@
 """Casos de uso do domínio de filmes."""
 
+import logging
 from math import ceil
+from uuid import uuid4
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.schemas import MetadadosPagina, Pagina
-from app.movies.models import DimGenre, DimMovie
-from app.movies.schemas import ConsultaCatalogo, FilmeResumo, GeneroResumo
+from app.movies.models import DimCompany, DimGenre, DimMovie, DimPerson, PersonType
+from app.movies.schemas import (
+    ConsultaCatalogo,
+    FilmeCriacao,
+    FilmeDetalhe,
+    FilmeResumo,
+    GeneroResumo,
+    PessoaResumo,
+    ProdutoraResumo,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class CatalogoFilmesService:
@@ -81,3 +94,113 @@ class CatalogoFilmesService:
             nota_media=resumo.nota_media_usuarios if resumo else None,
             quantidade_avaliacoes=resumo.qtd_avaliacoes_usuarios if resumo else 0,
         )
+
+
+class GestaoFilmesService:
+    """Coordena escritas atômicas do catálogo de filmes."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def criar(self, dados: FilmeCriacao) -> FilmeDetalhe:
+        """Cria um filme e reutiliza dimensões já cadastradas quando possível."""
+
+        try:
+            generos = await self._obter_ou_criar_generos(dados.generos)
+            diretor = await self._obter_ou_criar_pessoa(dados.diretor, "Diretor")
+            atores = await self._obter_ou_criar_pessoas(dados.atores, "Ator")
+            roteiristas = await self._obter_ou_criar_pessoas(dados.roteiristas, "Roteirista")
+            produtoras = await self._obter_ou_criar_produtoras(dados.produtoras)
+
+            filme = DimMovie(
+                id_filme=f"local-{uuid4().hex}",
+                titulo=dados.titulo,
+                data_lancamento=dados.data_lancamento,
+                ano_lancamento=dados.ano_lancamento,
+                duracao_minutos=dados.duracao_minutos,
+                status_filme=dados.status_filme,
+                sinopse=dados.sinopse,
+                url_poster=dados.url_poster,
+                url_backdrop=dados.url_backdrop,
+                genres=generos,
+                people=[diretor, *atores, *roteiristas],
+                companies=produtoras,
+            )
+            self._session.add(filme)
+            await self._session.commit()
+        except SQLAlchemyError as error:
+            await self._session.rollback()
+            logger.warning("Não foi possível cadastrar filme por uma falha de persistência.")
+            raise FilmePersistenceError from error
+
+        return self._para_detalhe(filme)
+
+    async def _obter_ou_criar_generos(self, nomes: list[str]) -> list[DimGenre]:
+        generos: list[DimGenre] = []
+        for nome in nomes:
+            genero = await self._session.scalar(
+                select(DimGenre).where(func.lower(DimGenre.nome_genero) == nome.lower())
+            )
+            generos.append(genero or DimGenre(nome_genero=nome))
+        return sorted(generos, key=lambda genero: genero.nome_genero.casefold())
+
+    async def _obter_ou_criar_pessoa(self, nome: str, papel: PersonType) -> DimPerson:
+        pessoa = await self._session.scalar(
+            select(DimPerson).where(
+                func.lower(DimPerson.nome_pessoa) == nome.lower(),
+                DimPerson.tipo_pessoa == papel,
+            )
+        )
+        return pessoa or DimPerson(nome_pessoa=nome, tipo_pessoa=papel)
+
+    async def _obter_ou_criar_pessoas(self, nomes: list[str], papel: PersonType) -> list[DimPerson]:
+        pessoas = [await self._obter_ou_criar_pessoa(nome, papel) for nome in nomes]
+        return sorted(pessoas, key=lambda pessoa: pessoa.nome_pessoa.casefold())
+
+    async def _obter_ou_criar_produtoras(self, nomes: list[str]) -> list[DimCompany]:
+        produtoras: list[DimCompany] = []
+        for nome in nomes:
+            produtora = await self._session.scalar(
+                select(DimCompany).where(func.lower(DimCompany.nome_produtora) == nome.lower())
+            )
+            produtoras.append(produtora or DimCompany(nome_produtora=nome))
+        return sorted(produtoras, key=lambda produtora: produtora.nome_produtora.casefold())
+
+    @staticmethod
+    def _para_detalhe(filme: DimMovie) -> FilmeDetalhe:
+        return FilmeDetalhe(
+            id=filme.id_filme,
+            titulo=filme.titulo,
+            ano_lancamento=filme.ano_lancamento,
+            url_poster=filme.url_poster,
+            generos=[
+                GeneroResumo(id=genero.sk_genre_id, nome=genero.nome_genero)
+                for genero in filme.genres
+            ],
+            nota_media=None,
+            quantidade_avaliacoes=0,
+            data_lancamento=filme.data_lancamento,
+            duracao_minutos=filme.duracao_minutos,
+            status_filme=filme.status_filme,
+            sinopse=filme.sinopse,
+            url_backdrop=filme.url_backdrop,
+            pessoas=[
+                PessoaResumo(
+                    id=pessoa.sk_person_id, nome=pessoa.nome_pessoa, papel=pessoa.tipo_pessoa
+                )
+                for pessoa in sorted(
+                    filme.people,
+                    key=lambda pessoa: (pessoa.tipo_pessoa, pessoa.nome_pessoa.casefold()),
+                )
+            ],
+            produtoras=[
+                ProdutoraResumo(id=produtora.sk_company_id, nome=produtora.nome_produtora)
+                for produtora in filme.companies
+            ],
+            desempenho=None,
+            avaliacoes=[],
+        )
+
+
+class FilmePersistenceError(Exception):
+    """Falha controlada de persistência durante uma escrita de filme."""
