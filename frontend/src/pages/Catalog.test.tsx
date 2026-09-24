@@ -32,6 +32,28 @@ function View({ onOpen = vi.fn() }: { onOpen?: (id: string) => void }) {
 }
 
 describe('Catálogo conectado', () => {
+  it('volta à última página válida após excluir o último resultado sem perder os filtros', async () => {
+    let deleted = false
+    const fetcher = vi.fn((url: string) => {
+      const page = Number(new URL(url).searchParams.get('pagina'))
+      return response(result(deleted && page === 2 ? [] : [movie], page, deleted ? 12 : 13))
+    })
+    vi.stubGlobal('fetch', fetcher)
+    const props = { genre: 'Animation', onGenre: vi.fn(), onOpen: vi.fn() }
+    const { rerender } = render(<Catalog {...props} revision={0} />)
+    await userEvent.click(await screen.findByRole('button', { name: /Próxima/ }))
+    await waitFor(() =>
+      expect(new URL(fetcher.mock.lastCall![0]).searchParams.get('pagina')).toBe('2'),
+    )
+    deleted = true
+    rerender(<Catalog {...props} revision={1} />)
+    await waitFor(() =>
+      expect(screen.getByRole('navigation', { name: 'Paginação do catálogo' })).toHaveTextContent(
+        'Página 1 de 1',
+      ),
+    )
+    expect(new URL(fetcher.mock.lastCall![0]).searchParams.get('genero')).toBe('Animation')
+  })
   it('mostra carregamento e depois filme, nota zero e detalhes', async () => {
     let finish!: (value: Response) => void
     vi.stubGlobal(

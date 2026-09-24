@@ -76,7 +76,20 @@ export interface FilmeCriacao {
   produtoras?: string[]
 }
 
-export type FilmeAtualizacao = Partial<FilmeCriacao>
+export type FilmeAtualizacao = Partial<
+  Pick<FilmeCriacao, 'titulo' | 'diretor' | 'generos' | 'atores' | 'roteiristas' | 'produtoras'>
+> & {
+  [
+    K in
+      | 'ano_lancamento'
+      | 'sinopse'
+      | 'data_lancamento'
+      | 'duracao_minutos'
+      | 'status_filme'
+      | 'url_poster'
+      | 'url_backdrop'
+  ]?: FilmeCriacao[K] | null
+}
 
 export interface FilmeResumo {
   id: string

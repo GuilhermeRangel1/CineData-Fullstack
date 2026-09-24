@@ -17,10 +17,12 @@ export function Catalog({
   genre,
   onGenre,
   onOpen,
+  revision = 0,
 }: {
   genre: string
   onGenre: (value: string) => void
   onOpen: (id: string) => void
+  revision?: number
 }) {
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
@@ -47,7 +49,9 @@ export function Catalog({
     },
     [page, query, genre, order],
   )
-  const { data, loading, error, retry } = useResource(loader)
+  const { data, loading, error, retry } = useResource(loader, revision)
+  if (data && page > Math.max(1, data.meta.total_paginas))
+    setPage(Math.max(1, data.meta.total_paginas))
   function changePage(value: number) {
     setPage(value)
     document.getElementById('catalogo')?.scrollIntoView({ block: 'start' })
@@ -106,7 +110,7 @@ export function Catalog({
             ? 'Buscando histórias…'
             : error
               ? 'Catálogo indisponível'
-              : `${(data?.meta.total_itens ?? 0).toLocaleString('pt-BR')} filmes${query ? ` para “${query}”` : ' para descobrir'}`}
+              : `${(data?.meta.total_itens ?? 0).toLocaleString('pt-BR')} ${data?.meta.total_itens === 1 ? 'filme' : 'filmes'}${query ? ` para “${query}”` : ' para descobrir'}`}
         </p>
         {error ? (
           <div className="empty-state" role="alert">

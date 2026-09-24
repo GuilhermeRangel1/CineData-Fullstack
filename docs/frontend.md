@@ -1,4 +1,4 @@
-# Interface e mídia — checkpoint da etapa 5
+# Interface e mídia — etapa 5
 
 O frontend usa React, TypeScript e CSS, com componentes separados para destaque,
 fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
@@ -14,13 +14,29 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
 - Estados de carregamento, vazio, erro e nova tentativa. Buscas antigas são
   canceladas para evitar que uma resposta atrasada substitua a atual.
 - Pôsteres ausentes ou quebrados recebem uma apresentação com o título.
+- Cadastro pelo botão **Adicionar filme** no cabeçalho; edição e exclusão
+  ficam nos detalhes de cada filme. O formulário oferece título, diretor,
+  ano, gêneros, sinopse, data completa e links opcionais de imagens.
+- Edição via PATCH envia apenas campos alterados. Elenco, produtoras e demais
+  relações não editadas são preservados. Se houver vários diretores, a interface
+  avisa que alterar esse campo substitui a direção pelo único nome informado.
+- Exclusão exige confirmação e informa que avaliações também serão removidas.
+- Avaliação com autor, nota de 0 a 10 (seletor em intervalos de 0,5) e resenha.
+  Catálogo, coleções, histórico e média são consultados novamente após escritas.
+- Campos inválidos recebem mensagens; falhas de escrita preservam o formulário.
+  Durante o envio, controles e fechamento da janela ficam bloqueados para
+  evitar requisições duplicadas. Uma falha de atualização posterior não é
+  apresentada como falha de gravação de uma avaliação já confirmada pela API.
 
 Os dados brutos preservam títulos e gêneros do arquivo original, inclusive
 idiomas, datas futuras, notas e imagens indisponíveis. As categorias em português
 na interface mapeiam os gêneros em inglês, sem modificar os registros.
 
-Cadastro, edição, exclusão e envio de avaliações pela interface ainda serão
-implementados. Este checkpoint não conclui toda a etapa 5.
+O formulário e suas conversões/validações estão separados em `MovieForm` e
+`lib/movieForm.ts`. `useMutation` coordena bloqueio de envio e erros; `useResource`
+invalida consultas após alterações, preservando filtros e ordenação do catálogo.
+Ao remover o último item de uma página, a navegação retorna à última página válida.
+Dados são persistidos pela API, não em armazenamento local do navegador.
 
 ## Destaque editorial
 
@@ -38,7 +54,7 @@ Explorar animações abre o filtro correspondente no catálogo real.
 O trailer usa a API oficial de iframe do YouTube e o domínio
 `youtube-nocookie.com`; nenhum vídeo foi baixado ou versionado. O destaque tenta
 reproduzir sem som, permite pausa e controle de áudio e pausa ao sair da área
-visível ou ao abrir o trailer em janela própria. Com preferência por movimento
+visível ou ao abrir uma janela de detalhes, cadastro ou trailer. Com preferência por movimento
 reduzido, começa estático; a pessoa pode iniciar a reprodução explicitamente.
 
 A imagem permanece até o evento de reprodução. Bloqueio de autoplay, falha do
@@ -50,10 +66,20 @@ do navegador podem impedir o vídeo.
 ## Verificações
 
 Execute em `frontend/`: `npm run lint`, `npm run test` e `npm run build`.
-Os testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
+Os 27 testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
 buscas fora de ordem, erros e nova tentativa, detalhes, pôster indisponível e
-os estados e controles do player com a API externa simulada.
+os estados e controles do player com a API externa simulada. Também cobrem
+cadastro, PATCH mínimo, campos opcionais apagados com null, validação antes do
+envio, prevenção de envio duplicado, preservação de texto em falhas, notas 0 e 10,
+confirmação/cancelamento/falha de exclusão e atualização das três listas após
+alterações. O fluxo integrado completo usa respostas HTTP simuladas no Vitest.
 
-O checkpoint também foi inspecionado no navegador com a API real, em desktop
-e em áreas de 390 e 320 pixels de largura. A reprodução do trailer oficial,
-no fundo e na janela própria, e a abertura de detalhes foram verificadas.
+A interface foi inspecionada no navegador em desktop e áreas de 390 e 320 pixels,
+incluindo formulários, confirmação, foco inicial e retorno por Escape. Cadastro,
+edição e envio de avaliação foram executados com a API real sobre banco isolado
+criado pelo Alembic; média e histórico foram conferidos. A limpeza desse registro
+pela API retornou 204, e sua ausência gerou a mensagem de 404 esperada na interface.
+A execução do botão de exclusão é coberta no teste integrado do frontend;
+a confirmação visual foi inspecionada sem remover registros da base importada.
+O trailer oficial, no fundo e na janela própria, já havia sido verificado no
+checkpoint visual. A revisão final de entrega permanece na etapa 6.

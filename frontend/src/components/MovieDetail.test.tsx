@@ -26,6 +26,52 @@ const movie: FilmeDetalhe = {
   ],
 }
 describe('Detalhes de um filme real', () => {
+  it('mantém confirmação aberta após falha de exclusão e só fecha depois do 204', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(movie))))
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ mensagem: 'Não foi possível excluir.' }), { status: 500 }),
+        ),
+      )
+      .mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
+    vi.stubGlobal('fetch', fetcher)
+    const close = vi.fn(),
+      deleted = vi.fn()
+    render(<MovieDetail id="1" onClose={close} onDeleted={deleted} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir filme' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir definitivamente' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível excluir.')
+    expect(close).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir definitivamente' }))
+    expect(deleted).toHaveBeenCalledOnce()
+    expect(close).toHaveBeenCalledOnce()
+  })
+
+  it('distingue avaliação publicada de uma falha posterior ao atualizar detalhes', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(movie))))
+      .mockImplementationOnce(() =>
+        Promise.resolve(new Response(JSON.stringify(movie.avaliacoes[0]), { status: 201 })),
+      )
+      .mockRejectedValueOnce(new TypeError('offline'))
+      .mockImplementation(() => Promise.resolve(new Response(JSON.stringify(movie))))
+    vi.stubGlobal('fetch', fetcher)
+    const changed = vi.fn()
+    render(<MovieDetail id="1" onClose={vi.fn()} onChanged={changed} />)
+    fireEvent.change(await screen.findByLabelText('Seu nome'), { target: { value: 'Ana' } })
+    await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), '8.5')
+    fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: 'Excelente.' } })
+    await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível conectar')
+    expect(screen.getByRole('status')).toHaveTextContent('Avaliação publicada')
+    await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    await screen.findByLabelText('Seu nome')
+    expect(changed).toHaveBeenCalledOnce()
+    expect(fetcher.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1)
+  })
   it('exibe sinopse, pessoas, média e histórico e permite fechar', async () => {
     vi.stubGlobal(
       'fetch',

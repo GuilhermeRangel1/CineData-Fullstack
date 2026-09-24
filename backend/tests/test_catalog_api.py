@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from datetime import datetime
 from decimal import Decimal
 
 import httpx
@@ -65,6 +66,8 @@ async def catalog_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSes
                     nome="Maria",
                     nota=8.5,
                     comentario="Ficção científica envolvente.",
+                    # Distinguish history from new writes even within the same SQLite second.
+                    created_at=datetime(2020, 1, 1),
                 )
             ],
         )

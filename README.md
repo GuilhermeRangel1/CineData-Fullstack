@@ -9,7 +9,7 @@ Permitir que o administrador gerencie um catálogo de filmes e suas avaliações
 O projeto utiliza Vite, React e TypeScript no frontend; FastAPI no backend; e
 SQLite como banco de dados.
 
-Ao final, a aplicação deverá permitir:
+A aplicação permite:
 
 - cadastrar, editar e remover filmes;
 - navegar por um catálogo paginado e pesquisar por título;
@@ -29,11 +29,12 @@ TODO.md        Plano de execução do projeto
 
 A API oferece CRUD de filmes, busca, paginação, detalhes e avaliações, com
 migrações e seed dos CSVs. O frontend já consulta essa API: catálogo, fileiras
-por gênero, pesquisa e detalhes com histórico e média de 0 a 10.
+por gênero, pesquisa e detalhes com histórico e média de 0 a 10. Também permite
+cadastrar, editar, excluir filmes com confirmação e publicar avaliações.
 
 A identidade CineData Analytics tem destaque editorial de O Castelo Animado
-com trailer oficial incorporado. Os formulários de cadastro, edição e avaliação,
-e a exclusão pela interface, ainda estão pendentes na etapa 5.
+com trailer oficial incorporado. A etapa 5 está implementada; a revisão final
+de qualidade e entrega está prevista na etapa 6.
 Veja as fontes de mídia e os comportamentos do player em
 [Interface e mídia](docs/frontend.md).
 

@@ -10,12 +10,14 @@ export function MovieShelf({
   genre,
   onOpen,
   onExplore,
+  revision = 0,
 }: {
   title: string
   subtitle: string
   genre: string
   onOpen: (id: string) => void
   onExplore: (genre: string) => void
+  revision?: number
 }) {
   const loader = useCallback(
     (signal: AbortSignal) =>
@@ -30,7 +32,7 @@ export function MovieShelf({
       ),
     [genre],
   )
-  const { data, loading, error, retry } = useResource(loader)
+  const { data, loading, error, retry } = useResource(loader, revision)
   const rail = useRef<HTMLDivElement>(null)
   function scroll(direction: number) {
     rail.current?.scrollBy({

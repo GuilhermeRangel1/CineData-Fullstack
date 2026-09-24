@@ -3,27 +3,29 @@ import { ErroDaApi } from '../api/client'
 
 // The caller memoizes the loader. Aborting protects searches and closing dialogs
 // from late responses replacing newer results.
-export function useResource<T>(loader: (signal: AbortSignal) => Promise<T>) {
+export function useResource<T>(loader: (signal: AbortSignal) => Promise<T>, revision = 0) {
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<{
     loader: typeof loader
     attempt: number
+    revision: number
     data: T | null
     loading: boolean
     error: string
-  }>({ loader, attempt, data: null, loading: true, error: '' })
+  }>({ loader, attempt, revision, data: null, loading: true, error: '' })
   useEffect(() => {
     const controller = new AbortController()
     loader(controller.signal).then(
       (data) => {
         if (!controller.signal.aborted)
-          setState({ loader, attempt, data, loading: false, error: '' })
+          setState({ loader, attempt, revision, data, loading: false, error: '' })
       },
       (error: unknown) => {
         if (!controller.signal.aborted)
           setState({
             loader,
             attempt,
+            revision,
             data: null,
             loading: false,
             error:
@@ -34,9 +36,9 @@ export function useResource<T>(loader: (signal: AbortSignal) => Promise<T>) {
       },
     )
     return () => controller.abort()
-  }, [loader, attempt])
+  }, [loader, attempt, revision])
   const current =
-    state.loader === loader && state.attempt === attempt
+    state.loader === loader && state.attempt === attempt && state.revision === revision
       ? state
       : { data: null, loading: true, error: '' }
   return { ...current, retry: () => setAttempt((value) => value + 1) }

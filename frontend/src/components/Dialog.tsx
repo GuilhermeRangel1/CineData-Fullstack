@@ -6,11 +6,13 @@ export function Dialog({
   onClose,
   children,
   className = '',
+  busy = false,
 }: {
   title: string
   onClose: () => void
   children: ReactNode
   className?: string
+  busy?: boolean
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
@@ -18,11 +20,13 @@ export function Dialog({
     const previous = document.activeElement as HTMLElement | null
     const overflow = document.body.style.overflow
     dialog?.showModal()
+    dialog?.querySelector<HTMLElement>('[data-initial-focus]')?.focus()
     document.body.style.overflow = 'hidden'
     return () => {
       dialog?.close()
       document.body.style.overflow = overflow
-      previous?.focus()
+      if (previous?.isConnected) previous.focus()
+      else document.querySelector<HTMLElement>('[data-dialog-focus-return]')?.focus()
     }
   }, [])
   return (
@@ -32,14 +36,19 @@ export function Dialog({
       aria-label={title}
       onCancel={(event) => {
         event.preventDefault()
-        onClose()
+        if (!busy) onClose()
       }}
       onClick={(event) => {
-        if (event.target === ref.current) onClose()
+        if (!busy && event.target === ref.current) onClose()
       }}
     >
       <div className="dialog-content">
-        <button className="icon-button dialog-close" aria-label="Fechar" onClick={onClose}>
+        <button
+          className="icon-button dialog-close"
+          aria-label="Fechar"
+          onClick={onClose}
+          disabled={busy}
+        >
           <Icon name="close" />
         </button>
         {children}

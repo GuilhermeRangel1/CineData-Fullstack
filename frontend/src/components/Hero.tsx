@@ -9,7 +9,7 @@ import {
 import { Dialog } from './Dialog'
 import { Icon } from './Icon'
 
-export function Hero({ onExplore }: { onExplore: () => void }) {
+export function Hero({ onExplore, paused = false }: { onExplore: () => void; paused?: boolean }) {
   const host = useRef<HTMLDivElement>(null)
   const section = useRef<HTMLElement>(null)
   const player = useRef<YouTubePlayer | null>(null)
@@ -113,7 +113,7 @@ export function Hero({ onExplore }: { onExplore: () => void }) {
   useEffect(() => {
     const visible = { current: true }
     const synchronize = () => {
-      if (document.hidden || !visible.current || trailerOpen || userPaused.current)
+      if (document.hidden || !visible.current || trailerOpen || paused || userPaused.current)
         player.current?.pauseVideo()
       else if (ready && !unavailable) player.current?.playVideo()
     }
@@ -131,7 +131,7 @@ export function Hero({ onExplore }: { onExplore: () => void }) {
       observer.disconnect()
       document.removeEventListener('visibilitychange', synchronize)
     }
-  }, [ready, trailerOpen, unavailable])
+  }, [ready, trailerOpen, unavailable, paused])
 
   function togglePlayback() {
     if (!motionAllowed) {

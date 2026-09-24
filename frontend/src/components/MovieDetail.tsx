@@ -1,14 +1,40 @@
-import { useCallback } from 'react'
-import { obterFilme } from '../api/client'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { obterFilme, removerFilme } from '../api/client'
 import { useResource } from '../hooks/useResource'
+import { useMutation } from '../hooks/useMutation'
 import { Dialog } from './Dialog'
+import { MovieForm } from './MovieForm'
+import { ReviewForm } from './ReviewForm'
 
 const number = (value: number | null | undefined) =>
   value == null ? 'Não informado' : value.toLocaleString('pt-BR')
 
-export function MovieDetail({ id, onClose }: { id: string; onClose: () => void }) {
+export function MovieDetail({
+  id,
+  onClose,
+  onChanged,
+  onDeleted,
+}: {
+  id: string
+  onClose: () => void
+  onChanged?: () => void
+  onDeleted?: () => void
+}) {
+  const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view')
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+  const focusAfterChange = useRef(false)
+  const feedback = useRef<HTMLParagraphElement>(null)
+  const editButton = useRef<HTMLButtonElement>(null)
+  const deletion = useMutation()
   const loader = useCallback((signal: AbortSignal) => obterFilme(id, signal), [id])
   const { data: movie, loading, error, retry } = useResource(loader)
+  useEffect(() => {
+    if (mode === 'view' && !loading && focusAfterChange.current) {
+      ;(feedback.current ?? editButton.current)?.focus()
+      focusAfterChange.current = false
+    }
+  }, [mode, loading, error])
   const people = (role: string) =>
     movie?.pessoas
       .filter((person) => person.papel === role)
@@ -16,11 +42,81 @@ export function MovieDetail({ id, onClose }: { id: string; onClose: () => void }
       .join(', ') || 'Não informado'
   return (
     <Dialog
-      title={movie?.titulo ?? 'Detalhes do filme'}
+      title={
+        mode === 'edit'
+          ? 'Editar filme'
+          : mode === 'delete'
+            ? 'Excluir filme'
+            : (movie?.titulo ?? 'Detalhes do filme')
+      }
       onClose={onClose}
       className="detail-dialog"
+      busy={busy || deletion.pending}
     >
-      {loading ? (
+      {notice && (
+        <p ref={feedback} tabIndex={-1} className="success-message detail-notice" role="status">
+          {notice}
+        </p>
+      )}
+      {mode === 'edit' && movie ? (
+        <MovieForm
+          movie={movie}
+          onBusyChange={setBusy}
+          onCancel={() => {
+            focusAfterChange.current = true
+            setMode('view')
+          }}
+          onSaved={() => {
+            focusAfterChange.current = true
+            setMode('view')
+            setNotice('Alterações salvas.')
+            retry()
+            onChanged?.()
+          }}
+        />
+      ) : mode === 'delete' && movie ? (
+        <div className="editor-body delete-confirmation">
+          <p className="eyebrow">GESTÃO DO CATÁLOGO</p>
+          <h2>Excluir este filme?</h2>
+          <p>
+            Você vai excluir <strong>{movie.titulo}</strong> e suas avaliações. Esta ação não pode
+            ser desfeita.
+          </p>
+          {deletion.error && (
+            <p role="alert" className="form-error">
+              {deletion.error}
+            </p>
+          )}
+          <div className="form-actions">
+            <button
+              className="button button-outline"
+              autoFocus
+              disabled={deletion.pending}
+              onClick={() => {
+                focusAfterChange.current = true
+                setMode('view')
+              }}
+            >
+              Manter filme
+            </button>
+            <button
+              className="button button-danger"
+              disabled={deletion.pending}
+              onClick={() =>
+                void deletion.run(
+                  () => removerFilme(id),
+                  () => {
+                    onDeleted?.()
+                    onClose()
+                  },
+                )
+              }
+            >
+              {deletion.pending ? 'Excluindo…' : 'Excluir definitivamente'}
+            </button>
+          </div>
+        </div>
+      ) : loading ? (
         <p className="dialog-state" role="status">
           Preparando os detalhes…
         </p>
@@ -58,6 +154,30 @@ export function MovieDetail({ id, onClose }: { id: string; onClose: () => void }
               </div>
             </div>
             <div className="detail-body">
+              <div className="management-actions">
+                <span>GESTÃO DO FILME</span>
+                <button
+                  ref={editButton}
+                  className="button button-outline"
+                  disabled={busy}
+                  onClick={() => {
+                    setNotice('')
+                    setMode('edit')
+                  }}
+                >
+                  Editar filme
+                </button>
+                <button
+                  className="text-button danger-text"
+                  disabled={busy}
+                  onClick={() => {
+                    setNotice('')
+                    setMode('delete')
+                  }}
+                >
+                  Excluir filme
+                </button>
+              </div>
               <div className="detail-summary">
                 <div className="detail-genres">
                   {movie.generos.map((genre) => (
@@ -148,6 +268,16 @@ export function MovieDetail({ id, onClose }: { id: string; onClose: () => void }
               <section className="reviews">
                 <p className="eyebrow">OUTROS OLHARES</p>
                 <h3>O que acharam do filme</h3>
+                <ReviewForm
+                  movieId={id}
+                  onBusyChange={setBusy}
+                  onSaved={() => {
+                    focusAfterChange.current = true
+                    setNotice('Avaliação publicada. Sua nota já faz parte da média.')
+                    retry()
+                    onChanged?.()
+                  }}
+                />
                 {movie.avaliacoes.length ? (
                   <ul>
                     {movie.avaliacoes.map((review) => (
