@@ -1,7 +1,9 @@
+from datetime import date
+
 import pytest
 from pydantic import ValidationError
 
-from app.movies.schemas import AvaliacaoCriacao, ConsultaCatalogo, FilmeCriacao
+from app.movies.schemas import AvaliacaoCriacao, ConsultaCatalogo, FilmeAtualizacao, FilmeCriacao
 
 
 def test_movie_creation_contract_accepts_required_fields() -> None:
@@ -33,3 +35,21 @@ def test_catalog_query_contract_defines_stable_default_order() -> None:
 
     assert consulta.ordenar_por == "titulo"
     assert consulta.direcao == "asc"
+
+
+def test_movie_creation_contract_rejects_year_that_differs_from_release_date() -> None:
+    with pytest.raises(ValidationError):
+        FilmeCriacao(
+            titulo="Filme inconsistente",
+            diretor="Diretora",
+            ano_lancamento=2023,
+            data_lancamento=date(2024, 1, 1),
+            generos=["Drama"],
+        )
+
+
+def test_movie_update_contract_rejects_empty_payload_and_null_required_relations() -> None:
+    with pytest.raises(ValidationError):
+        FilmeAtualizacao()
+    with pytest.raises(ValidationError):
+        FilmeAtualizacao(diretor=None)

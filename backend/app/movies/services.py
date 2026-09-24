@@ -5,11 +5,12 @@ from math import ceil
 from uuid import uuid4
 
 from sqlalchemy import func, select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.schemas import MetadadosPagina, Pagina
+from app.core.errors import FilmeConflitoError, FilmeNaoEncontradoError, FilmePersistenceError
 from app.movies.models import (
     DimCompany,
     DimGenre,
@@ -21,6 +22,7 @@ from app.movies.schemas import (
     AvaliacaoLeitura,
     ConsultaCatalogo,
     DesempenhoFilme,
+    FilmeAtualizacao,
     FilmeCriacao,
     FilmeDetalhe,
     FilmeResumo,
@@ -30,6 +32,14 @@ from app.movies.schemas import (
 )
 
 logger = logging.getLogger(__name__)
+DETALHE_LOAD_OPTIONS = (
+    selectinload(DimMovie.genres),
+    selectinload(DimMovie.people),
+    selectinload(DimMovie.companies),
+    selectinload(DimMovie.performance),
+    selectinload(DimMovie.reviews_summary),
+    selectinload(DimMovie.reviews),
+)
 
 
 class CatalogoFilmesService:
@@ -87,16 +97,7 @@ class CatalogoFilmesService:
         """Retorna um filme completo, carregando relações sem consultas N+1."""
 
         filme = await self._session.scalar(
-            select(DimMovie)
-            .where(DimMovie.id_filme == filme_id)
-            .options(
-                selectinload(DimMovie.genres),
-                selectinload(DimMovie.people),
-                selectinload(DimMovie.companies),
-                selectinload(DimMovie.performance),
-                selectinload(DimMovie.reviews_summary),
-                selectinload(DimMovie.reviews),
-            )
+            select(DimMovie).where(DimMovie.id_filme == filme_id).options(*DETALHE_LOAD_OPTIONS)
         )
         if filme is None:
             raise FilmeNaoEncontradoError
@@ -155,12 +156,92 @@ class GestaoFilmesService:
             )
             self._session.add(filme)
             await self._session.commit()
+        except IntegrityError as error:
+            await self._session.rollback()
+            logger.warning("Cadastro de filme interrompido por conflito de integridade.")
+            raise FilmeConflitoError from error
         except SQLAlchemyError as error:
             await self._session.rollback()
-            logger.warning("Não foi possível cadastrar filme por uma falha de persistência.")
+            logger.error("Cadastro de filme interrompido por falha de persistência.")
             raise FilmePersistenceError from error
 
         return await CatalogoFilmesService(self._session).obter_detalhe(filme.id_filme)
+
+    async def atualizar(self, filme_id: str, dados: FilmeAtualizacao) -> FilmeDetalhe:
+        """Atualiza somente os campos enviados, incluindo relações quando necessário."""
+
+        filme = await self._obter_filme_para_escrita(filme_id)
+        try:
+            for campo in (
+                "titulo",
+                "ano_lancamento",
+                "sinopse",
+                "data_lancamento",
+                "duracao_minutos",
+                "status_filme",
+                "url_poster",
+                "url_backdrop",
+            ):
+                if campo in dados.model_fields_set:
+                    setattr(filme, campo, getattr(dados, campo))
+
+            if "generos" in dados.model_fields_set:
+                filme.genres = await self._obter_ou_criar_generos(dados.generos or [])
+            if "diretor" in dados.model_fields_set:
+                diretor = await self._obter_ou_criar_pessoa(dados.diretor or "", "Diretor")
+                self._substituir_pessoas_por_papel(filme, "Diretor", [diretor])
+            if "atores" in dados.model_fields_set:
+                atores = await self._obter_ou_criar_pessoas(dados.atores or [], "Ator")
+                self._substituir_pessoas_por_papel(filme, "Ator", atores)
+            if "roteiristas" in dados.model_fields_set:
+                roteiristas = await self._obter_ou_criar_pessoas(
+                    dados.roteiristas or [], "Roteirista"
+                )
+                self._substituir_pessoas_por_papel(filme, "Roteirista", roteiristas)
+            if "produtoras" in dados.model_fields_set:
+                filme.companies = await self._obter_ou_criar_produtoras(dados.produtoras or [])
+
+            await self._session.commit()
+        except IntegrityError as error:
+            await self._session.rollback()
+            logger.warning("Atualização de filme interrompida por conflito de integridade.")
+            raise FilmeConflitoError from error
+        except SQLAlchemyError as error:
+            await self._session.rollback()
+            logger.error("Atualização de filme interrompida por falha de persistência.")
+            raise FilmePersistenceError from error
+
+        return await CatalogoFilmesService(self._session).obter_detalhe(filme.id_filme)
+
+    async def remover(self, filme_id: str) -> None:
+        """Remove um filme e seus relacionamentos dependentes de forma atômica."""
+
+        filme = await self._obter_filme_para_escrita(filme_id)
+        try:
+            await self._session.delete(filme)
+            await self._session.commit()
+        except IntegrityError as error:
+            await self._session.rollback()
+            logger.warning("Remoção de filme interrompida por conflito de integridade.")
+            raise FilmeConflitoError from error
+        except SQLAlchemyError as error:
+            await self._session.rollback()
+            logger.error("Remoção de filme interrompida por falha de persistência.")
+            raise FilmePersistenceError from error
+
+    async def _obter_filme_para_escrita(self, filme_id: str) -> DimMovie:
+        filme = await self._session.scalar(
+            select(DimMovie).where(DimMovie.id_filme == filme_id).options(*DETALHE_LOAD_OPTIONS)
+        )
+        if filme is None:
+            raise FilmeNaoEncontradoError
+        return filme
+
+    @staticmethod
+    def _substituir_pessoas_por_papel(
+        filme: DimMovie, papel: PersonType, pessoas: list[DimPerson]
+    ) -> None:
+        filme.people = [pessoa for pessoa in filme.people if pessoa.tipo_pessoa != papel] + pessoas
 
     async def _obter_ou_criar_generos(self, nomes: list[str]) -> list[DimGenre]:
         generos: list[DimGenre] = []
@@ -262,11 +343,3 @@ class GestaoFilmesService:
                 for avaliacao in filme.reviews
             ],
         )
-
-
-class FilmePersistenceError(Exception):
-    """Falha controlada de persistência durante uma escrita de filme."""
-
-
-class FilmeNaoEncontradoError(Exception):
-    """Filme solicitado não existe no catálogo."""

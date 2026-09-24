@@ -2,18 +2,19 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas import Pagina
 from app.db.session import get_db
-from app.movies.schemas import ConsultaCatalogo, FilmeCriacao, FilmeDetalhe, FilmeResumo
-from app.movies.services import (
-    CatalogoFilmesService,
-    FilmeNaoEncontradoError,
-    FilmePersistenceError,
-    GestaoFilmesService,
+from app.movies.schemas import (
+    ConsultaCatalogo,
+    FilmeAtualizacao,
+    FilmeCriacao,
+    FilmeDetalhe,
+    FilmeResumo,
 )
+from app.movies.services import CatalogoFilmesService, GestaoFilmesService
 
 movies_router = APIRouter(prefix="/filmes", tags=["filmes"])
 
@@ -25,13 +26,7 @@ async def criar_filme(
 ) -> FilmeDetalhe:
     """Cadastra um filme e seus relacionamentos obrigatórios."""
 
-    try:
-        return await GestaoFilmesService(session).criar(dados)
-    except FilmePersistenceError as error:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Não foi possível cadastrar o filme devido a um conflito de dados.",
-        ) from error
+    return await GestaoFilmesService(session).criar(dados)
 
 
 @movies_router.get("", response_model=Pagina[FilmeResumo])
@@ -46,14 +41,31 @@ async def listar_filmes(
 
 @movies_router.get("/{filme_id}", response_model=FilmeDetalhe)
 async def obter_filme(
-    filme_id: str,
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> FilmeDetalhe:
     """Consulta os detalhes completos de um filme pelo seu identificador público."""
 
-    try:
-        return await CatalogoFilmesService(session).obter_detalhe(filme_id)
-    except FilmeNaoEncontradoError as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Filme não encontrado."
-        ) from error
+    return await CatalogoFilmesService(session).obter_detalhe(filme_id)
+
+
+@movies_router.patch("/{filme_id}", response_model=FilmeDetalhe)
+async def atualizar_filme(
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
+    dados: FilmeAtualizacao,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> FilmeDetalhe:
+    """Atualiza parcialmente um filme pelo seu identificador público."""
+
+    return await GestaoFilmesService(session).atualizar(filme_id, dados)
+
+
+@movies_router.delete("/{filme_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remover_filme(
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    """Remove um filme pelo seu identificador público."""
+
+    await GestaoFilmesService(session).remover(filme_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

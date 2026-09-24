@@ -4,6 +4,7 @@ from decimal import Decimal
 import httpx
 import pytest
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
@@ -243,6 +244,109 @@ async def test_movie_detail_endpoint_returns_not_found_for_unknown_movie(
         app.dependency_overrides.clear()
 
     assert response.status_code == 404
+    assert response.json() == {
+        "codigo": "FILME_NAO_ENCONTRADO",
+        "mensagem": "Filme não encontrado.",
+    }
+
+
+async def test_update_movie_endpoint_changes_only_sent_fields_and_relationships(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.patch(
+                "/api/v1/filmes/movie-1",
+                json={
+                    "titulo": "A Chegada Atualizada",
+                    "diretor": "Nova Diretora",
+                    "generos": ["Drama"],
+                    "atores": ["Novo Ator"],
+                    "sinopse": None,
+                },
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["titulo"] == "A Chegada Atualizada"
+    assert payload["sinopse"] is None
+    assert [genero["nome"] for genero in payload["generos"]] == ["Drama"]
+    assert {(pessoa["nome"], pessoa["papel"]) for pessoa in payload["pessoas"]} == {
+        ("Nova Diretora", "Diretor"),
+        ("Novo Ator", "Ator"),
+    }
+    assert payload["produtoras"][0]["nome"] == "Paramount Pictures"
+    assert payload["desempenho"]["nota_tmdb"] == 7.6
+
+
+async def test_update_movie_endpoint_returns_not_found_for_unknown_movie(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.patch("/api/v1/filmes/inexistente", json={"titulo": "Novo"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+
+
+async def test_delete_movie_endpoint_removes_dependents_and_returns_no_content(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.delete("/api/v1/filmes/movie-1")
+            detail_response = await client.get("/api/v1/filmes/movie-1")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 204
+    assert response.content == b""
+    assert detail_response.status_code == 404
+    async with catalog_session_factory() as session:
+        assert await session.scalar(select(func.count()).select_from(DimMovie)) == 1
+        assert await session.scalar(select(func.count()).select_from(DimReview)) == 0
+        assert await session.scalar(select(func.count()).select_from(FactMoviePerformance)) == 0
+        assert await session.scalar(select(func.count()).select_from(MovieReview)) == 0
+
+
+async def test_delete_movie_endpoint_returns_not_found_for_unknown_movie(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.delete("/api/v1/filmes/inexistente")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
 
 
 async def test_create_movie_endpoint_persists_required_relationships(
@@ -320,3 +424,41 @@ async def test_create_movie_endpoint_rejects_incomplete_payload(
         "codigo": "REQUISICAO_INVALIDA",
         "mensagem": "Dados da requisição são inválidos.",
     }
+
+
+async def test_create_movie_endpoint_rolls_back_and_hides_persistence_failure(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def failing_commit(self: AsyncSession) -> None:
+        del self
+        raise SQLAlchemyError("falha simulada")
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    monkeypatch.setattr(AsyncSession, "commit", failing_commit)
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/filmes",
+                json={
+                    "titulo": "Filme que falha",
+                    "diretor": "Diretora",
+                    "ano_lancamento": 2024,
+                    "generos": ["Drama"],
+                },
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "codigo": "FALHA_DE_PERSISTENCIA",
+        "mensagem": "Não foi possível concluir a operação no momento.",
+    }
+    async with catalog_session_factory() as session:
+        assert await session.scalar(select(func.count()).select_from(DimMovie)) == 2

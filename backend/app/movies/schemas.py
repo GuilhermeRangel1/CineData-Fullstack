@@ -6,7 +6,7 @@ Esses schemas definem a comunicação da API e não expõem os modelos ORM.
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 PapelPessoa = Literal["Ator", "Diretor", "Roteirista"]
 OrdenacaoFilme = Literal["titulo", "ano_lancamento"]
@@ -78,6 +78,14 @@ class FilmeCriacao(ContratoFilmes):
     roteiristas: list[NomePessoa] = Field(default_factory=list, max_length=200)
     produtoras: list[NomeProdutora] = Field(default_factory=list, max_length=100)
 
+    @model_validator(mode="after")
+    def validar_data_e_ano(self) -> "FilmeCriacao":
+        """Impede ano de lançamento divergente da data informada."""
+
+        if self.data_lancamento and self.ano_lancamento != self.data_lancamento.year:
+            raise ValueError("O ano de lançamento deve corresponder à data informada.")
+        return self
+
     @field_validator("generos", "atores", "roteiristas", "produtoras")
     @classmethod
     def nomes_nao_podem_repetir(cls, valores: list[str]) -> list[str]:
@@ -106,6 +114,32 @@ class FilmeAtualizacao(ContratoFilmes):
     atores: list[NomePessoa] | None = Field(default=None, max_length=200)
     roteiristas: list[NomePessoa] | None = Field(default=None, max_length=200)
     produtoras: list[NomeProdutora] | None = Field(default=None, max_length=100)
+
+    @model_validator(mode="after")
+    def validar_campos_alterados(self) -> "FilmeAtualizacao":
+        """Exige uma alteração e protege relações obrigatórias contra nulos."""
+
+        if not self.model_fields_set:
+            raise ValueError("Informe ao menos um campo para atualizar o filme.")
+        for campo in ("titulo", "diretor", "generos"):
+            if campo in self.model_fields_set and getattr(self, campo) is None:
+                raise ValueError(f"O campo '{campo}' não pode ser nulo.")
+        return self
+
+    @field_validator("generos", "atores", "roteiristas", "produtoras")
+    @classmethod
+    def nomes_nao_podem_repetir(cls, valores: list[str] | None) -> list[str] | None:
+        """Evita relações duplicadas antes de iniciar a transação."""
+
+        if valores is None:
+            return valores
+        vistos: set[str] = set()
+        for valor in valores:
+            chave = valor.casefold()
+            if chave in vistos:
+                raise ValueError("Uma mesma relação não pode ser informada mais de uma vez.")
+            vistos.add(chave)
+        return valores
 
 
 class FilmeResumo(ContratoFilmes):

@@ -45,10 +45,10 @@ CSVs; a segunda carga não altera contagens ou cria duplicados.
 - [x] Implementar busca textual por título, combinável com a paginação.
 - [x] Implementar consulta de detalhes com gêneros, pessoas, desempenho,
       avaliações e média.
-- [ ] Implementar atualização parcial e remoção individual, retornando 404 para
+- [x] Implementar atualização parcial e remoção individual, retornando 404 para
       recurso inexistente.
-- [ ] Prevenir consultas N+1 e validar limites de paginação, textos e datas.
-- [ ] Padronizar respostas de erro, logs úteis sem dados sensíveis e rollback
+- [x] Prevenir consultas N+1 e validar limites de paginação, textos e datas.
+- [x] Padronizar respostas de erro, logs úteis sem dados sensíveis e rollback
       em qualquer falha de escrita.
 
 **Critério de saída:** CRUD, busca, paginação e detalhes possuem testes de API

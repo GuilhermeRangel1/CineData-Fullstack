@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from app.api.v1.router import api_router
 from app.api.v1.schemas import ErroApi
 from app.core.config import get_settings
+from app.core.errors import ErroDominio
 from app.core.logging import configure_logging
 from app.db.session import engine
 
@@ -54,6 +55,14 @@ def create_app() -> FastAPI:
             mensagem="Dados da requisição são inválidos.",
         )
         return JSONResponse(status_code=422, content=erro.model_dump())
+
+    @app.exception_handler(ErroDominio)
+    async def domain_error_handler(request: Request, exc: ErroDominio) -> JSONResponse:
+        """Converte erros controlados em respostas públicas sem detalhes internos."""
+
+        del request
+        erro = ErroApi(codigo=exc.codigo, mensagem=exc.mensagem)
+        return JSONResponse(status_code=exc.status_code, content=erro.model_dump())
 
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:
