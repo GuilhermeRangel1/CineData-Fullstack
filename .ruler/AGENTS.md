@@ -71,6 +71,28 @@ concluída se uma funcionalidade existir apenas na API ou apenas na interface.
 - Não versionar segredos, arquivos `.env`, bancos SQLite locais, ambientes
   virtuais, `node_modules` ou artefatos de build.
 
+## Padrão de engenharia
+
+- Organize mudanças por responsabilidade: rotas tratam HTTP, serviços contêm
+  regras de negócio e persistência fica isolada da apresentação.
+- Defina contratos de entrada e saída separados dos modelos ORM. Valide limites,
+  formatos, paginação e relações antes de iniciar escritas.
+- Toda escrita que afetar mais de uma entidade deve ser atômica. Ao ocorrer
+  erro, desfaça a transação e retorne uma resposta segura e coerente.
+- Prefira comportamento determinístico: ordenação explícita, mensagens de erro
+  previsíveis e cargas idempotentes.
+- Registre eventos relevantes para diagnóstico, sem expor segredos, conteúdo de
+  avaliações ou rastros internos ao cliente.
+- Trate acessibilidade, responsividade, estado vazio, carregamento e falha como
+  requisitos de cada fluxo de interface, não como acabamento posterior.
+- Antes de concluir uma mudança, execute as verificações aplicáveis e revise o
+  diff para garantir que não houve alteração fora de escopo.
+- Nunca prepare, crie ou publique commits, nem altere histórico Git, crie
+  branches, abra pull requests ou altere remotos sem um pedido explícito do
+  usuário na conversa atual. Ao terminar uma etapa, explique o que foi feito,
+  seus impactos, as verificações realizadas e as propostas de desenvolvimento;
+  então aguarde a decisão do usuário sobre o próximo passo.
+
 ## Fora do escopo inicial
 
 Não implemente antes dos requisitos obrigatórios estarem completos e testados:
@@ -92,4 +114,3 @@ Uma entrega só está pronta quando:
 - lint, testes e builds aplicáveis passam;
 - estados de carregamento, vazio, validação e erro são tratados na interface;
 - o README contém comandos realmente verificados para instalar e executar a aplicação.
-

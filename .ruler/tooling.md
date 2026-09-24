@@ -12,6 +12,19 @@
 
 Não mova os módulos existentes do backend sem necessidade técnica demonstrável.
 
+## Arquitetura da aplicação
+
+- Routers cuidam de parsing HTTP, status e dependências; não concentram regras
+  de negócio ou consultas complexas.
+- Serviços coordenam validação de domínio, conversões de nota, transações e
+  regras que envolvam mais de uma entidade.
+- Acesso a dados deve permanecer testável e não deve vazar detalhes SQLAlchemy
+  para componentes React ou contratos de API.
+- Use uma representação de erro consistente para toda a API e nunca retorne
+  exceções, SQL ou caminhos locais ao cliente.
+- Mantenha interfaces e tipos de contrato como fonte de verdade entre frontend
+  e backend; não replique estruturas sem necessidade.
+
 ## Backend
 
 - Use as dependências e configurações declaradas em `backend/pyproject.toml`.
@@ -26,6 +39,11 @@ Não mova os módulos existentes do backend sem necessidade técnica demonstráv
 - Retorne códigos HTTP coerentes: 201 para criação, 204 para exclusão bem-sucedida,
   404 para recurso ausente e 422 para entrada inválida.
 - Evite consultas N+1 ao carregar gêneros, pessoas, desempenho e avaliações.
+- Dê ordem explícita a toda coleção exposta pela API.
+- Faça logs estruturados de falhas e operações de carga, sem registrar segredos,
+  comentários completos ou dados além do necessário para diagnóstico.
+- Restrinja CORS às origens configuradas para cada ambiente; não use coringa em
+  produção.
 
 Comandos de verificação do backend devem partir de `backend/`:
 
@@ -70,6 +88,9 @@ declarar a interface concluída.
 - Faça a carga em lotes para não manter todo o conjunto em memória.
 - Produza um resumo com quantidades inseridas, atualizadas, ignoradas e inválidas.
 - A execução repetida deve produzir o mesmo estado final.
+- Não carregue CSVs inteiros em memória quando puder processá-los em lotes.
+- Mantenha métricas de carga verificáveis: linhas lidas, inseridas, atualizadas,
+  ignoradas e rejeitadas.
 
 ## Testes
 
@@ -79,6 +100,11 @@ declarar a interface concluída.
 - Use banco temporário isolado nos testes; nunca dependa de `rocketlab.db` local.
 - Para correções de defeitos, escreva um teste que falhe antes da correção sempre
   que isso for viável.
+- Toda alteração de migração deve ser testada a partir de um banco vazio.
+- Todo endpoint que altera dados deve ter testes de sucesso, validação, ausência
+  de recurso e rollback quando houver falha relevante.
+- O frontend deve validar contratos em compile-time e testar os estados de
+  carregamento, vazio, erro e sucesso dos fluxos principais.
 
 ## Disciplina de mudanças
 
@@ -88,4 +114,10 @@ declarar a interface concluída.
 - Preserve mudanças do usuário que não façam parte da tarefa atual.
 - Não crie funcionalidades opcionais enquanto houver requisito obrigatório
   incompleto.
-
+- Revise impacto em contratos, migrações, testes e documentação antes de aceitar
+  uma alteração de domínio.
+- Não execute `git add`, `git commit`, `git push`, criação de branch, rebase,
+  reset, abertura de pull request ou alteração de remoto sem pedido explícito
+  do usuário. Mantenha as mudanças locais por padrão e dê assistência sobre o
+  estado do desenvolvimento, impactos, verificações e próximos passos sem
+  transformar a conversa em um relatório de operações Git.
