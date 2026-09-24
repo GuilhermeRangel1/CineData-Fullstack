@@ -147,6 +147,7 @@ class FilmeResumo(ContratoFilmes):
     titulo: str = Field(min_length=1, max_length=500)
     ano_lancamento: int | None = None
     url_poster: str | None = None
+    url_backdrop: str | None = None
     generos: list[GeneroResumo]
     nota_media: float | None = Field(default=None, ge=0, le=10)
     quantidade_avaliacoes: int = Field(ge=0)
@@ -171,3 +172,4 @@ class ConsultaCatalogo(ContratoFilmes):
     tamanho_pagina: int = Field(default=12, ge=1, le=100)
     ordenar_por: OrdenacaoFilme = "titulo"
     direcao: DirecaoOrdenacao = "asc"
+    priorizar_capa: bool = False

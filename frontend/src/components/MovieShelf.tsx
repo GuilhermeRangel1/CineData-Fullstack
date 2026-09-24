@@ -27,6 +27,7 @@ export function MovieShelf({
           tamanho_pagina: '12',
           ordenar_por: 'ano_lancamento',
           direcao: 'desc',
+          priorizar_capa: 'true',
         }),
         signal,
       ),

@@ -14,6 +14,12 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
 - Estados de carregamento, vazio, erro e nova tentativa. Buscas antigas são
   canceladas para evitar que uma resposta atrasada substitua a atual.
 - Pôsteres ausentes ou quebrados recebem uma apresentação com o título.
+- O catálogo prioriza filmes com pôster ou backdrop, sem omitir registros sem
+  imagem. Quando um pôster não existe, o card usa o backdrop como alternativa;
+  nos detalhes, o pôster também substitui um backdrop ausente.
+- Respostas de catálogo e detalhes são mantidas por até um minuto no cache em
+  memória do cliente. Qualquer cadastro, edição, exclusão ou avaliação limpa
+  esse cache antes de as consultas serem atualizadas, evitando dados obsoletos.
 - Cadastro pelo botão **Adicionar filme** no cabeçalho; edição e exclusão
   ficam nos detalhes de cada filme. O formulário oferece título, diretor,
   ano, gêneros, sinopse, data completa e links opcionais de imagens.

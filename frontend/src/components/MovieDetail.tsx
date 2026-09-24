@@ -23,6 +23,7 @@ export function MovieDetail({
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [failedCoverUrl, setFailedCoverUrl] = useState('')
   const focusAfterChange = useRef(false)
   const feedback = useRef<HTMLParagraphElement>(null)
   const editButton = useRef<HTMLButtonElement>(null)
@@ -40,6 +41,7 @@ export function MovieDetail({
       .filter((person) => person.papel === role)
       .map((person) => person.nome)
       .join(', ') || 'Não informado'
+  const coverUrl = movie?.url_backdrop ?? movie?.url_poster
   return (
     <Dialog
       title={
@@ -132,12 +134,14 @@ export function MovieDetail({
         movie && (
           <>
             <div className="detail-cover">
-              {movie.url_backdrop && (
+              {coverUrl && failedCoverUrl !== coverUrl && (
                 <img
-                  src={movie.url_backdrop}
+                  src={coverUrl.replace('/t/p/w1280/', '/t/p/w780/')}
                   alt=""
-                  onError={(event) => {
-                    event.currentTarget.style.visibility = 'hidden'
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  onError={() => {
+                    setFailedCoverUrl(coverUrl)
                   }}
                 />
               )}

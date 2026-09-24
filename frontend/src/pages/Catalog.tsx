@@ -42,6 +42,7 @@ export function Catalog({
         tamanho_pagina: '12',
         ordenar_por: order === 'recent' ? 'ano_lancamento' : 'titulo',
         direcao: order === 'recent' ? 'desc' : 'asc',
+        priorizar_capa: 'true',
       })
       if (query) params.set('busca', query)
       if (genre) params.set('genero', genre)

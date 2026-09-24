@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 
 export function MovieCard({ movie, onOpen }: { movie: FilmeResumo; onOpen: (id: string) => void }) {
   const [failed, setFailed] = useState(false)
+  const imageUrl = movie.url_poster ?? movie.url_backdrop
   return (
     <article className="movie-card">
       <button
@@ -12,8 +13,15 @@ export function MovieCard({ movie, onOpen }: { movie: FilmeResumo; onOpen: (id: 
         aria-label={`Ver detalhes de ${movie.titulo}`}
       >
         <div className="poster">
-          {movie.url_poster && !failed ? (
-            <img src={movie.url_poster} alt="" loading="lazy" onError={() => setFailed(true)} />
+          {imageUrl && !failed ? (
+            <img
+              src={imageUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={() => setFailed(true)}
+            />
           ) : (
             <div className="poster-fallback">
               <Icon name="film" />

@@ -10,6 +10,7 @@ const movie: FilmeDetalhe = {
   titulo: 'A Chegada',
   ano_lancamento: 2016,
   url_poster: 'https://example.com/poster.jpg',
+  url_backdrop: null,
   generos: [{ id: 'g', nome: 'Drama' }],
   nota_media: 8.5,
   quantidade_avaliacoes: 1,
@@ -17,7 +18,6 @@ const movie: FilmeDetalhe = {
   duracao_minutos: 116,
   status_filme: null,
   sinopse: 'Uma linguista investiga um contato inesperado.',
-  url_backdrop: null,
   pessoas: [{ id: 'p', nome: 'Denis Villeneuve', papel: 'Diretor' }],
   produtoras: [],
   desempenho: null,
@@ -110,5 +110,15 @@ describe('Detalhes de um filme real', () => {
     expect(screen.getByText('Pôster indisponível')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Ver detalhes de A Chegada' }))
     expect(open).toHaveBeenCalledWith('1')
+  })
+
+  it('usa o pôster como imagem de detalhes quando o backdrop está ausente', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify(movie)))))
+    const { container } = render(<MovieDetail id="1" onClose={vi.fn()} />)
+    await screen.findByText(movie.sinopse!)
+    const image = container.querySelector('.detail-cover img')!
+    expect(image).toHaveAttribute('src', movie.url_poster)
+    fireEvent.error(image)
+    expect(container.querySelector('.detail-cover img')).not.toBeInTheDocument()
   })
 })

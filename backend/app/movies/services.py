@@ -78,11 +78,15 @@ class CatalogoFilmesService:
         ordem_primaria = (
             campo_ordenacao.asc() if consulta.direcao == "asc" else campo_ordenacao.desc()
         )
+        ordenacao = [ordem_primaria, DimMovie.titulo.asc(), DimMovie.id_filme.asc()]
+        if consulta.priorizar_capa:
+            # Um backdrop também permite uma capa útil no card, quando não há pôster.
+            ordenacao.insert(
+                0, (DimMovie.url_poster.is_(None) & DimMovie.url_backdrop.is_(None)).asc()
+            )
         offset = (consulta.pagina - 1) * consulta.tamanho_pagina
         result = await self._session.scalars(
-            statement.order_by(ordem_primaria, DimMovie.titulo.asc(), DimMovie.id_filme.asc())
-            .offset(offset)
-            .limit(consulta.tamanho_pagina)
+            statement.order_by(*ordenacao).offset(offset).limit(consulta.tamanho_pagina)
         )
         filmes = list(result.unique())
 
@@ -118,6 +122,7 @@ class CatalogoFilmesService:
             titulo=filme.titulo,
             ano_lancamento=filme.ano_lancamento,
             url_poster=filme.url_poster,
+            url_backdrop=filme.url_backdrop,
             generos=[
                 GeneroResumo(id=genero.sk_genre_id, nome=genero.nome_genero)
                 for genero in filme.genres

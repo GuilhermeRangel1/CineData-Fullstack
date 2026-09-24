@@ -96,6 +96,7 @@ export interface FilmeResumo {
   titulo: string
   ano_lancamento: number | null
   url_poster: string | null
+  url_backdrop: string | null
   generos: GeneroResumo[]
   nota_media: number | null
   quantidade_avaliacoes: number
@@ -120,4 +121,5 @@ export interface ConsultaCatalogo {
   tamanho_pagina?: number
   ordenar_por?: OrdenacaoFilme
   direcao?: DirecaoOrdenacao
+  priorizar_capa?: boolean
 }

@@ -173,6 +173,7 @@ async def test_catalog_endpoint_combines_case_insensitive_search_and_pagination(
                 "titulo": "Chegada Final",
                 "ano_lancamento": 2024,
                 "url_poster": None,
+                "url_backdrop": None,
                 "generos": [],
                 "nota_media": None,
                 "quantidade_avaliacoes": 0,
@@ -185,6 +186,36 @@ async def test_catalog_endpoint_combines_case_insensitive_search_and_pagination(
             "total_paginas": 2,
         },
     }
+
+
+async def test_catalog_endpoint_prioritizes_records_with_a_cover(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async with catalog_session_factory() as session:
+        session.add(
+            DimMovie(
+                id_filme="movie-cover",
+                titulo="Zeta com imagem",
+                ano_lancamento=2024,
+                url_backdrop="https://example.com/backdrop.jpg",
+            )
+        )
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/filmes", params={"priorizar_capa": "true"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["itens"][0]["id"] == "movie-cover"
 
 
 async def test_movie_detail_endpoint_returns_full_loaded_data(

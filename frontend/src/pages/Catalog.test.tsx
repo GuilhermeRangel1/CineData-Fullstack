@@ -4,12 +4,14 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { Catalog } from './Catalog'
 import type { FilmeResumo, Pagina } from '../types/api'
+import { limparCacheDaApiParaTeste } from '../api/client'
 
 const movie: FilmeResumo = {
   id: '1',
   titulo: 'Uma história',
   ano_lancamento: 2024,
   url_poster: null,
+  url_backdrop: null,
   generos: [],
   nota_media: 0,
   quantidade_avaliacoes: 1,
@@ -46,6 +48,7 @@ describe('Catálogo conectado', () => {
       expect(new URL(fetcher.mock.lastCall![0]).searchParams.get('pagina')).toBe('2'),
     )
     deleted = true
+    limparCacheDaApiParaTeste()
     rerender(<Catalog {...props} revision={1} />)
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: 'Paginação do catálogo' })).toHaveTextContent(
