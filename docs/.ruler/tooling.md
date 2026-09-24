@@ -12,6 +12,53 @@
 
 Não mova os módulos existentes do backend sem necessidade técnica demonstrável.
 
+## Fluxo de trabalho por tarefa
+
+- Antes de editar, leia o item correspondente no `TODO.md`, os contratos
+  envolvidos e a documentação diretamente relacionada ao requisito.
+- Trabalhe em uma unidade coerente por vez. Não marque um item como concluído
+  enquanto sua validação ainda estiver pendente.
+- É permitido criar novos arquivos quando isso melhorar a separação de
+  responsabilidades ou for necessário para atender ao requisito. O arquivo
+  novo deve respeitar a estrutura do projeto, não duplicar uma responsabilidade
+  existente e não contrariar o conteúdo-base deste Ruler.
+- Preserve os CSVs originais, contratos públicos, decisões arquiteturais e
+  limites de escopo existentes. Se uma mudança precisar contrariar uma dessas
+  decisões, registre a justificativa e consulte o usuário antes de prosseguir.
+- Antes de concluir qualquer alteração, revise o diff e execute as validações
+  aplicáveis à área modificada. Uma alteração só está pronta quando os gates
+  relevantes passam sem erros.
+- Não execute operações Git que alterem o histórico sem pedido explícito do
+  usuário. Por padrão, mantenha as alterações locais e informe o estado,
+  impactos, validações e próximo passo.
+
+## Validação obrigatória
+
+Toda mudança deve ter uma validação proporcional ao risco. Para código novo ou
+alterado, isso inclui testes automatizados do comportamento e dos casos de
+erro relevantes, sempre que possível. Para alterações de banco, use um SQLite
+temporário, aplique as migrações a partir de um banco vazio e valide rollback e
+integridade referencial. Para contratos ou documentação de API, confirme os
+status HTTP e o formato público das respostas.
+
+Gates mínimos disponíveis no projeto:
+
+```powershell
+# Backend, executados a partir de backend/
+python -m ruff format --check .
+python -m ruff check .
+python -m pytest
+
+# Frontend, executados a partir de frontend/
+npm run lint
+npm run build
+```
+
+Quando um comando ainda não existir no projeto, não o invente como se tivesse
+passado: registre a limitação e use a verificação equivalente disponível.
+Após os gates, confirme com `git diff --check` que não há erro de whitespace ou
+alteração acidental fora do escopo.
+
 ## Arquitetura da aplicação
 
 - Routers cuidam de parsing HTTP, status e dependências; não concentram regras
