@@ -5,15 +5,15 @@ próxima etapa quando o critério de saída da etapa atual estiver atendido.
 
 ## 1. Base de desenvolvimento e contratos
 
-- [ ] Confirmar a estrutura final: `backend/`, `frontend/` e `data/raw/`.
-- [ ] Criar o frontend com Vite, React e TypeScript em `frontend/`.
-- [ ] Criar `.env.example` com configurações não sensíveis e alinhar o README
+- [x] Confirmar a estrutura final: `backend/`, `frontend/` e `data/raw/`.
+- [x] Criar o frontend com Vite, React e TypeScript em `frontend/`.
+- [x] Criar `.env.example` com configurações não sensíveis e alinhar o README
       aos comandos realmente executáveis no Windows e no CI.
-- [ ] Definir contratos Pydantic e TypeScript para filme, gênero, pessoa,
+- [x] Definir contratos Pydantic e TypeScript para filme, gênero, pessoa,
       avaliação, paginação e respostas de erro.
-- [ ] Definir a convenção de API sob `/api/v1`, incluindo filtros, paginação,
+- [x] Definir a convenção de API sob `/api/v1`, incluindo filtros, paginação,
       ordenação estável e códigos HTTP.
-- [ ] Criar uma camada de serviços para regras de negócio e manter routers, ORM
+- [x] Criar uma camada de serviços para regras de negócio e manter routers, ORM
       e componentes React em responsabilidades separadas.
 
 **Critério de saída:** backend e frontend iniciam localmente; health check,
@@ -57,15 +57,15 @@ para sucesso, validação, recurso inexistente e falha transacional relevante.
 ## 4. Backend: avaliações e média
 
 - [ ] Implementar a criação e listagem do histórico de avaliações por filme.
-- [ ] Receber e apresentar notas como 1 a 5 estrelas na API de aplicação.
-- [ ] Converter centralmente entre estrelas e a escala 0 a 10 preservada no
-      banco e nos CSVs; não alterar arquivos brutos.
+- [ ] Receber, validar e apresentar notas na escala de 0 a 10.
+- [ ] Manter a escala de 0 a 10 de forma consistente entre API, banco e CSVs,
+      sem alterar os arquivos brutos.
 - [ ] Calcular ou atualizar a média de avaliações com consistência após cada
       inserção, sem divergência entre detalhes e catálogo.
 - [ ] Validar nota, autor e resenha, e manter a integridade referencial ao
       excluir filmes.
 
-**Critério de saída:** testes cobrem conversão de escala, limites de nota,
+**Critério de saída:** testes cobrem limites de nota na escala de 0 a 10,
 histórico, média e comportamento após exclusão de filme.
 
 ## 5. Frontend: fluxos obrigatórios
@@ -76,9 +76,9 @@ histórico, média e comportamento após exclusão de filme.
 - [ ] Implementar formulário de criação e edição com validação clara antes de
       enviar à API.
 - [ ] Implementar exclusão com confirmação e feedback de sucesso ou falha.
-- [ ] Exibir detalhes completos, média em estrelas e histórico de avaliações.
-- [ ] Implementar formulário para nova avaliação, com seletor de 1 a 5 estrelas
-      e resenha.
+- [ ] Exibir detalhes completos, média de 0 a 10 e histórico de avaliações.
+- [ ] Implementar formulário para nova avaliação, com seletor de 0 a 10 e
+      resenha.
 - [ ] Garantir navegação por teclado, rótulos de formulário, contraste e uso
       adequado em telas móveis e desktop.
 

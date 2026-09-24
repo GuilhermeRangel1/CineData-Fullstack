@@ -46,15 +46,11 @@ concluída se uma funcionalidade existir apenas na API ou apenas na interface.
 
 ## Regra de avaliações
 
-- A experiência do usuário usa uma escala de 1 a 5 estrelas, conforme a atividade.
-- Os CSVs e o modelo inicial usam notas de 0 a 10; preserve os arquivos brutos e
-  o armazenamento nessa escala para evitar perda ou reinterpretação dos dados.
-- Converta estrelas para a escala persistida multiplicando por 2 e converta a
-  escala persistida para estrelas dividindo por 2.
-- Centralize a conversão na camada de aplicação; não espalhe cálculos pelo
-  frontend, pelos routers e pelos repositórios.
-- Valide os limites nas entradas e cubra conversão e média com testes.
-- A média exibida ao usuário deve estar na escala de 1 a 5 estrelas.
+- A orientação da organização prevalece sobre a inconsistência do enunciado:
+  avaliações usam a escala de 0 a 10.
+- Preserve essa escala nos CSVs, no banco, na API e na interface; não faça
+  conversões para estrelas.
+- Valide os limites nas entradas e cubra nota e média com testes.
 
 ## Limites de arquitetura e dados
 

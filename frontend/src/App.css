@@ -1,0 +1,43 @@
+.app-shell { min-height: 100vh; background: radial-gradient(circle at 80% -10%, #3b233e 0, transparent 27rem), #121116; }
+.topbar, main { max-width: 1180px; margin: auto; padding-inline: 32px; }
+.topbar { height: 76px; display: flex; align-items: center; gap: 42px; border-bottom: 1px solid #2a272e; }
+.brand { display: inline-flex; align-items: center; gap: 9px; color: #fff; font-weight: 750; font-size: 1.15rem; text-decoration: none; letter-spacing: -.03em; }
+.brand-mark { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 9px; background: #e24d75; font-family: Georgia, serif; font-size: 1.3rem; }
+nav { display: flex; gap: 25px; flex: 1; }
+.nav-link { border: 0; padding: 8px 0; color: #9d98a4; background: none; font-size: .92rem; }
+.nav-link.active, .nav-link:hover { color: #fff; }
+.nav-link.active { border-bottom: 2px solid #e24d75; }
+.add-movie, .filter, .empty-state button { border: 0; border-radius: 8px; background: #e24d75; color: #fff; padding: 10px 15px; font-weight: 650; font-size: .86rem; }
+.intro { padding: 82px 0 55px; max-width: 680px; }
+.eyebrow { margin: 0 0 14px; text-transform: uppercase; color: #e67591; letter-spacing: .12em; font-size: .72rem; font-weight: 800; }
+h1 { margin: 0; color: #fff; font-size: clamp(2.5rem, 6vw, 4.6rem); letter-spacing: -.065em; line-height: .98; }
+.subtitle { margin: 18px 0 29px; color: #aaa5af; font-size: 1.05rem; }
+.search { max-width: 530px; display: flex; align-items: center; gap: 10px; padding: 0 15px; border: 1px solid #39343e; border-radius: 10px; background: #1b191f; color: #a49da8; }
+.search:focus-within { outline: 2px solid #e24d75; outline-offset: 2px; }
+.search input { width: 100%; border: 0; outline: 0; padding: 15px 0; color: #fff; background: transparent; }
+.search input::placeholder { color: #817b86; }
+.catalog { padding-bottom: 70px; }
+.section-heading { display: flex; align-items: end; justify-content: space-between; margin-bottom: 22px; }
+h2, h3 { color: #fff; }
+h2 { margin: 0 0 5px; font-size: 1.35rem; letter-spacing: -.03em; }
+.section-heading p { margin: 0; color: #8c8791; font-size: .85rem; }
+.filter { background: #242128; color: #d8d4da; border: 1px solid #3a353e; }
+.movie-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.movie-card { overflow: hidden; border: 1px solid #302c34; border-radius: 11px; background: #1a181e; transition: transform .2s ease, border-color .2s ease; }
+.movie-card:hover { transform: translateY(-4px); border-color: #67515e; }
+.movie-poster { height: 238px; display: grid; place-items: center; color: rgba(255,255,255,.8); font-family: Georgia, serif; font-size: 5rem; font-weight: bold; }
+.poster-1 { background: linear-gradient(140deg, #39517d, #111526 70%); }
+.poster-2 { background: linear-gradient(140deg, #725247, #231414 70%); }
+.poster-3 { background: linear-gradient(140deg, #437a6f, #163329 70%); }
+.poster-4 { background: linear-gradient(140deg, #d8d0b6, #3f3b31 70%); }
+.movie-info { padding: 16px; }
+.movie-title-row { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+h3 { margin: 0; font-size: .98rem; line-height: 1.2; letter-spacing: -.02em; }
+.movie-title-row span, .genres, .rating small { color: #918a96; font-size: .78rem; }
+.genres { margin: 8px 0 14px; min-height: 1em; }
+.rating { margin: 0; color: #e9e4e9; font-size: .88rem; font-weight: 650; }
+.rating span { color: #efbd51; } .rating small { margin-left: 3px; font-weight: 400; }
+.empty-state { padding: 48px; text-align: center; border: 1px dashed #48414b; border-radius: 12px; color: #aaa5af; }
+.empty-state p { margin: 0 0 16px; }
+@media (max-width: 760px) { .topbar, main { padding-inline: 20px; } .topbar { gap: 16px; } nav { display: none; } .add-movie { margin-left: auto; } .intro { padding-block: 56px 38px; } .movie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .movie-poster { height: 190px; } }
+@media (max-width: 420px) { .topbar { padding-inline: 14px; } .add-movie { padding: 9px; font-size: .76rem; } .movie-grid { gap: 10px; } .movie-info { padding: 12px; } .movie-poster { height: 150px; } }
