@@ -7,7 +7,7 @@
 ├── backend/       # FastAPI, SQLAlchemy, Alembic e testes Python
 ├── frontend/      # Vite, React, TypeScript e testes da interface
 ├── data/raw/      # CSVs originais, versionados sem alterações
-└── .ruler/        # fonte central das instruções para agentes
+└── docs/.ruler/   # fonte central das instruções para agentes
 ```
 
 Não mova os módulos existentes do backend sem necessidade técnica demonstrável.

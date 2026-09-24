@@ -21,17 +21,17 @@ lint e typecheck iniciais funcionam; os contratos não expõem entidades ORM.
 
 ## 2. Banco, migrações e carga inicial
 
-- [ ] Conferir a compatibilidade entre modelos SQLAlchemy, migração inicial e
+- [x] Conferir a compatibilidade entre modelos SQLAlchemy, migração inicial e
       os 10 CSVs versionados.
-- [ ] Criar uma rotina ou comando de carga documentado, que leia os CSVs sem
+- [x] Criar uma rotina ou comando de carga documentado, que leia os CSVs sem
       modificá-los e respeite a ordem de chaves estrangeiras.
-- [ ] Implementar carga em lotes, validação de cabeçalhos e referências, resumo
+- [x] Implementar carga em lotes, validação de cabeçalhos e referências, resumo
       de registros processados e falha clara para dados inválidos.
-- [ ] Garantir idempotência: duas execuções da carga resultam no mesmo estado
+- [x] Garantir idempotência: duas execuções da carga resultam no mesmo estado
       final, sem duplicação.
-- [ ] Usar transações com rollback em falhas e manter o Alembic como única
+- [x] Usar transações com rollback em falhas e manter o Alembic como única
       autoridade para criação/evolução de tabelas.
-- [ ] Preparar banco SQLite temporário e isolado para testes de integração.
+- [x] Preparar banco SQLite temporário e isolado para testes de integração.
 
 **Critério de saída:** um clone limpo executa migrações e importa todos os
 CSVs; a segunda carga não altera contagens ou cria duplicados.

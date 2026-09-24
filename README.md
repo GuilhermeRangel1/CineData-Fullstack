@@ -53,6 +53,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python -m pip install -e ".[dev]"
 Copy-Item .env.example .env
 .\.venv\Scripts\alembic upgrade head
+.\.venv\Scripts\python -m app.db.seed --database-url "sqlite+aiosqlite:///./rocketlab.db"
 .\.venv\Scripts\uvicorn app.main:app --reload
 ```
 
@@ -76,4 +77,16 @@ npm run build
 ## Dados iniciais
 
 Os 10 CSVs fornecidos estão em `data/raw/` e devem permanecer sem edição
-manual. A rotina de importação ainda será implementada.
+manual. Depois de aplicar as migrações, execute o comando abaixo a partir de
+`backend/` para carregá-los:
+
+```powershell
+.\.venv\Scripts\python -m app.db.seed --database-url "sqlite+aiosqlite:///./rocketlab.db"
+```
+
+A carga valida os cabeçalhos, os tipos e todas as referências entre os CSVs,
+processa registros em lotes de 1.000 e mostra um resumo por arquivo. Ela usa
+uma única transação: qualquer erro desfaz a carga inteira. É seguro repetir o
+comando, pois as chaves fornecidas nos CSVs são usadas para atualizar ou manter
+os registros existentes sem criar duplicidades. Para ajustar o tamanho dos
+lotes, adicione `--batch-size 500` (ou outro inteiro positivo).
