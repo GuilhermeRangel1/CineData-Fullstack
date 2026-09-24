@@ -27,10 +27,15 @@ TODO.md        Plano de execução do projeto
 
 ## Estado atual
 
-Há uma base de backend com modelos, migrações e health check. O frontend possui
-um catálogo demonstrativo com busca local e dados simulados. Os contratos de
-dados já foram definidos, mas a API de negócio, a carga dos CSVs e a integração
-com o frontend ainda estão em desenvolvimento.
+A API oferece CRUD de filmes, busca, paginação, detalhes e avaliações, com
+migrações e seed dos CSVs. O frontend já consulta essa API: catálogo, fileiras
+por gênero, pesquisa e detalhes com histórico e média de 0 a 10.
+
+A identidade CineData Analytics tem destaque editorial de O Castelo Animado
+com trailer oficial incorporado. Os formulários de cadastro, edição e avaliação,
+e a exclusão pela interface, ainda estão pendentes na etapa 5.
+Veja as fontes de mídia e os comportamentos do player em
+[Interface e mídia](docs/frontend.md).
 
 ## Como executar
 
@@ -71,6 +76,7 @@ Set-Location backend
 # Frontend
 Set-Location frontend
 npm run lint
+npm run test
 npm run build
 ```
 

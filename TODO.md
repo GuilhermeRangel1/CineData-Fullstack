@@ -70,13 +70,14 @@ histórico, média e comportamento após exclusão de filme.
 
 ## 5. Frontend: fluxos obrigatórios
 
-- [ ] Criar páginas para catálogo, detalhes do filme e gestão de filmes.
-- [ ] Implementar busca, paginação e estados de carregamento, vazio e erro no
+- [x] Criar catálogo e consulta de detalhes em janela acessível, integrados à API.
+- [ ] Criar a interface de gestão de filmes.
+- [x] Implementar busca, paginação e estados de carregamento, vazio e erro no
       catálogo.
 - [ ] Implementar formulário de criação e edição com validação clara antes de
       enviar à API.
 - [ ] Implementar exclusão com confirmação e feedback de sucesso ou falha.
-- [ ] Exibir detalhes completos, média de 0 a 10 e histórico de avaliações.
+- [x] Exibir detalhes completos, média de 0 a 10 e histórico de avaliações.
 - [ ] Implementar formulário para nova avaliação, com seletor de 0 a 10 e
       resenha.
 - [ ] Garantir navegação por teclado, rótulos de formulário, contraste e uso
@@ -84,6 +85,11 @@ histórico, média e comportamento após exclusão de filme.
 
 **Critério de saída:** todos os requisitos obrigatórios podem ser realizados
 pela interface usando a API real, inclusive em estados sem dados e com erro.
+
+**Checkpoint visual:** identidade CineData Analytics, destaque editorial de
+O Castelo Animado com trailer oficial incorporado e imagem alternativa,
+fileiras por gênero, catálogo paginado e detalhes. Cadastro, edição,
+exclusão e envio de avaliações pela interface continuam pendentes.
 
 ## 6. Qualidade, robustez e entrega
 
