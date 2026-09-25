@@ -48,6 +48,7 @@ bridge_movie_genre = Table(
         String(64),
         ForeignKey("dim_genres.sk_genre_id", ondelete="CASCADE"),
         primary_key=True,
+        index=True,
     ),
 )
 

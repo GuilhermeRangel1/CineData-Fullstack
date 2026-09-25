@@ -98,16 +98,16 @@ e banco isolado. A revisão final de entrega permanece na etapa 6.
 
 - [x] Disponibilizar execução reproduzível com Docker Compose, incluindo frontend,
       backend, migrações, seed idempotente, health checks e persistência SQLite.
-- [ ] Aumentar a cobertura dos fluxos críticos no backend e no frontend,
+- [x] Aumentar a cobertura dos fluxos críticos no backend e no frontend,
       priorizando regras de negócio, falhas e regressões.
-- [ ] Executar lint, typecheck, testes, build do frontend e migrações em uma
+- [x] Executar lint, typecheck, testes, build do frontend e migrações em uma
       sequência reproduzível.
-- [ ] Revisar CORS para aceitar somente as origens locais necessárias e nunca
+- [x] Revisar CORS para aceitar somente as origens locais necessárias e nunca
       retornar detalhes internos em mensagens de erro.
-- [ ] Revisar desempenho das rotas de catálogo e detalhes com o volume dos CSVs.
-- [ ] Documentar arquitetura, comandos de instalação, carga de dados, execução,
+- [x] Revisar desempenho das rotas de catálogo e detalhes com o volume dos CSVs.
+- [x] Documentar arquitetura, comandos de instalação, carga de dados, execução,
       testes e limitações no README apenas após validá-los.
-- [ ] Revisar o diff final, confirmar que `.env`, bancos locais, dependências e
+- [x] Revisar o diff final, confirmar que `.env`, bancos locais, dependências e
       builds não estão versionados, e separar commits por assunto.
 
 **Critério de saída:** os comandos documentados funcionam em clone limpo e a

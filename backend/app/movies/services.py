@@ -64,11 +64,28 @@ class CatalogoFilmesService:
             statement = statement.where(func.lower(DimMovie.titulo).like(f"%{termo}%", escape="\\"))
 
         if consulta.genero:
+            genero_id = await self._session.scalar(
+                select(DimGenre.sk_genre_id).where(
+                    func.lower(DimGenre.nome_genero) == consulta.genero.casefold()
+                )
+            )
+            if genero_id is None:
+                return Pagina(
+                    itens=[],
+                    meta=MetadadosPagina(
+                        pagina=consulta.pagina,
+                        tamanho_pagina=consulta.tamanho_pagina,
+                        total_itens=0,
+                        total_paginas=0,
+                    ),
+                )
             statement = statement.join(DimMovie.genres).where(
-                func.lower(DimGenre.nome_genero) == consulta.genero.casefold()
+                DimGenre.sk_genre_id == genero_id
             )
 
-        statement = statement.distinct()
+        # As relações do catálogo são únicas por chave no schema; não há linhas
+        # duplicadas a eliminar. Evitar DISTINCT mantém o filtro por gênero
+        # indexável mesmo com a base completa dos CSVs.
         total = await self._session.scalar(
             select(func.count()).select_from(statement.order_by(None).subquery())
         )

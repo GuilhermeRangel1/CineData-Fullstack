@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -15,6 +16,7 @@ from app.db.session import engine
 
 configure_logging()
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -38,8 +40,9 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.backend_cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_headers=["Content-Type"],
+        max_age=600,
     )
     app.include_router(api_router, prefix=settings.api_v1_prefix)
 
@@ -63,6 +66,18 @@ def create_app() -> FastAPI:
         del request
         erro = ErroApi(codigo=exc.codigo, mensagem=exc.mensagem)
         return JSONResponse(status_code=exc.status_code, content=erro.model_dump())
+
+    @app.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        """Registra o erro técnico sem expor detalhes internos ao cliente."""
+
+        logger.exception("Erro inesperado em %s %s", request.method, request.url.path)
+        del exc
+        erro = ErroApi(
+            codigo="ERRO_INTERNO",
+            mensagem="Não foi possível concluir a operação no momento.",
+        )
+        return JSONResponse(status_code=500, content=erro.model_dump())
 
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:

@@ -33,8 +33,8 @@ por gênero, pesquisa e detalhes com histórico e média de 0 a 10. Também perm
 cadastrar, editar, excluir filmes com confirmação e publicar avaliações.
 
 A identidade CineData Analytics tem destaque editorial de O Castelo Animado
-com trailer oficial incorporado. A etapa 5 está implementada; a revisão final
-de qualidade e entrega está prevista na etapa 6.
+com trailer oficial incorporado. As etapas obrigatórias e a revisão de
+qualidade/entrega estão concluídas.
 Veja as fontes de mídia e os comportamentos do player em
 [Interface e mídia](docs/frontend.md).
 
@@ -95,6 +95,38 @@ npm run lint
 npm run test
 npm run build
 ```
+
+Os comandos acima foram validados em 25 de setembro de 2026: 30 testes do
+backend, 30 testes do frontend, lint dos dois projetos e o build de produção
+do frontend passaram. As migrations também foram aplicadas em um banco SQLite
+temporário antes da carga dos CSVs.
+
+## Arquitetura, segurança e desempenho
+
+O backend separa routers HTTP, serviços de domínio e modelos SQLAlchemy. O
+Alembic é a única autoridade para evoluir o schema: a migration inicial cria o
+catálogo e a migration `0002_add_catalog_filter_index` adiciona um índice para
+o filtro por gênero. O frontend centraliza chamadas HTTP e invalida o cache de
+leitura após alterações no catálogo.
+
+O CORS aceita apenas as origens locais configuradas em
+`BACKEND_CORS_ORIGINS`: por padrão `http://localhost:5173`; no Docker Compose,
+também `http://localhost:8080`. A API devolve envelopes de erro públicos e não
+expõe detalhes internos de validação, persistência ou falhas inesperadas.
+
+O catálogo foi revisado usando os dados completos fornecidos (95.645 filmes).
+O filtro por gênero resolve primeiro a chave do gênero e usa o índice da tabela
+de associação; assim evita varreduras e remoção redundante de duplicatas. Os
+detalhes carregam relações com `selectinload`, prevenindo consultas N+1.
+
+## Limitações conhecidas
+
+- A aplicação é administrativa e ainda não possui autenticação, contas de
+  usuário ou autorização por perfil.
+- O SQLite é adequado para a execução local e demonstração da atividade; uma
+  implantação concorrente de maior escala exigiria um banco servidor.
+- A busca atual é textual por título. Busca tolerante a erros de digitação ou
+  por relevância exigiria um mecanismo de busca dedicado.
 
 ## Dados iniciais
 
