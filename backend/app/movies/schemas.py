@@ -39,13 +39,13 @@ class PessoaResumo(ContratoFilmes):
 
 
 class AvaliacaoCriacao(ContratoFilmes):
-    nome: str = Field(min_length=1, max_length=120)
     nota: float = Field(ge=0, le=10)
     comentario: str = Field(min_length=1, max_length=4000)
 
 
 class AvaliacaoLeitura(AvaliacaoCriacao):
     id: str = Field(min_length=1, max_length=64)
+    nome: str = Field(min_length=1, max_length=120)
     criada_em: datetime
 
 

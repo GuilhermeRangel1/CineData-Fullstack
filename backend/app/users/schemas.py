@@ -51,3 +51,4 @@ class TokenAcesso(BaseModel):
     access_token: str
     token_type: Literal["bearer"] = "bearer"
     expires_in: int = Field(gt=0)
+    usuario: UsuarioLeitura

@@ -17,6 +17,8 @@ from app.movies.schemas import (
     FilmeResumo,
 )
 from app.movies.services import AvaliacoesService, CatalogoFilmesService, GestaoFilmesService
+from app.users.dependencies import get_current_admin, get_current_user
+from app.users.models import User
 
 movies_router = APIRouter(prefix="/filmes", tags=["filmes"])
 
@@ -25,9 +27,11 @@ movies_router = APIRouter(prefix="/filmes", tags=["filmes"])
 async def criar_filme(
     dados: FilmeCriacao,
     session: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
 ) -> FilmeDetalhe:
     """Cadastra um filme e seus relacionamentos obrigatórios."""
 
+    del admin
     return await GestaoFilmesService(session).criar(dados)
 
 
@@ -60,10 +64,11 @@ async def criar_avaliacao(
     filme_id: Annotated[str, Path(min_length=1, max_length=50)],
     dados: AvaliacaoCriacao,
     session: Annotated[AsyncSession, Depends(get_db)],
+    usuario: Annotated[User, Depends(get_current_user)],
 ) -> AvaliacaoLeitura:
     """Registra uma avaliação e atualiza a média pública do filme."""
 
-    return await AvaliacoesService(session).criar(filme_id, dados)
+    return await AvaliacoesService(session).criar(filme_id, dados, usuario)
 
 
 @movies_router.get("/{filme_id}", response_model=FilmeDetalhe)
@@ -81,9 +86,11 @@ async def atualizar_filme(
     filme_id: Annotated[str, Path(min_length=1, max_length=50)],
     dados: FilmeAtualizacao,
     session: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
 ) -> FilmeDetalhe:
     """Atualiza parcialmente um filme pelo seu identificador público."""
 
+    del admin
     return await GestaoFilmesService(session).atualizar(filme_id, dados)
 
 
@@ -91,8 +98,10 @@ async def atualizar_filme(
 async def remover_filme(
     filme_id: Annotated[str, Path(min_length=1, max_length=50)],
     session: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
 ) -> Response:
     """Remove um filme pelo seu identificador público."""
 
+    del admin
     await GestaoFilmesService(session).remover(filme_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

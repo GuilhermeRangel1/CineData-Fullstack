@@ -122,11 +122,11 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 - [x] Criar endpoints de cadastro e login local por e-mail e senha.
 - [x] Emitir JWT próprio da aplicação após o login.
 - [x] Criar os perfis `user` e `admin`.
-- [ ] Manter catálogo e detalhes públicos sem autenticação.
-- [ ] Criar telas de cadastro, login e encerramento de sessão no frontend.
-- [ ] Exigir autenticação para criar avaliações.
-- [ ] Restringir gestão de filmes e comunidades ao administrador.
-- [ ] Vincular novas avaliações ao usuário e preservar avaliações importadas.
+- [x] Manter catálogo e detalhes públicos sem autenticação.
+- [x] Criar telas de cadastro, login e encerramento de sessão no frontend.
+- [x] Exigir autenticação para criar avaliações.
+- [x] Restringir gestão de filmes ao administrador.
+- [x] Vincular novas avaliações ao usuário e preservar avaliações importadas.
 
 ### 8. Avaliações, listas e perfis
 
@@ -142,6 +142,7 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 
 ### 9. Comunidades
 
+- [ ] Restringir gestão de comunidades ao administrador.
 - [ ] Permitir que o administrador crie, edite e exclua comunidades.
 - [ ] Permitir que usuários entrem e saiam de comunidades.
 - [ ] Criar publicações e comentários relacionados a filmes do catálogo.

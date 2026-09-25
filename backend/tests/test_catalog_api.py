@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from datetime import datetime
 from decimal import Decimal
 
@@ -21,6 +21,32 @@ from app.movies.models import (
     FactMoviePerformance,
     MovieReview,
 )
+from app.users.dependencies import get_current_admin, get_current_user
+from app.users.models import User
+
+
+@pytest.fixture(autouse=True)
+def authenticated_actor_overrides() -> Iterator[None]:
+    """Mantém os testes do catálogo focados no comportamento de cada rota."""
+
+    async def standard_user() -> User:
+        return User(id="user-1", email="ana@example.com", nome="Ana", password_hash="hash")
+
+    async def administrator() -> User:
+        return User(
+            id="admin-1",
+            email="admin@example.com",
+            nome="Admin",
+            password_hash="hash",
+            role="admin",
+        )
+
+    app.dependency_overrides[get_current_user] = standard_user
+    app.dependency_overrides[get_current_admin] = administrator
+    try:
+        yield
+    finally:
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -73,6 +99,19 @@ async def catalog_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSes
         )
         session.add_all(
             [
+                User(
+                    id="user-1",
+                    email="ana@example.com",
+                    nome="Ana",
+                    password_hash="hash",
+                ),
+                User(
+                    id="admin-1",
+                    email="admin@example.com",
+                    nome="Admin",
+                    password_hash="hash",
+                    role="admin",
+                ),
                 DimMovie(id_filme="movie-2", titulo="Zodíaco", ano_lancamento=2007, genres=[drama]),
                 chegada,
             ]
@@ -325,7 +364,6 @@ async def test_reviews_endpoints_create_history_and_keep_average_consistent(
             creation_response = await client.post(
                 "/api/v1/filmes/movie-1/avaliacoes",
                 json={
-                    "nome": "Ana",
                     "nota": 10,
                     "comentario": "Uma avaliação excelente.",
                 },
@@ -365,11 +403,11 @@ async def test_review_endpoints_validate_payload_and_return_not_found(
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             invalid_score = await client.post(
                 "/api/v1/filmes/movie-1/avaliacoes",
-                json={"nome": "Ana", "nota": 10.1, "comentario": "Inválida."},
+                json={"nota": 10.1, "comentario": "Inválida."},
             )
             invalid_text = await client.post(
                 "/api/v1/filmes/movie-1/avaliacoes",
-                json={"nome": " ", "nota": 0, "comentario": " "},
+                json={"nota": 0, "comentario": " "},
             )
             missing_movie = await client.get("/api/v1/filmes/inexistente/avaliacoes")
     finally:

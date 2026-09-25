@@ -222,6 +222,12 @@ class MovieReview(Base):
     sk_movie_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("dim_movies.sk_movie_id", ondelete="CASCADE"), index=True
     )
+    user_id: Mapped[str | None] = mapped_column(
+        String(32),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
+        default=None,
+    )
     nome: Mapped[str] = mapped_column(String(120))
     nota: Mapped[float] = mapped_column(Double)
     comentario: Mapped[str] = mapped_column(String(4000))

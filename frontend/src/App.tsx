@@ -6,6 +6,8 @@ import { MovieShelf } from './components/MovieShelf'
 import { Catalog } from './pages/Catalog'
 import { Dialog } from './components/Dialog'
 import { MovieForm } from './components/MovieForm'
+import { AuthForm } from './components/AuthForm'
+import { carregarSessao, encerrarSessao, type Sessao } from './auth/session'
 import './App.css'
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
   const [creating, setCreating] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [session, setSession] = useState<Sessao | null>(() => carregarSessao())
+  const [authMode, setAuthMode] = useState<'login' | 'cadastro' | null>(null)
   const refresh = () => setRevision((value) => value + 1)
   function explore(value: string) {
     setGenre(value)
@@ -49,16 +53,42 @@ function App() {
           <Icon name="search" />
           <span>Encontrar um filme</span>
         </a>
-        <button
-          className="button button-outline add-movie"
-          data-dialog-focus-return
-          onClick={() => {
-            setNotice('')
-            setCreating(true)
-          }}
-        >
-          + Adicionar filme
-        </button>
+        {session ? (
+          <div className="account-actions">
+            <span>Olá, {session.usuario.nome}</span>
+            {session.usuario.role === 'admin' && (
+              <button
+                className="button button-outline add-movie"
+                data-dialog-focus-return
+                onClick={() => {
+                  setNotice('')
+                  setCreating(true)
+                }}
+              >
+                + Adicionar filme
+              </button>
+            )}
+            <button
+              className="text-button"
+              onClick={() => {
+                encerrarSessao()
+                setSession(null)
+                setNotice('Sessão encerrada.')
+              }}
+            >
+              Sair
+            </button>
+          </div>
+        ) : (
+          <div className="account-actions">
+            <button className="text-button" onClick={() => setAuthMode('login')}>
+              Entrar
+            </button>
+            <button className="button button-outline" onClick={() => setAuthMode('cadastro')}>
+              Criar conta
+            </button>
+          </div>
+        )}
       </header>
       <main>
         <Hero onExplore={() => explore('Animation')} paused={creating || selected !== null} />
@@ -143,6 +173,24 @@ function App() {
           />
         </Dialog>
       )}
+      {authMode && (
+        <Dialog
+          title={authMode === 'cadastro' ? 'Criar conta' : 'Entrar'}
+          className="editor-dialog"
+          busy={busy}
+          onClose={() => setAuthMode(null)}
+        >
+          <AuthForm
+            mode={authMode}
+            onBusyChange={setBusy}
+            onAuthenticated={(newSession) => {
+              setSession(newSession)
+              setAuthMode(null)
+              setNotice(`Sessão iniciada como ${newSession.usuario.nome}.`)
+            }}
+          />
+        </Dialog>
+      )}
       {selected && (
         <MovieDetail
           key={selected}
@@ -154,6 +202,8 @@ function App() {
             setNotice('Filme e avaliações excluídos.')
             document.querySelector<HTMLElement>('.add-movie')?.focus()
           }}
+          usuario={session?.usuario ?? null}
+          onLoginRequested={() => setAuthMode('login')}
         />
       )}
     </div>

@@ -65,7 +65,11 @@ def create_app() -> FastAPI:
 
         del request
         erro = ErroApi(codigo=exc.codigo, mensagem=exc.mensagem)
-        return JSONResponse(status_code=exc.status_code, content=erro.model_dump())
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=erro.model_dump(),
+            headers=exc.headers,
+        )
 
     @app.exception_handler(Exception)
     async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:

@@ -5,6 +5,16 @@ import { MovieDetail } from './MovieDetail'
 import { MovieCard } from './MovieCard'
 import type { FilmeDetalhe } from '../types/api'
 
+const admin = {
+  id: 'admin',
+  email: 'admin@example.com',
+  nome: 'Admin',
+  role: 'admin' as const,
+  created_at: '2026-09-25T12:00:00Z',
+}
+
+const user = { ...admin, id: 'user', email: 'ana@example.com', nome: 'Ana', role: 'user' as const }
+
 const movie: FilmeDetalhe = {
   id: '1',
   titulo: 'A Chegada',
@@ -39,7 +49,7 @@ describe('Detalhes de um filme real', () => {
     vi.stubGlobal('fetch', fetcher)
     const close = vi.fn(),
       deleted = vi.fn()
-    render(<MovieDetail id="1" onClose={close} onDeleted={deleted} />)
+    render(<MovieDetail id="1" onClose={close} onDeleted={deleted} usuario={admin} />)
     await userEvent.click(await screen.findByRole('button', { name: 'Excluir filme' }))
     await userEvent.click(screen.getByRole('button', { name: 'Excluir definitivamente' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível excluir.')
@@ -60,15 +70,15 @@ describe('Detalhes de um filme real', () => {
       .mockImplementation(() => Promise.resolve(new Response(JSON.stringify(movie))))
     vi.stubGlobal('fetch', fetcher)
     const changed = vi.fn()
-    render(<MovieDetail id="1" onClose={vi.fn()} onChanged={changed} />)
-    fireEvent.change(await screen.findByLabelText('Seu nome'), { target: { value: 'Ana' } })
+    render(<MovieDetail id="1" onClose={vi.fn()} onChanged={changed} usuario={user} />)
+    await screen.findByLabelText('Sua nota (0 a 10)')
     await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), '8.5')
     fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: 'Excelente.' } })
     await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível conectar')
     expect(screen.getByRole('status')).toHaveTextContent('Avaliação publicada')
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
-    await screen.findByLabelText('Seu nome')
+    await screen.findByLabelText('Sua nota (0 a 10)')
     expect(changed).toHaveBeenCalledOnce()
     expect(fetcher.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1)
   })

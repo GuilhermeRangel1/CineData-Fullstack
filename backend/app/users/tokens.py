@@ -7,7 +7,7 @@ import jwt
 from app.core.config import get_settings
 from app.core.errors import ConfiguracaoAutenticacaoError
 from app.users.models import User
-from app.users.schemas import TokenAcesso
+from app.users.schemas import TokenAcesso, UsuarioLeitura
 
 JWT_ALGORITHM = "HS256"
 JWT_ISSUER = "cinedata-analytics"
@@ -37,4 +37,5 @@ def criar_token_acesso(usuario: User) -> TokenAcesso:
     return TokenAcesso(
         access_token=token,
         expires_in=int((expiracao - agora).total_seconds()),
+        usuario=UsuarioLeitura.model_validate(usuario),
     )

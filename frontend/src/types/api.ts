@@ -36,14 +36,29 @@ export interface PessoaResumo {
 }
 
 export interface AvaliacaoCriacao {
-  nome: string
   nota: number
   comentario: string
 }
 
 export interface AvaliacaoLeitura extends AvaliacaoCriacao {
   id: string
+  nome: string
   criada_em: string
+}
+
+export interface UsuarioLeitura {
+  id: string
+  email: string
+  nome: string
+  role: 'user' | 'admin'
+  created_at: string
+}
+
+export interface TokenAcesso {
+  access_token: string
+  token_type: 'bearer'
+  expires_in: number
+  usuario: UsuarioLeitura
 }
 
 export interface DesempenhoFilme {

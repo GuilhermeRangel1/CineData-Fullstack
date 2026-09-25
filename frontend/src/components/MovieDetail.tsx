@@ -5,6 +5,7 @@ import { useMutation } from '../hooks/useMutation'
 import { Dialog } from './Dialog'
 import { MovieForm } from './MovieForm'
 import { ReviewForm } from './ReviewForm'
+import type { UsuarioLeitura } from '../types/api'
 
 const number = (value: number | null | undefined) =>
   value == null ? 'Não informado' : value.toLocaleString('pt-BR')
@@ -14,11 +15,15 @@ export function MovieDetail({
   onClose,
   onChanged,
   onDeleted,
+  usuario = null,
+  onLoginRequested = () => undefined,
 }: {
   id: string
   onClose: () => void
   onChanged?: () => void
   onDeleted?: () => void
+  usuario?: UsuarioLeitura | null
+  onLoginRequested?: () => void
 }) {
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view')
   const [busy, setBusy] = useState(false)
@@ -158,30 +163,32 @@ export function MovieDetail({
               </div>
             </div>
             <div className="detail-body">
-              <div className="management-actions">
-                <span>GESTÃO DO FILME</span>
-                <button
-                  ref={editButton}
-                  className="button button-outline"
-                  disabled={busy}
-                  onClick={() => {
-                    setNotice('')
-                    setMode('edit')
-                  }}
-                >
-                  Editar filme
-                </button>
-                <button
-                  className="text-button danger-text"
-                  disabled={busy}
-                  onClick={() => {
-                    setNotice('')
-                    setMode('delete')
-                  }}
-                >
-                  Excluir filme
-                </button>
-              </div>
+              {usuario?.role === 'admin' && (
+                <div className="management-actions">
+                  <span>GESTÃO DO FILME</span>
+                  <button
+                    ref={editButton}
+                    className="button button-outline"
+                    disabled={busy}
+                    onClick={() => {
+                      setNotice('')
+                      setMode('edit')
+                    }}
+                  >
+                    Editar filme
+                  </button>
+                  <button
+                    className="text-button danger-text"
+                    disabled={busy}
+                    onClick={() => {
+                      setNotice('')
+                      setMode('delete')
+                    }}
+                  >
+                    Excluir filme
+                  </button>
+                </div>
+              )}
               <div className="detail-summary">
                 <div className="detail-genres">
                   {movie.generos.map((genre) => (
@@ -272,16 +279,25 @@ export function MovieDetail({
               <section className="reviews">
                 <p className="eyebrow">OUTROS OLHARES</p>
                 <h3>O que acharam do filme</h3>
-                <ReviewForm
-                  movieId={id}
-                  onBusyChange={setBusy}
-                  onSaved={() => {
-                    focusAfterChange.current = true
-                    setNotice('Avaliação publicada. Sua nota já faz parte da média.')
-                    retry()
-                    onChanged?.()
-                  }}
-                />
+                {usuario ? (
+                  <ReviewForm
+                    movieId={id}
+                    onBusyChange={setBusy}
+                    onSaved={() => {
+                      focusAfterChange.current = true
+                      setNotice('Avaliação publicada. Sua nota já faz parte da média.')
+                      retry()
+                      onChanged?.()
+                    }}
+                  />
+                ) : (
+                  <div className="review-login-prompt">
+                    <p className="muted">Entre na sua conta para publicar uma avaliação.</p>
+                    <button className="button button-outline" onClick={onLoginRequested}>
+                      Entrar para avaliar
+                    </button>
+                  </div>
+                )}
                 {movie.avaliacoes.length ? (
                   <ul>
                     {movie.avaliacoes.map((review) => (

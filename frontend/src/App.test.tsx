@@ -51,6 +51,19 @@ it('completa cadastro, edição, avaliação e exclusão atualizando todas as li
     return json(current)
   })
   vi.stubGlobal('fetch', fetcher)
+  window.localStorage.setItem(
+    'cinedata.session',
+    JSON.stringify({
+      token: 'token-de-teste',
+      usuario: {
+        id: 'admin',
+        email: 'admin@example.com',
+        nome: 'Admin',
+        role: 'admin',
+        created_at: '2026-09-25T12:00:00Z',
+      },
+    }),
+  )
   render(<App />)
   await screen.findByText('Nenhuma história por aqui. Ainda.')
   await userEvent.click(screen.getByRole('button', { name: /Adicionar filme/ }))
@@ -68,7 +81,6 @@ it('completa cadastro, edição, avaliação e exclusão atualizando todas as li
       screen.getAllByRole('button', { name: 'Ver detalhes de História revisada' }),
     ).toHaveLength(3),
   )
-  fireEvent.change(within(detail).getByLabelText('Seu nome'), { target: { value: 'Ana' } })
   await userEvent.selectOptions(within(detail).getByLabelText('Sua nota (0 a 10)'), '10')
   fireEvent.change(within(detail).getByLabelText('Sua resenha'), {
     target: { value: 'Uma ótima sessão.' },

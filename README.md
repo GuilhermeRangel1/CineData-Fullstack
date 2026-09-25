@@ -32,6 +32,8 @@ migrações e seed dos CSVs. O frontend já consulta essa API: catálogo, fileir
 por gênero, pesquisa e detalhes com histórico e média de 0 a 10. Também permite
 cadastrar, editar, excluir filmes com confirmação e publicar avaliações.
 Também oferece cadastro e login locais por e-mail e senha, com sessão JWT.
+O catálogo é público; somente contas autenticadas podem avaliar e somente
+administradores podem alterar o catálogo.
 
 A identidade CineData Analytics tem destaque editorial de O Castelo Animado
 com trailer oficial incorporado. As etapas obrigatórias e a revisão de
@@ -111,6 +113,10 @@ ele não é duplicado. Não há senha ou administrador padrão no código. Para 
 o Docker Compose, informe as mesmas variáveis no ambiente do PowerShell antes
 de executar `docker compose up --build`.
 
+O frontend mantém a sessão localmente e envia o JWT no cabeçalho Bearer. O
+catálogo e seus detalhes continuam públicos; publicar uma avaliação exige login,
+e criar, editar ou remover filmes exige uma conta `admin`.
+
 ## Verificações
 
 ```powershell
@@ -126,7 +132,7 @@ npm run test
 npm run build
 ```
 
-Os comandos acima foram validados em 25 de setembro de 2026: 37 testes do
+Os comandos acima foram validados em 25 de setembro de 2026: 38 testes do
 backend, 30 testes do frontend, lint dos dois projetos e o build de produção
 do frontend passaram. As migrations também foram aplicadas em um banco SQLite
 temporário antes da carga dos CSVs.
@@ -136,10 +142,12 @@ temporário antes da carga dos CSVs.
 O backend separa routers HTTP, serviços de domínio e modelos SQLAlchemy. O
 Alembic é a única autoridade para evoluir o schema: a migration inicial cria o
 catálogo, a migration `0002_add_catalog_filter_index` adiciona um índice para o
-filtro por gênero e a `0003_add_local_users` cria as contas locais. Senhas são
-persistidas somente como hash Argon2; a sessão é um JWT assinado por uma chave
-externa ao repositório. O frontend centraliza chamadas HTTP e invalida o cache
-de leitura após alterações no catálogo.
+filtro por gênero, a `0003_add_local_users` cria as contas locais e a
+`0004_link_reviews_to_users` vincula novas avaliações a elas, sem alterar as
+avaliações importadas. Senhas são persistidas somente como hash Argon2; a sessão
+é um JWT assinado por uma chave externa ao repositório. O frontend centraliza
+chamadas HTTP, envia o Bearer da sessão e invalida o cache de leitura após
+alterações no catálogo.
 
 O CORS aceita apenas as origens locais configuradas em
 `BACKEND_CORS_ORIGINS`: por padrão `http://localhost:5173`; no Docker Compose,
@@ -153,8 +161,7 @@ detalhes carregam relações com `selectinload`, prevenindo consultas N+1.
 
 ## Limitações conhecidas
 
-- Catálogo, gestão de filmes e avaliações ainda permanecem públicos. A próxima
-  etapa aplicará o JWT e os papéis às rotas que exigem autenticação/autorização.
+- Comunidades, listas, amizades e perfis públicos ainda não foram implementados.
 - O SQLite é adequado para a execução local e demonstração da atividade; uma
   implantação concorrente de maior escala exigiria um banco servidor.
 - A busca atual é textual por título. Busca tolerante a erros de digitação ou

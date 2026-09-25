@@ -10,7 +10,6 @@ describe('Nova avaliação', () => {
       saved = vi.fn()
     vi.stubGlobal('fetch', fetcher)
     render(<ReviewForm movieId="1" onSaved={saved} onBusyChange={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('Seu nome'), { target: { value: ' Ana ' } })
     await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), score)
     fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: ' Meu olhar. ' } })
     await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
@@ -18,11 +17,11 @@ describe('Nova avaliação', () => {
       expect.stringContaining('/filmes/1/avaliacoes'),
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ nome: 'Ana', nota: Number(score), comentario: 'Meu olhar.' }),
+        body: JSON.stringify({ nota: Number(score), comentario: 'Meu olhar.' }),
       }),
     )
     expect(saved).toHaveBeenCalledOnce()
-    expect(screen.getByLabelText('Seu nome')).toHaveValue('')
+    expect(screen.getByLabelText('Sua nota (0 a 10)')).toHaveValue('')
   })
 
   it('rejeita textos em branco e preserva o conteúdo se o filme não existir', async () => {
@@ -32,11 +31,9 @@ describe('Nova avaliação', () => {
       saved = vi.fn()
     vi.stubGlobal('fetch', fetcher)
     render(<ReviewForm movieId="1" onSaved={saved} onBusyChange={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('Seu nome'), { target: { value: '   ' } })
     fireEvent.submit(screen.getByRole('form'))
-    expect(screen.getByRole('alert')).toHaveTextContent('Preencha seu nome')
+    expect(screen.getByRole('alert')).toHaveTextContent('Escolha uma nota')
     expect(fetcher).not.toHaveBeenCalled()
-    fireEvent.change(screen.getByLabelText('Seu nome'), { target: { value: 'Ana' } })
     await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), '8.5')
     fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: 'Gostei muito.' } })
     await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))

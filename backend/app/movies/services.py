@@ -33,6 +33,7 @@ from app.movies.schemas import (
     PessoaResumo,
     ProdutoraResumo,
 )
+from app.users.models import User
 
 logger = logging.getLogger(__name__)
 DETALHE_LOAD_OPTIONS = (
@@ -167,14 +168,20 @@ class AvaliacoesService:
         )
         return [self._para_leitura(avaliacao) for avaliacao in avaliacoes]
 
-    async def criar(self, filme_id: str, dados: AvaliacaoCriacao) -> AvaliacaoLeitura:
+    async def criar(
+        self,
+        filme_id: str,
+        dados: AvaliacaoCriacao,
+        usuario: User,
+    ) -> AvaliacaoLeitura:
         """Insere uma avaliação e atualiza seu agregado na mesma transação."""
 
         filme = await self._obter_filme(filme_id)
         try:
             avaliacao = MovieReview(
                 sk_movie_id=filme.sk_movie_id,
-                nome=dados.nome,
+                user_id=usuario.id,
+                nome=usuario.nome,
                 nota=dados.nota,
                 comentario=dados.comentario,
             )

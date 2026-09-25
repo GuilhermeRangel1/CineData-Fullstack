@@ -20,14 +20,14 @@ def test_movie_creation_contract_accepts_required_fields() -> None:
 
 
 def test_review_contract_accepts_rating_on_zero_to_ten_scale() -> None:
-    avaliacao = AvaliacaoCriacao(nome="Ana", nota=10, comentario="Ótimo filme.")
+    avaliacao = AvaliacaoCriacao(nota=10, comentario="Ótimo filme.")
 
     assert avaliacao.nota == 10
 
 
 def test_review_contract_rejects_rating_outside_zero_to_ten_scale() -> None:
     with pytest.raises(ValidationError):
-        AvaliacaoCriacao(nome="Ana", nota=10.1, comentario="Ótimo filme.")
+        AvaliacaoCriacao(nota=10.1, comentario="Ótimo filme.")
 
 
 def test_catalog_query_contract_defines_stable_default_order() -> None:

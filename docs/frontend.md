@@ -20,15 +20,18 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
 - Respostas de catálogo e detalhes são mantidas por até um minuto no cache em
   memória do cliente. Qualquer cadastro, edição, exclusão ou avaliação limpa
   esse cache antes de as consultas serem atualizadas, evitando dados obsoletos.
-- Cadastro pelo botão **Adicionar filme** no cabeçalho; edição e exclusão
-  ficam nos detalhes de cada filme. O formulário oferece título, diretor,
-  ano, gêneros, sinopse, data completa e links opcionais de imagens.
+- Cadastro, login e encerramento de sessão locais pelo cabeçalho. A sessão JWT
+  é mantida no navegador e enviada nas escritas da API.
+- O botão **Adicionar filme**, a edição e a exclusão ficam visíveis apenas para
+  administradores. O formulário oferece título, diretor, ano, gêneros, sinopse,
+  data completa e links opcionais de imagens.
 - Edição via PATCH envia apenas campos alterados. Elenco, produtoras e demais
   relações não editadas são preservados. Se houver vários diretores, a interface
   avisa que alterar esse campo substitui a direção pelo único nome informado.
 - Exclusão exige confirmação e informa que avaliações também serão removidas.
-- Avaliação com autor, nota de 0 a 10 (seletor em intervalos de 0,5) e resenha.
-  Catálogo, coleções, histórico e média são consultados novamente após escritas.
+- Avaliação com a identidade da conta, nota de 0 a 10 (seletor em intervalos de
+  0,5) e resenha. Sem sessão, a interface convida a pessoa a entrar. Catálogo,
+  coleções, histórico e média são consultados novamente após escritas.
 - Campos inválidos recebem mensagens; falhas de escrita preservam o formulário.
   Durante o envio, controles e fechamento da janela ficam bloqueados para
   evitar requisições duplicadas. Uma falha de atualização posterior não é
@@ -72,7 +75,7 @@ do navegador podem impedir o vídeo.
 ## Verificações
 
 Execute em `frontend/`: `npm run lint`, `npm run test` e `npm run build`.
-Os 27 testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
+Os 30 testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
 buscas fora de ordem, erros e nova tentativa, detalhes, pôster indisponível e
 os estados e controles do player com a API externa simulada. Também cobrem
 cadastro, PATCH mínimo, campos opcionais apagados com null, validação antes do

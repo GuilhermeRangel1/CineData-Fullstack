@@ -11,9 +11,12 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.movies.models import MovieReview
 from app.users.models import User
 from app.users.schemas import UsuarioCadastro
+from app.users.security import gerar_hash_senha
 from app.users.services import AuthService
+from app.users.tokens import criar_token_acesso
 
 
 @pytest.fixture
@@ -198,3 +201,71 @@ async def test_bootstrap_creates_the_initial_administrator_only_once(
     assert foi_criado
     assert segundo.id == primeiro.id
     assert not foi_criado_novamente
+
+
+async def test_catalog_is_public_but_writes_require_the_expected_account_role(
+    user_session_factory: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("JWT_SECRET_KEY", "segredo-de-teste-com-tamanho-suficiente")
+    get_settings.cache_clear()
+    async with user_session_factory() as session:
+        usuario = User(
+            id="user-1",
+            email="ana@example.com",
+            nome="Ana",
+            password_hash=gerar_hash_senha("senha-local-segura"),
+        )
+        admin = User(
+            id="admin-1",
+            email="admin@example.com",
+            nome="Admin",
+            password_hash=gerar_hash_senha("senha-admin-segura"),
+            role="admin",
+        )
+        session.add_all([usuario, admin])
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with user_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            public_catalog = await client.get("/api/v1/filmes")
+            no_session = await client.post(
+                "/api/v1/filmes",
+                json={"titulo": "Novo", "diretor": "Diretora", "generos": ["Drama"]},
+            )
+            regular_user = await client.post(
+                "/api/v1/filmes",
+                headers={"Authorization": f"Bearer {criar_token_acesso(usuario).access_token}"},
+                json={"titulo": "Novo", "diretor": "Diretora", "generos": ["Drama"]},
+            )
+            administrator = await client.post(
+                "/api/v1/filmes",
+                headers={"Authorization": f"Bearer {criar_token_acesso(admin).access_token}"},
+                json={"titulo": "Novo", "diretor": "Diretora", "generos": ["Drama"]},
+            )
+            review = await client.post(
+                f"/api/v1/filmes/{administrator.json()['id']}/avaliacoes",
+                headers={"Authorization": f"Bearer {criar_token_acesso(usuario).access_token}"},
+                json={"nota": 9, "comentario": "Ótimo filme."},
+            )
+    finally:
+        app.dependency_overrides.clear()
+        get_settings.cache_clear()
+
+    assert public_catalog.status_code == 200
+    assert no_session.status_code == 401
+    assert no_session.headers["www-authenticate"] == "Bearer"
+    assert regular_user.status_code == 403
+    assert administrator.status_code == 201
+    assert review.status_code == 201
+    assert review.json()["nome"] == "Ana"
+
+    async with user_session_factory() as session:
+        saved_review = await session.scalar(select(MovieReview).where(MovieReview.nome == "Ana"))
+    assert saved_review is not None
+    assert saved_review.user_id == "user-1"

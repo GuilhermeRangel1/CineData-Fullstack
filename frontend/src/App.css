@@ -81,6 +81,24 @@
   text-decoration: none;
   font-size: 12px;
 }
+.account-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #d2d2d8;
+  font-size: 12px;
+}
+.account-actions .button {
+  min-height: 36px;
+  padding: 8px 14px;
+}
+.review-login-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+}
 .header-caption {
   border-left: 1px solid #ffffff30;
   padding-left: 28px;

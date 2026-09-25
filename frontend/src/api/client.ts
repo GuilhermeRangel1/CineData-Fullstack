@@ -1,13 +1,16 @@
 import type {
   AvaliacaoCriacao,
   AvaliacaoLeitura,
+  TokenAcesso,
   ErroApi,
   FilmeAtualizacao,
   FilmeCriacao,
   FilmeDetalhe,
   FilmeResumo,
   Pagina,
+  UsuarioLeitura,
 } from '../types/api'
+import { obterTokenSessao } from '../auth/session'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
 const CACHE_TTL_MS = 60_000
@@ -24,9 +27,14 @@ export class ErroDaApi extends Error {
 }
 
 async function requisitar<T>(caminho: string, init?: RequestInit): Promise<T> {
+  const token = obterTokenSessao()
   const resposta = await fetch(`${apiBaseUrl}${caminho}`, {
     ...init,
-    headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
+    headers: {
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   })
 
   if (!resposta.ok) {
@@ -54,6 +62,24 @@ function invalidarCacheDeFilmes() {
 /** Uso exclusivo dos testes: cada caso começa sem respostas em memória. */
 export function limparCacheDaApiParaTeste() {
   cacheDeLeitura.clear()
+}
+
+export function registrar(dados: {
+  nome: string
+  email: string
+  senha: string
+}): Promise<UsuarioLeitura> {
+  return requisitar<UsuarioLeitura>('/auth/cadastro', {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  })
+}
+
+export function entrar(dados: { email: string; senha: string }): Promise<TokenAcesso> {
+  return requisitar<TokenAcesso>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  })
 }
 
 export function listarFilmes(

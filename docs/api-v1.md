@@ -17,18 +17,28 @@ significa apenas a primeira versão da API; não acrescenta nenhuma funcionalida
 - Notas e médias usam a escala de 0 a 10.
 - Coleções usam paginação e ordenação estável.
 - Erros não expõem SQL, exceções ou caminhos locais.
+- Rotas autenticadas recebem `Authorization: Bearer <jwt>`.
 
 ## Rotas disponíveis
 
-| Método | Rota | Finalidade | Resposta |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/filmes` | Cadastra filme | `201 Created` |
-| `GET` | `/api/v1/filmes` | Lista o catálogo paginado | `200 OK` |
-| `GET` | `/api/v1/filmes/{filme_id}` | Consulta detalhes do filme | `200 OK` |
-| `PATCH` | `/api/v1/filmes/{filme_id}` | Atualiza parcialmente um filme | `200 OK` |
-| `DELETE` | `/api/v1/filmes/{filme_id}` | Remove um filme | `204 No Content` |
-| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Consulta o histórico de avaliações | `200 OK` |
-| `POST` | `/api/v1/filmes/{filme_id}/avaliacoes` | Adiciona uma avaliação | `201 Created` |
+| Método | Rota | Finalidade | Acesso | Resposta |
+| --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/cadastro` | Cria uma conta local | Público | `201 Created` |
+| `POST` | `/api/v1/auth/login` | Inicia sessão local | Público | `200 OK` |
+| `POST` | `/api/v1/filmes` | Cadastra filme | `admin` | `201 Created` |
+| `GET` | `/api/v1/filmes` | Lista o catálogo paginado | Público | `200 OK` |
+| `GET` | `/api/v1/filmes/{filme_id}` | Consulta detalhes do filme | Público | `200 OK` |
+| `PATCH` | `/api/v1/filmes/{filme_id}` | Atualiza parcialmente um filme | `admin` | `200 OK` |
+| `DELETE` | `/api/v1/filmes/{filme_id}` | Remove um filme | `admin` | `204 No Content` |
+| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Consulta o histórico de avaliações | Público | `200 OK` |
+| `POST` | `/api/v1/filmes/{filme_id}/avaliacoes` | Adiciona uma avaliação | Autenticado | `201 Created` |
+
+### Contas e sessão
+
+`POST /api/v1/auth/cadastro` recebe `nome`, `email` e `senha`; a conta sempre
+nasce com o papel `user`. `POST /api/v1/auth/login` recebe `email` e `senha` e
+devolve o JWT Bearer e os dados públicos da conta. O único `admin` inicial é
+criado pelo comando de bootstrap da infraestrutura, nunca pelo cadastro público.
 
 ### Catálogo
 
@@ -68,11 +78,12 @@ Resposta paginada:
 
 ### Avaliações
 
-`POST /api/v1/filmes/{filme_id}/avaliacoes` recebe `nome`, `nota` e
-`comentario`. A nota é um número entre `0` e `10`, inclusive. A inclusão cria
-o item no histórico e atualiza a quantidade e a média do filme na mesma
-transação. Para preservar o consolidado importado pelos CSVs, a nova média é
-ponderada pela quantidade já registrada no resumo do filme.
+`POST /api/v1/filmes/{filme_id}/avaliacoes` recebe `nota` e `comentario` e
+exige uma sessão válida. O autor é derivado da conta autenticada, e a nova
+avaliação é vinculada a ela. A nota é um número entre `0` e `10`, inclusive.
+A inclusão cria o item no histórico e atualiza a quantidade e a média do filme
+na mesma transação. Para preservar o consolidado importado pelos CSVs, a nova
+média é ponderada pela quantidade já registrada no resumo do filme.
 
 `GET /api/v1/filmes/{filme_id}/avaliacoes` retorna o histórico disponível, da
 avaliação mais recente para a mais antiga. Ambas as rotas retornam `404` quando
@@ -83,6 +94,8 @@ o filme não existe.
 | Situação | Status |
 | --- | --- |
 | Dados inválidos, como `pagina=0` | `422 Unprocessable Entity` |
+| Token ausente ou inválido | `401 Unauthorized` |
+| Conta sem o papel exigido | `403 Forbidden` |
 | Filme inexistente | `404 Not Found` |
 | Conflito de estado | `409 Conflict` |
 | Falha inesperada | `500 Internal Server Error` |

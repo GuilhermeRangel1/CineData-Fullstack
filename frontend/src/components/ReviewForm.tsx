@@ -11,7 +11,6 @@ export function ReviewForm({
   onSaved: () => void
   onBusyChange: (busy: boolean) => void
 }) {
-  const [name, setName] = useState('')
   const [score, setScore] = useState('')
   const [comment, setComment] = useState('')
   const [validation, setValidation] = useState('')
@@ -19,28 +18,24 @@ export function ReviewForm({
   function submit(event: FormEvent) {
     event.preventDefault()
     if (
-      !name.trim() ||
       !comment.trim() ||
       score === '' ||
       !Number.isFinite(Number(score)) ||
       Number(score) < 0 ||
       Number(score) > 10 ||
-      name.trim().length > 120 ||
       comment.trim().length > 4000
     ) {
-      setValidation('Preencha seu nome, escolha uma nota entre 0 e 10 e escreva sua resenha.')
+      setValidation('Escolha uma nota entre 0 e 10 e escreva sua resenha.')
       return
     }
     setValidation('')
     void run(
       () =>
         criarAvaliacao(movieId, {
-          nome: name.trim(),
           nota: Number(score),
           comentario: comment.trim(),
         }),
       () => {
-        setName('')
         setScore('')
         setComment('')
         onSaved()
@@ -52,16 +47,6 @@ export function ReviewForm({
       <h4>E qual é o seu olhar?</h4>
       <p className="muted">Sua nota faz parte da história. Todos os campos são obrigatórios.</p>
       <fieldset className="form-grid" disabled={pending}>
-        <label>
-          Seu nome
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-            maxLength={120}
-            autoComplete="name"
-          />
-        </label>
         <label>
           Sua nota (0 a 10)
           <select value={score} onChange={(event) => setScore(event.target.value)} required>

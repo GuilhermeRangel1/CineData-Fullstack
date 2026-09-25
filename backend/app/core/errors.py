@@ -7,6 +7,7 @@ class ErroDominio(Exception):
     status_code = 500
     codigo = "ERRO_INTERNO"
     mensagem = "Não foi possível concluir a operação."
+    headers: dict[str, str] | None = None
 
 
 class FilmeNaoEncontradoError(ErroDominio):
@@ -55,3 +56,20 @@ class ConfiguracaoAutenticacaoError(ErroDominio):
     status_code = 503
     codigo = "AUTENTICACAO_INDISPONIVEL"
     mensagem = "A autenticação não está disponível no momento."
+
+
+class TokenInvalidoError(ErroDominio):
+    """O token Bearer está ausente, expirado ou não é confiável."""
+
+    status_code = 401
+    codigo = "TOKEN_INVALIDO"
+    mensagem = "É necessário iniciar uma sessão válida para esta operação."
+    headers = {"WWW-Authenticate": "Bearer"}
+
+
+class PermissaoNegadaError(ErroDominio):
+    """A conta autenticada não possui o papel exigido pela operação."""
+
+    status_code = 403
+    codigo = "PERMISSAO_NEGADA"
+    mensagem = "Sua conta não possui permissão para esta operação."
