@@ -113,8 +113,61 @@ e banco isolado. A revisão final de entrega permanece na etapa 6.
 **Critério de saída:** os comandos documentados funcionam em clone limpo e a
 aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 
-## Após o MVP, apenas se solicitado
+## Próximas extensões planejadas
 
-- [ ] Autenticação e autorização.
-- [ ] Filtros avançados, favoritos, recomendações e integrações externas.
-- [ ] Storybook, cache, métricas externas, CI/CD e deploy.
+### 7. Contas locais e autorização
+
+- [x] Criar tabela de usuários sem alterar os dados existentes do catálogo.
+- [x] Armazenar senha somente como hash seguro, nunca em texto puro.
+- [ ] Criar endpoints de cadastro e login local por e-mail e senha.
+- [ ] Emitir JWT próprio da aplicação após o login.
+- [ ] Criar os perfis `user` e `admin`.
+- [ ] Manter catálogo e detalhes públicos sem autenticação.
+- [ ] Criar telas de cadastro, login e encerramento de sessão no frontend.
+- [ ] Exigir autenticação para criar avaliações.
+- [ ] Restringir gestão de filmes e comunidades ao administrador.
+- [ ] Vincular novas avaliações ao usuário e preservar avaliações importadas.
+
+### 8. Avaliações, listas e perfis
+
+- [ ] Exibir a média geral e a quantidade de avaliações por filme.
+- [ ] Criar a lista virtual obrigatória de filmes avaliados por cada usuário.
+- [ ] Permitir listas personalizadas com nome e filmes do catálogo.
+- [ ] Implementar a lista "assistir depois".
+- [ ] Definir visibilidade das listas públicas e privadas.
+- [ ] Criar perfis públicos com avaliações, listas públicas e quantidade de
+      amigos.
+- [ ] Adicionar trailer opcional ao detalhe do filme quando houver uma fonte
+      válida, sem alterar os CSVs originais.
+
+### 9. Comunidades
+
+- [ ] Permitir que o administrador crie, edite e exclua comunidades.
+- [ ] Permitir que usuários entrem e saiam de comunidades.
+- [ ] Criar publicações e comentários relacionados a filmes do catálogo.
+- [ ] Permitir mencionar um filme usando `movie_id` e exibir seus dados no post.
+- [ ] Adicionar reações simples às publicações.
+- [ ] Usar requisições HTTP/polling inicialmente; avaliar WebSockets apenas se
+      a experiência exigir atualização em tempo real.
+
+### 10. Amizades
+
+- [ ] Criar solicitações de amizade com estados pendente, aceita e bloqueada.
+- [ ] Permitir consultar amigos e quantidade de amigos no perfil.
+- [ ] Respeitar a visibilidade definida para listas e avaliações.
+
+### 11. Recursos opcionais
+
+- [ ] Implementar filtros avançados além de título, gênero, ordenação e
+      paginação.
+- [ ] Implementar recomendações baseadas em avaliações e listas.
+- [ ] Integrar fonte externa para dados ou trailers de filmes.
+- [ ] Criar solicitações de inclusão de filmes para avaliação do administrador.
+- [ ] Criar Storybook para componentes visuais.
+- [x] Manter cache de consultas de leitura no frontend.
+- [ ] Adicionar métricas externas e observabilidade.
+- [ ] Criar pipeline de CI/CD.
+- [x] Disponibilizar execução local via Docker Compose.
+- [ ] Publicar a aplicação em um ambiente de deploy.
+- [ ] Avaliar quizzes, conquistas, níveis, notícias e eventos somente depois
+      de validar o núcleo social.

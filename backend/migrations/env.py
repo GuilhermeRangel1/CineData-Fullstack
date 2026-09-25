@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.core.config import get_settings
 from app.db.base import Base
 from app.movies import models  # noqa: F401  Registra as tabelas no metadata.
+from app.users import models as user_models  # noqa: F401  Registra as tabelas no metadata.
 
 config = context.config
 

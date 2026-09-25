@@ -1,5 +1,6 @@
 from app.db.base import Base
 from app.movies import models  # noqa: F401  Registra os modelos ORM.
+from app.users import models as user_models  # noqa: F401  Registra os modelos ORM.
 
 
 def test_movie_schema_registers_expected_tables() -> None:
@@ -14,6 +15,7 @@ def test_movie_schema_registers_expected_tables() -> None:
         "dim_reviews",
         "fact_movies_performance",
         "movie_reviews",
+        "users",
     }
 
     assert set(Base.metadata.tables) == expected_tables
@@ -27,3 +29,11 @@ def test_movie_review_columns_match_shared_csv() -> None:
         table.columns.keys()
     )
     assert table.primary_key.columns.keys() == ["sk_movie_review_id"]
+
+
+def test_user_schema_stores_only_a_password_hash() -> None:
+    table = Base.metadata.tables["users"]
+
+    assert {"id", "email", "nome", "password_hash", "role"} <= set(table.columns.keys())
+    assert "password" not in table.columns
+    assert table.primary_key.columns.keys() == ["id"]

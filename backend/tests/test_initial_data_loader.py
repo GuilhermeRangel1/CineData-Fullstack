@@ -100,7 +100,8 @@ def test_loader_is_idempotent_after_alembic_migration(
     assert first_summary.processed == second_summary.processed
     assert first_summary.total == 10
     assert _table_counts(migrated_database) == first_counts
-    assert set(first_counts.values()) == {1}
+    assert first_counts["users"] == 0
+    assert {count for table, count in first_counts.items() if table != "users"} == {1}
 
 
 def test_loader_rolls_back_when_a_foreign_key_is_invalid(
