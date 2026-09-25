@@ -31,6 +31,7 @@ A API oferece CRUD de filmes, busca, paginação, detalhes e avaliações, com
 migrações e seed dos CSVs. O frontend já consulta essa API: catálogo, fileiras
 por gênero, pesquisa e detalhes com histórico e média de 0 a 10. Também permite
 cadastrar, editar, excluir filmes com confirmação e publicar avaliações.
+Também oferece cadastro e login locais por e-mail e senha, com sessão JWT.
 
 A identidade CineData Analytics tem destaque editorial de O Castelo Animado
 com trailer oficial incorporado. As etapas obrigatórias e a revisão de
@@ -81,6 +82,35 @@ Copy-Item .env.example .env
 Acesse `http://localhost:8000/health` para verificar a API e
 `http://localhost:8000/docs` para a documentação automática.
 
+### Contas locais e administrador inicial
+
+O cadastro público em `POST /api/v1/auth/cadastro` cria exclusivamente contas
+com o papel `user`. O login em `POST /api/v1/auth/login` devolve um JWT Bearer;
+antes de usá-lo, configure uma chave de assinatura no `backend/.env`:
+
+```env
+JWT_SECRET_KEY=uma-chave-aleatoria-longa-e-exclusiva-para-este-ambiente
+```
+
+Para criar o primeiro administrador, defina também no mesmo arquivo:
+
+```env
+INITIAL_ADMIN_EMAIL=admin@exemplo.com
+INITIAL_ADMIN_NAME=Administrador
+INITIAL_ADMIN_PASSWORD=defina-uma-senha-forte
+```
+
+Após aplicar as migrações, execute uma única vez:
+
+```powershell
+.\.venv\Scripts\python -m app.users.bootstrap_admin
+```
+
+O comando é idempotente: se já houver um administrador com o e-mail informado,
+ele não é duplicado. Não há senha ou administrador padrão no código. Para usar
+o Docker Compose, informe as mesmas variáveis no ambiente do PowerShell antes
+de executar `docker compose up --build`.
+
 ## Verificações
 
 ```powershell
@@ -96,7 +126,7 @@ npm run test
 npm run build
 ```
 
-Os comandos acima foram validados em 25 de setembro de 2026: 30 testes do
+Os comandos acima foram validados em 25 de setembro de 2026: 37 testes do
 backend, 30 testes do frontend, lint dos dois projetos e o build de produção
 do frontend passaram. As migrations também foram aplicadas em um banco SQLite
 temporário antes da carga dos CSVs.
@@ -105,9 +135,11 @@ temporário antes da carga dos CSVs.
 
 O backend separa routers HTTP, serviços de domínio e modelos SQLAlchemy. O
 Alembic é a única autoridade para evoluir o schema: a migration inicial cria o
-catálogo e a migration `0002_add_catalog_filter_index` adiciona um índice para
-o filtro por gênero. O frontend centraliza chamadas HTTP e invalida o cache de
-leitura após alterações no catálogo.
+catálogo, a migration `0002_add_catalog_filter_index` adiciona um índice para o
+filtro por gênero e a `0003_add_local_users` cria as contas locais. Senhas são
+persistidas somente como hash Argon2; a sessão é um JWT assinado por uma chave
+externa ao repositório. O frontend centraliza chamadas HTTP e invalida o cache
+de leitura após alterações no catálogo.
 
 O CORS aceita apenas as origens locais configuradas em
 `BACKEND_CORS_ORIGINS`: por padrão `http://localhost:5173`; no Docker Compose,
@@ -121,8 +153,8 @@ detalhes carregam relações com `selectinload`, prevenindo consultas N+1.
 
 ## Limitações conhecidas
 
-- A aplicação é administrativa e ainda não possui autenticação, contas de
-  usuário ou autorização por perfil.
+- Catálogo, gestão de filmes e avaliações ainda permanecem públicos. A próxima
+  etapa aplicará o JWT e os papéis às rotas que exigem autenticação/autorização.
 - O SQLite é adequado para a execução local e demonstração da atividade; uma
   implantação concorrente de maior escala exigiria um banco servidor.
 - A busca atual é textual por título. Busca tolerante a erros de digitação ou

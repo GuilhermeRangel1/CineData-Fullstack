@@ -8,6 +8,11 @@ services:
       DATABASE_URL: sqlite+aiosqlite:////app/data/rocketlab.db
       BACKEND_CORS_ORIGINS: '["http://localhost:5173", "http://localhost:8080"]'
       LOG_LEVEL: INFO
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
     volumes:
       - cinedata-db:/app/data
     ports:

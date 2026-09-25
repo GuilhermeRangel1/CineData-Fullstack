@@ -119,9 +119,9 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 
 - [x] Criar tabela de usuários sem alterar os dados existentes do catálogo.
 - [x] Armazenar senha somente como hash seguro, nunca em texto puro.
-- [ ] Criar endpoints de cadastro e login local por e-mail e senha.
-- [ ] Emitir JWT próprio da aplicação após o login.
-- [ ] Criar os perfis `user` e `admin`.
+- [x] Criar endpoints de cadastro e login local por e-mail e senha.
+- [x] Emitir JWT próprio da aplicação após o login.
+- [x] Criar os perfis `user` e `admin`.
 - [ ] Manter catálogo e detalhes públicos sem autenticação.
 - [ ] Criar telas de cadastro, login e encerramento de sessão no frontend.
 - [ ] Exigir autenticação para criar avaliações.
