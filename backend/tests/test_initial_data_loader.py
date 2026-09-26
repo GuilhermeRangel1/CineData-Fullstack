@@ -15,6 +15,18 @@ from app.db.seed import InitialDataError, seed_database
 
 BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 TEST_TEMPORARY_DIRECTORY = BACKEND_DIRECTORY.parent / "tmp" / "initial-data-loader-tests"
+SOCIAL_TABLES = {
+    "users",
+    "user_lists",
+    "user_list_movies",
+    "watch_later_movies",
+    "friendship_requests",
+    "communities",
+    "community_memberships",
+    "community_posts",
+    "community_comments",
+    "community_reactions",
+}
 
 
 @pytest.fixture
@@ -100,14 +112,8 @@ def test_loader_is_idempotent_after_alembic_migration(
     assert first_summary.processed == second_summary.processed
     assert first_summary.total == 10
     assert _table_counts(migrated_database) == first_counts
-    assert first_counts["users"] == 0
-    catalog_tables = set(first_counts) - {
-        "users",
-        "user_lists",
-        "user_list_movies",
-        "watch_later_movies",
-        "friendship_requests",
-    }
+    assert {first_counts[table] for table in SOCIAL_TABLES} == {0}
+    catalog_tables = set(first_counts) - SOCIAL_TABLES
     assert {first_counts[table] for table in catalog_tables} == {1}
 
 

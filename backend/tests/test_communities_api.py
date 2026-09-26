@@ -1,0 +1,196 @@
+from collections.abc import AsyncIterator
+
+import httpx
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
+
+from app.db.base import Base
+from app.db.session import get_db
+from app.main import app
+from app.movies.models import DimGenre, DimMovie
+from app.users.dependencies import get_current_admin, get_current_user
+from app.users.models import User
+
+
+@pytest.fixture
+async def communities_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    engine = create_async_engine(
+        "sqlite+aiosqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with session_factory() as session:
+        genre = DimGenre(nome_genero="Fantasia")
+        session.add_all(
+            [
+                User(
+                    id="admin",
+                    email="admin@example.com",
+                    nome="Admin",
+                    password_hash="hash",
+                    role="admin",
+                ),
+                User(id="ana", email="ana@example.com", nome="Ana", password_hash="hash"),
+                User(id="bia", email="bia@example.com", nome="Bia", password_hash="hash"),
+                DimMovie(id_filme="movie-1", titulo="O Castelo Animado", genres=[genre]),
+            ]
+        )
+        await session.commit()
+    try:
+        yield session_factory
+    finally:
+        await engine.dispose()
+
+
+async def test_admin_manages_communities_and_people_can_participate(
+    communities_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with communities_session_factory() as session:
+            yield session
+
+    async def admin() -> User:
+        return User(
+            id="admin", email="admin@example.com", nome="Admin", password_hash="hash", role="admin"
+        )
+
+    async def ana() -> User:
+        return User(id="ana", email="ana@example.com", nome="Ana", password_hash="hash")
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_admin] = admin
+    app.dependency_overrides[get_current_user] = ana
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/v1/comunidades",
+                json={
+                    "nome": "Fãs de fantasia",
+                    "descricao": "Conversas sobre mundos imaginários.",
+                },
+            )
+            community_id = created.json()["id"]
+            listed = await client.get("/api/v1/comunidades")
+            joined = await client.post(f"/api/v1/comunidades/{community_id}/participacao")
+            duplicate_join = await client.post(f"/api/v1/comunidades/{community_id}/participacao")
+            members = await client.get(f"/api/v1/comunidades/{community_id}/membros")
+            updated = await client.patch(
+                f"/api/v1/comunidades/{community_id}", json={"descricao": "Fantasia no cinema."}
+            )
+            left = await client.delete(f"/api/v1/comunidades/{community_id}/participacao")
+            deleted = await client.delete(f"/api/v1/comunidades/{community_id}")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert created.status_code == 201
+    assert listed.json()[0]["quantidade_membros"] == 0
+    assert joined.status_code == 204
+    assert duplicate_join.status_code == 409
+    assert members.json() == [{"id": "ana", "nome": "Ana", "avatar_url": None}]
+    assert updated.json()["descricao"] == "Fantasia no cinema."
+    assert left.status_code == 204
+    assert deleted.status_code == 204
+
+
+async def test_only_admin_can_create_a_community(
+    communities_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with communities_session_factory() as session:
+            yield session
+
+    async def denied_admin() -> User:
+        from app.core.errors import PermissaoNegadaError
+
+        raise PermissaoNegadaError
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_admin] = denied_admin
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/comunidades", json={"nome": "Livre", "descricao": "Não deve criar."}
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+    assert response.json()["codigo"] == "PERMISSAO_NEGADA"
+
+
+async def test_members_can_post_comment_and_react_to_a_mentioned_movie(
+    communities_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with communities_session_factory() as session:
+            yield session
+
+    async def admin() -> User:
+        return User(
+            id="admin", email="admin@example.com", nome="Admin", password_hash="hash", role="admin"
+        )
+
+    async def ana() -> User:
+        return User(id="ana", email="ana@example.com", nome="Ana", password_hash="hash")
+
+    async def bia() -> User:
+        return User(id="bia", email="bia@example.com", nome="Bia", password_hash="hash")
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_admin] = admin
+    app.dependency_overrides[get_current_user] = ana
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            community = await client.post(
+                "/api/v1/comunidades",
+                json={"nome": "Animação", "descricao": "Cinema animado."},
+            )
+            community_id = community.json()["id"]
+            blocked_post = await client.post(
+                f"/api/v1/comunidades/{community_id}/publicacoes",
+                json={"conteudo": "Quero conversar sobre este filme."},
+            )
+            await client.post(f"/api/v1/comunidades/{community_id}/participacao")
+            post = await client.post(
+                f"/api/v1/comunidades/{community_id}/publicacoes",
+                json={"conteudo": "Quero conversar sobre este filme.", "movie_id": "movie-1"},
+            )
+            post_id = post.json()["id"]
+            app.dependency_overrides[get_current_user] = bia
+            blocked_comment = await client.post(
+                f"/api/v1/comunidades/publicacoes/{post_id}/comentarios",
+                json={"conteudo": "Ainda não entrei."},
+            )
+            await client.post(f"/api/v1/comunidades/{community_id}/participacao")
+            comment = await client.post(
+                f"/api/v1/comunidades/publicacoes/{post_id}/comentarios",
+                json={"conteudo": "Adoro a direção de arte."},
+            )
+            reaction = await client.post(
+                f"/api/v1/comunidades/publicacoes/{post_id}/reacoes", json={"tipo": "amei"}
+            )
+            posts = await client.get(f"/api/v1/comunidades/{community_id}/publicacoes")
+            removed_reaction = await client.delete(
+                f"/api/v1/comunidades/publicacoes/{post_id}/reacoes"
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert blocked_post.status_code == 403
+    assert blocked_post.json()["codigo"] == "PARTICIPACAO_NECESSARIA"
+    assert post.status_code == 201
+    assert post.json()["filme"]["titulo"] == "O Castelo Animado"
+    assert blocked_comment.status_code == 403
+    assert comment.status_code == 201
+    assert comment.json()["autor"]["nome"] == "Bia"
+    assert reaction.json() == [{"tipo": "amei", "quantidade": 1}]
+    assert posts.json()[0]["comentarios"][0]["conteudo"] == "Adoro a direção de arte."
+    assert posts.json()[0]["reacoes"] == [{"tipo": "amei", "quantidade": 1}]
+    assert removed_reaction.status_code == 204

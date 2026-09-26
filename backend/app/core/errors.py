@@ -121,3 +121,33 @@ class AmizadeConflitoError(ErroDominio):
     status_code = 409
     codigo = "AMIZADE_EM_CONFLITO"
     mensagem = "Já existe uma solicitação, amizade ou bloqueio entre estas contas."
+
+
+class ComunidadeNaoEncontradaError(ErroDominio):
+    status_code = 404
+    codigo = "COMUNIDADE_NAO_ENCONTRADA"
+    mensagem = "Comunidade não encontrada."
+
+
+class ComunidadeConflitoError(ErroDominio):
+    status_code = 409
+    codigo = "COMUNIDADE_EM_CONFLITO"
+    mensagem = "Já existe uma comunidade com este nome."
+
+
+class PublicacaoComunidadeNaoEncontradaError(ErroDominio):
+    status_code = 404
+    codigo = "PUBLICACAO_NAO_ENCONTRADA"
+    mensagem = "Publicação não encontrada."
+
+
+class ParticipacaoComunidadeNecessariaError(ErroDominio):
+    status_code = 403
+    codigo = "PARTICIPACAO_NECESSARIA"
+    mensagem = "Entre na comunidade para realizar esta ação."
+
+
+class ParticipacaoComunidadeConflitoError(ErroDominio):
+    status_code = 409
+    codigo = "PARTICIPACAO_EM_CONFLITO"
+    mensagem = "A pessoa já participa desta comunidade."

@@ -1,3 +1,4 @@
+from app.communities import models as community_models  # noqa: F401  Registra os modelos ORM.
 from app.db.base import Base
 from app.movies import models  # noqa: F401  Registra os modelos ORM.
 from app.users import models as user_models  # noqa: F401  Registra os modelos ORM.
@@ -20,6 +21,11 @@ def test_movie_schema_registers_expected_tables() -> None:
         "user_list_movies",
         "watch_later_movies",
         "friendship_requests",
+        "communities",
+        "community_memberships",
+        "community_posts",
+        "community_comments",
+        "community_reactions",
     }
 
     assert set(Base.metadata.tables) == expected_tables
