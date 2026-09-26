@@ -33,6 +33,7 @@ async def test_cors_accepts_only_configured_local_origin() -> None:
     assert allowed.status_code == 200
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
     assert "POST" in allowed.headers["access-control-allow-methods"]
+    assert "Authorization" in allowed.headers["access-control-allow-headers"]
     assert blocked.status_code == 400
     assert "access-control-allow-origin" not in blocked.headers
 

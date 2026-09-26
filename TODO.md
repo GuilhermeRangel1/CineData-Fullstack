@@ -160,24 +160,39 @@ lint e build passam sem alterar os CSVs originais.
 - [ ] Usar requisições HTTP/polling inicialmente; avaliar WebSockets apenas se
       a experiência exigir atualização em tempo real.
 
+**Critério de saída:** administrador gerencia comunidades; usuários entram,
+saem e interagem com publicações, comentários, menções de filmes e reações;
+permissões, visibilidade dos dados relacionados e fluxos principais possuem
+testes de API e interface.
+
 ### 10. Amizades
 
 - [x] Criar solicitações de amizade com estados pendente, aceita e bloqueada.
 - [x] Permitir consultar amigos e quantidade de amigos no perfil.
 - [x] Respeitar a visibilidade definida para listas e avaliações.
 
+**Critério de saída:** usuário autenticado envia, aceita, bloqueia e remove
+amizades; perfil público informa a quantidade correta de amigos; e listas ou
+avaliações privadas não aparecem nas consultas públicas, com testes cobrindo
+transições de solicitação, autorização e visibilidade.
+
 ### 11. Recursos opcionais
 
 - [ ] Implementar filtros avançados além de título, gênero, ordenação e
       paginação.
 - [ ] Implementar recomendações baseadas em avaliações e listas.
+- [ ] Criar um "Mapa de gostos": grafo interativo com filmes avaliados pelo
+      usuário, recomendações próximas e conexões explicadas por afinidades
+      como gênero, direção ou elenco.
 - [ ] Integrar fonte externa para dados ou trailers de filmes.
-- [ ] Criar solicitações de inclusão de filmes para avaliação do administrador.
 - [ ] Criar Storybook para componentes visuais.
 - [x] Manter cache de consultas de leitura no frontend.
 - [ ] Adicionar métricas externas e observabilidade.
 - [ ] Criar pipeline de CI/CD.
 - [x] Disponibilizar execução local via Docker Compose.
-- [ ] Publicar a aplicação em um ambiente de deploy.
 - [ ] Avaliar quizzes, conquistas, níveis, notícias e eventos somente depois
       de validar o núcleo social.
+
+**Critério de saída:** cada item opcional marcado como concluído possui fluxo
+utilizável, documentação e validação proporcional ao seu impacto, sem regredir
+os requisitos obrigatórios ou expor dados sensíveis.
