@@ -19,6 +19,7 @@ def test_movie_schema_registers_expected_tables() -> None:
         "user_lists",
         "user_list_movies",
         "watch_later_movies",
+        "friendship_requests",
     }
 
     assert set(Base.metadata.tables) == expected_tables

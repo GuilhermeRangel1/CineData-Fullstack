@@ -7,7 +7,17 @@ avaliações, listas e comunidades serão introduzidas em migrações próprias.
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, String, Table, Text, func
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -15,6 +25,7 @@ from app.movies.models import DimMovie
 
 USER_ROLES: tuple[str, ...] = ("user", "admin")
 LIST_VISIBILITIES: tuple[str, ...] = ("publica", "privada")
+FRIENDSHIP_STATUSES: tuple[str, ...] = ("pendente", "aceita", "bloqueada")
 
 
 user_list_movies = Table(
@@ -124,4 +135,35 @@ class UserList(Base):
     movies: Mapped[list["DimMovie"]] = relationship(
         secondary=user_list_movies,
         order_by=user_list_movies.c.created_at.desc(),
+    )
+
+
+class FriendshipRequest(Base):
+    """Pedido direcionado que pode virar amizade ou bloqueio."""
+
+    __tablename__ = "friendship_requests"
+    __table_args__ = (
+        CheckConstraint("requester_id <> recipient_id", name="different_users"),
+        CheckConstraint(
+            "status IN ("
+            + ", ".join(f"'{status}'" for status in FRIENDSHIP_STATUSES)
+            + ")",
+            name="status_valid",
+        ),
+        UniqueConstraint("requester_id", "recipient_id", name="requester_recipient_unique"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=generate_user_id)
+    requester_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    recipient_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default="pendente", server_default="pendente", index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
     )

@@ -128,6 +128,10 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 - [x] Restringir gestão de filmes ao administrador.
 - [x] Vincular novas avaliações ao usuário e preservar avaliações importadas.
 
+**Critério de saída:** cadastro e login emitem uma sessão local segura; catálogo
+permanece público; avaliações exigem usuário autenticado; e a gestão de filmes
+aceita somente administradores, com testes cobrindo autenticação e autorização.
+
 ### 8. Avaliações, listas e perfis
 
 - [x] Exibir a média geral e a quantidade de avaliações por filme.
@@ -139,6 +143,11 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
       amigos.
 - [x] Adicionar trailer opcional ao detalhe do filme quando houver uma fonte
       válida, sem alterar os CSVs originais.
+
+**Critério de saída:** usuário autenticado cria e gerencia listas, usa
+"assistir depois", atualiza seu perfil com avatar e consulta perfis públicos;
+detalhes exibem trailer do YouTube quando configurado; migrações, testes,
+lint e build passam sem alterar os CSVs originais.
 
 ### 9. Comunidades
 
@@ -153,8 +162,8 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 
 ### 10. Amizades
 
-- [ ] Criar solicitações de amizade com estados pendente, aceita e bloqueada.
-- [ ] Permitir consultar amigos e quantidade de amigos no perfil.
+- [x] Criar solicitações de amizade com estados pendente, aceita e bloqueada.
+- [x] Permitir consultar amigos e quantidade de amigos no perfil.
 - [ ] Respeitar a visibilidade definida para listas e avaliações.
 
 ### 11. Recursos opcionais

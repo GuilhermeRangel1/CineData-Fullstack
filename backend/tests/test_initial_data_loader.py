@@ -106,6 +106,7 @@ def test_loader_is_idempotent_after_alembic_migration(
         "user_lists",
         "user_list_movies",
         "watch_later_movies",
+        "friendship_requests",
     }
     assert {first_counts[table] for table in catalog_tables} == {1}
 

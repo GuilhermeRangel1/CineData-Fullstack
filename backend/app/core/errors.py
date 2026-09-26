@@ -97,3 +97,27 @@ class PerfilNaoEncontradoError(ErroDominio):
     status_code = 404
     codigo = "PERFIL_NAO_ENCONTRADO"
     mensagem = "Perfil não encontrado."
+
+
+class SolicitacaoAmizadeInvalidaError(ErroDominio):
+    """Impede que uma conta envie um pedido para si mesma."""
+
+    status_code = 422
+    codigo = "SOLICITACAO_AMIZADE_INVALIDA"
+    mensagem = "Não é possível enviar uma solicitação de amizade para si mesmo."
+
+
+class SolicitacaoAmizadeNaoEncontradaError(ErroDominio):
+    """Pedido solicitado não existe ou não pode ser respondido pela conta."""
+
+    status_code = 404
+    codigo = "SOLICITACAO_AMIZADE_NAO_ENCONTRADA"
+    mensagem = "Solicitação de amizade não encontrada."
+
+
+class AmizadeConflitoError(ErroDominio):
+    """Evita pedidos repetidos e reaproximações bloqueadas."""
+
+    status_code = 409
+    codigo = "AMIZADE_EM_CONFLITO"
+    mensagem = "Já existe uma solicitação, amizade ou bloqueio entre estas contas."
