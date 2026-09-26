@@ -20,6 +20,8 @@ import type {
   ListaDetalhe,
   ListaLeitura,
   VisibilidadeLista,
+  ContatoAmizade,
+  SolicitacaoAmizade,
 } from '../types/api'
 import { obterTokenSessao } from '../auth/session'
 
@@ -251,6 +253,36 @@ export function removerReacaoPublicacao(id: string): Promise<void> {
   return requisitar<void>(`/comunidades/publicacoes/${encodeURIComponent(id)}/reacoes`, {
     method: 'DELETE',
   })
+}
+
+export function listarAmigos(signal?: AbortSignal): Promise<ContatoAmizade[]> {
+  return requisitar<ContatoAmizade[]>('/minha-conta/amigos', { signal, cache: 'no-store' })
+}
+
+export function listarSolicitacoesAmizade(signal?: AbortSignal): Promise<SolicitacaoAmizade[]> {
+  return requisitar<SolicitacaoAmizade[]>('/minha-conta/amigos/solicitacoes', { signal, cache: 'no-store' })
+}
+
+export function pesquisarPessoas(busca: string, signal?: AbortSignal): Promise<ContatoAmizade[]> {
+  return requisitar<ContatoAmizade[]>(`/minha-conta/amigos/pesquisa?busca=${encodeURIComponent(busca)}`, { signal, cache: 'no-store' })
+}
+
+export function enviarSolicitacaoAmizade(usuarioId: string): Promise<SolicitacaoAmizade> {
+  return requisitar<SolicitacaoAmizade>(`/minha-conta/amigos/solicitacoes/${encodeURIComponent(usuarioId)}`, { method: 'POST' })
+}
+
+export function responderSolicitacaoAmizade(
+  solicitacaoId: string,
+  acao: 'aceitar' | 'bloquear',
+): Promise<SolicitacaoAmizade> {
+  return requisitar<SolicitacaoAmizade>(`/minha-conta/amigos/solicitacoes/${encodeURIComponent(solicitacaoId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ acao }),
+  })
+}
+
+export function removerAmigo(usuarioId: string): Promise<void> {
+  return requisitar<void>(`/minha-conta/amigos/${encodeURIComponent(usuarioId)}`, { method: 'DELETE' })
 }
 
 export function listarListas(signal?: AbortSignal): Promise<ListaLeitura[]> {

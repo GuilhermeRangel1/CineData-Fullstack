@@ -83,6 +83,12 @@ class AvaliacaoPerfil(AvaliacaoLeitura):
     filme: FilmeResumo
 
 
+class ComunidadePerfil(BaseModel):
+    id: str
+    nome: str
+    descricao: str
+
+
 class PerfilPublico(BaseModel):
     """Visão pública de uma conta, sem e-mail ou dados de autenticação."""
 
@@ -94,6 +100,7 @@ class PerfilPublico(BaseModel):
     quantidade_amigos: int = Field(ge=0)
     avaliacoes: list[AvaliacaoPerfil]
     listas_publicas: list["ListaPublica"]
+    comunidades: list[ComunidadePerfil]
 
 
 class ListaPublica(BaseModel):

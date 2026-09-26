@@ -4,12 +4,13 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.communities.models import Community, community_memberships
 from app.core.errors import PerfilNaoEncontradoError
 from app.movies.models import DimMovie, MovieReview
 from app.movies.schemas import AvaliacaoLeitura
 from app.movies.services import CatalogoFilmesService
 from app.users.models import FriendshipRequest, User, UserList
-from app.users.schemas import AvaliacaoPerfil, ListaPublica, PerfilPublico
+from app.users.schemas import AvaliacaoPerfil, ComunidadePerfil, ListaPublica, PerfilPublico
 
 
 class PerfilPublicoService:
@@ -50,6 +51,16 @@ class PerfilPublicoService:
                 selectinload(MovieReview.movie).selectinload(DimMovie.reviews_summary),
             )
             .order_by(MovieReview.created_at.desc(), MovieReview.sk_movie_review_id.desc())
+            .limit(5)
+        )
+        comunidades = await self._session.scalars(
+            select(Community)
+            .join(
+                community_memberships,
+                community_memberships.c.community_id == Community.id,
+            )
+            .where(community_memberships.c.user_id == usuario.id)
+            .order_by(func.lower(Community.nome), Community.id)
         )
         return PerfilPublico(
             id=usuario.id,
@@ -78,5 +89,13 @@ class PerfilPublicoService:
                 )
                 for lista in usuario.lists
                 if lista.visibilidade == "publica"
+            ],
+            comunidades=[
+                ComunidadePerfil(
+                    id=comunidade.id,
+                    nome=comunidade.nome,
+                    descricao=comunidade.descricao,
+                )
+                for comunidade in comunidades
             ],
         )

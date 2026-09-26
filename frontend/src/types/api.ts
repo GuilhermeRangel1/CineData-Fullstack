@@ -150,6 +150,22 @@ export interface PessoaComunidade {
   avatar_url: string | null
 }
 
+export interface ContatoAmizade {
+  id: string
+  nome: string
+  avatar_url: string | null
+}
+
+export type StatusSolicitacaoAmizade = 'pendente' | 'aceita' | 'bloqueada'
+
+export interface SolicitacaoAmizade {
+  id: string
+  status: StatusSolicitacaoAmizade
+  direcao: 'enviada' | 'recebida'
+  pessoa: ContatoAmizade
+  criada_em: string
+}
+
 export interface ComunidadeLeitura {
   id: string
   nome: string
@@ -196,6 +212,7 @@ export interface PerfilPublico {
   quantidade_amigos: number
   avaliacoes: (AvaliacaoLeitura & { filme: FilmeResumo })[]
   listas_publicas: { id: string; nome: string; quantidade_filmes: number; filmes: FilmeResumo[] }[]
+  comunidades: { id: string; nome: string; descricao: string }[]
 }
 
 export type VisibilidadeLista = 'publica' | 'privada'

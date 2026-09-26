@@ -134,6 +134,16 @@ class AmizadesService:
         )
         return [self._para_contato(amigo) for amigo in amigos.scalars()]
 
+    async def pesquisar_pessoas(self, busca: str, usuario: User) -> list[ContatoAmizade]:
+        termo = f"%{busca.strip().lower()}%"
+        resultado = await self._session.execute(
+            select(User)
+            .where(User.id != usuario.id, func.lower(User.nome).like(termo))
+            .order_by(func.lower(User.nome), User.id)
+            .limit(8)
+        )
+        return [self._para_contato(pessoa) for pessoa in resultado.scalars()]
+
     async def remover_amigo(self, amigo_id: str, usuario: User) -> None:
         resultado = await self._session.execute(
             delete(FriendshipRequest).where(

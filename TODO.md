@@ -183,10 +183,10 @@ possuem testes de API e interface.
 - [x] Criar solicitações de amizade com estados pendente, aceita e bloqueada.
 - [x] Permitir consultar amigos e quantidade de amigos no perfil.
 - [x] Respeitar a visibilidade definida para listas e avaliações.
-- [ ] Criar no frontend a área de amizades e contatos do usuário.
-- [ ] Permitir pesquisar usuários e enviar solicitações de amizade pelo frontend.
-- [ ] Permitir aceitar, bloquear e remover amizades pelo frontend.
-- [ ] Exibir solicitações pendentes e amigos atuais na conta do usuário.
+- [x] Criar no frontend a área de amizades e contatos do usuário.
+- [x] Permitir pesquisar usuários e enviar solicitações de amizade pelo frontend.
+- [x] Permitir aceitar, bloquear e remover amizades pelo frontend.
+- [x] Exibir solicitações pendentes e amigos atuais na conta do usuário.
 
 **Critério de saída:** a API permite que o usuário autenticado envie, aceite,
 bloqueie e remova amizades; o frontend oferece esses fluxos em uma área de

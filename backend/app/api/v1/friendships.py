@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Response, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -36,6 +36,17 @@ async def listar_solicitacoes(
     """Lista pedidos enviados e recebidos, incluindo pedidos bloqueados."""
 
     return await AmizadesService(session).listar_solicitacoes(usuario)
+
+
+@friendships_router.get("/pesquisa", response_model=list[ContatoAmizade])
+async def pesquisar_pessoas(
+    busca: Annotated[str, Query(min_length=2, max_length=120)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    usuario: Annotated[User, Depends(get_current_user)],
+) -> list[ContatoAmizade]:
+    """Busca perfis locais pelo nome para iniciar novas amizades."""
+
+    return await AmizadesService(session).pesquisar_pessoas(busca, usuario)
 
 
 @friendships_router.post(

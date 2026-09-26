@@ -10,11 +10,12 @@ import { AuthForm } from './components/AuthForm'
 import { ProfileForm } from './components/ProfileForm'
 import { CommunityHub } from './components/CommunityHub'
 import { ListHub } from './components/ListHub'
+import { FriendshipHub } from './components/FriendshipHub'
 import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, type Sessao } from './auth/session'
 import './App.css'
 
 function App() {
-  const [page, setPage] = useState<'home' | 'lists' | 'communities'>('home')
+  const [page, setPage] = useState<'home' | 'lists' | 'friends' | 'communities'>('home')
   const [selected, setSelected] = useState<string | null>(null)
   const [genre, setGenre] = useState('')
   const [catalogVersion, setCatalogVersion] = useState(0)
@@ -43,21 +44,20 @@ function App() {
   }
   return (
     <div className="app-shell">
-      <a className="skip-link" href={page === 'home' ? '#catalogo' : page === 'lists' ? '#minhas-listas' : '#comunidades'}>
+      <a className="skip-link" href={page === 'home' ? '#catalogo' : page === 'lists' ? '#minhas-listas' : page === 'friends' ? '#amigos' : '#comunidades'}>
         Pular para o conteúdo
       </a>
       <header className={`topbar ${page !== 'home' ? 'topbar--solid' : ''}`}>
-        <a className="brand" href="#inicio" aria-label="CineData Analytics, início" onClick={showHome}>
+        <a className="brand" href="#inicio" aria-label="CineData, início" onClick={showHome}>
           <span className="brand-symbol">
             <Icon name="film" />
           </span>
-          <span className="brand-name">
-            CINEDATA<small>ANALYTICS</small>
-          </span>
+          <span className="brand-name">CINEDATA</span>
         </a>
         <nav className="main-nav" aria-label="Navegação principal">
           <a href="#inicio" onClick={showHome}>Início</a>
           <button type="button" aria-current={page === 'lists' ? 'page' : undefined} onClick={showLists}>Minhas listas</button>
+          <button type="button" aria-current={page === 'friends' ? 'page' : undefined} onClick={() => setPage('friends')}>Amigos</button>
           <button type="button" aria-current={page === 'communities' ? 'page' : undefined} onClick={() => setPage('communities')}>Comunidades</button>
         </nav>
         <a href="#catalogo" className="header-search" onClick={showHome}>
@@ -144,6 +144,13 @@ function App() {
           onLoginRequested={() => setAuthMode('login')}
           onOpenMovie={setSelected}
         />
+      ) : page === 'friends' ? (
+        <FriendshipHub
+          key={session?.usuario.id ?? 'guest'}
+          usuario={session?.usuario ?? null}
+          onLoginRequested={() => setAuthMode('login')}
+          onOpenMovie={setSelected}
+        />
       ) : (
         <main id="comunidades">
           <CommunityHub
@@ -156,7 +163,7 @@ function App() {
       )}
       <footer className="footer">
         <a className="footer-brand" href="#inicio" onClick={showHome}>
-          CINEDATA <span>ANALYTICS</span>
+          CINEDATA
         </a>
         <p>Histórias que ficam. Olhares que se encontram.</p>
         {page === 'home' ? (
@@ -222,7 +229,6 @@ function App() {
             onAuthenticated={(newSession) => {
               setSession(newSession)
               setAuthMode(null)
-              setNotice(`Sessão iniciada como ${newSession.usuario.nome}.`)
             }}
           />
         </Dialog>
