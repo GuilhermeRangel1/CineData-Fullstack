@@ -360,6 +360,25 @@ async def test_catalog_endpoint_prioritizes_records_with_a_trailer(
     assert response.json()["itens"][0]["id"] == "movie-1"
 
 
+async def test_catalog_endpoint_can_return_only_records_with_a_trailer(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/filmes", params={"somente_com_trailer": "true"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert [filme["id"] for filme in response.json()["itens"]] == ["movie-1"]
+
+
 async def test_trailer_endpoint_returns_the_saved_youtube_link(
     catalog_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:

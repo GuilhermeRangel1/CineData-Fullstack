@@ -29,6 +29,7 @@ export function MovieShelf({
           direcao: 'desc',
           priorizar_capa: 'true',
           priorizar_trailer: 'true',
+          somente_com_trailer: 'true',
         }),
         signal,
       ),

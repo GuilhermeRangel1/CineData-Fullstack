@@ -172,6 +172,8 @@ class CatalogoFilmesService:
             )
         if consulta.priorizar_trailer:
             ordenacao.insert(0, DimMovie.url_trailer.is_(None).asc())
+        if consulta.somente_com_trailer:
+            statement = statement.where(DimMovie.url_trailer.is_not(None))
         offset = (consulta.pagina - 1) * consulta.tamanho_pagina
         result = await self._session.scalars(
             statement.order_by(*ordenacao).offset(offset).limit(consulta.tamanho_pagina)

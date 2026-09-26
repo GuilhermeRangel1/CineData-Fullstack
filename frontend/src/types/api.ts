@@ -150,6 +150,7 @@ export interface ConsultaCatalogo {
   direcao?: DirecaoOrdenacao
   priorizar_capa?: boolean
   priorizar_trailer?: boolean
+  somente_com_trailer?: boolean
 }
 
 export interface TmdbResultado {

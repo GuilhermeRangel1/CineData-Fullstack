@@ -207,6 +207,7 @@ class ConsultaCatalogo(ContratoFilmes):
     direcao: DirecaoOrdenacao = "asc"
     priorizar_capa: bool = False
     priorizar_trailer: bool = False
+    somente_com_trailer: bool = False
 
     @field_validator(
         "pessoa",
