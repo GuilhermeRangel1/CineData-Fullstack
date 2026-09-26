@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { obterMapaGostos } from '../api/client'
 import type { MapaGostos, NoMapaGostos } from '../types/api'
 import { Icon } from './Icon'
 
-const PALETA_DE_GENEROS = ['#ed5a86', '#aa7cf4', '#55c4d4', '#e5b65b', '#78c985', '#e88c62']
+const PALETA_DE_GENEROS = ['#ff528f', '#c48aff', '#35e3ef', '#ffd45b', '#6bed99', '#ff985c']
 
 function corDoGenero(genero: string | null): string {
   if (!genero) return '#a47adf'
   return PALETA_DE_GENEROS[[...genero].reduce((total, letra) => total + letra.charCodeAt(0), 0) % PALETA_DE_GENEROS.length]
+}
+
+function normalizar(texto: string): string {
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
 type Posicao = { x: number; y: number }
@@ -34,12 +38,16 @@ export function TasteMap({ onOpenMovie, revision = 0 }: { onOpenMovie: (id: stri
   const [erro, setErro] = useState('')
   const [selecionado, setSelecionado] = useState<NoMapaGostos | null>(null)
   const [tentativa, setTentativa] = useState(0)
+  const [excluir, setExcluir] = useState<string[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [foco, setFoco] = useState<string | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
     const timer = window.setTimeout(() => {
-      void obterMapaGostos({ limiteNos: 24, vizinhosPorFilme: 3, busca }, controller.signal)
+      void obterMapaGostos({ limiteNos: 24, vizinhosPorFilme: 3, excluir }, controller.signal)
         .then((mapa) => {
+          if (controller.signal.aborted) return
           setDados(mapa)
           setErro('')
           setSelecionado((atual) => mapa.nos.find((no) => no.id === atual?.id) ?? null)
@@ -47,21 +55,59 @@ export function TasteMap({ onOpenMovie, revision = 0 }: { onOpenMovie: (id: stri
         .catch((error: unknown) => {
           if (!controller.signal.aborted) setErro(error instanceof Error ? error.message : 'Não foi possível montar o mapa.')
         })
-    }, busca ? 250 : 0)
+        .finally(() => { if (!controller.signal.aborted) setCarregando(false) })
+    }, 0)
     return () => {
       controller.abort()
       window.clearTimeout(timer)
     }
-  }, [busca, tentativa, revision])
+  }, [excluir, tentativa, revision])
 
   const posicoes = useMemo(() => distribuir(dados?.nos ?? []), [dados])
+  const ativo = foco ?? selecionado?.id
+  const nosPorId = useMemo(
+    () => new Map((dados?.nos ?? []).map((no) => [no.id, no])),
+    [dados],
+  )
+  const origemPorDestino = useMemo(
+    () => new Map((dados?.arestas ?? []).map((aresta) => [aresta.destino, aresta.origem])),
+    [dados],
+  )
+  const relacionados = useMemo(() => {
+    const ids = new Set(ativo ? [ativo] : [])
+    dados?.arestas.forEach((aresta) => {
+      if (aresta.origem === ativo || aresta.destino === ativo) {
+        ids.add(aresta.origem)
+        ids.add(aresta.destino)
+      }
+    })
+    return ids
+  }, [ativo, dados])
+  const encontrados = useMemo(() => {
+    const termo = normalizar(busca.trim())
+    return new Set(
+      (dados?.nos ?? [])
+        .filter((no) => normalizar(no.titulo).includes(termo))
+        .map((no) => no.id),
+    )
+  }, [busca, dados])
+  const corDaOrigem = (id: string) => corDoGenero(nosPorId.get(id)?.genero_principal ?? null)
+  function atualizar() {
+    setCarregando(true)
+    setErro('')
+    const anteriores = dados?.nos.filter((no) => no.tipo === 'recomendado').map((no) => no.id) ?? []
+    // Se o catálogo se esgotou, mantém a exclusão até surgir uma nova alternativa.
+    if (anteriores.length) setExcluir(anteriores)
+    setTentativa((valor) => valor + 1)
+    setBusca('')
+    setSelecionado(null)
+  }
   return (
     <main className="taste-map-page" id="mapa-de-gostos">
       <header className="taste-map-header">
         <div>
           <p className="eyebrow"><span className="red-line" />DESCOBERTA PESSOAL</p>
           <h1>Seu mapa de gostos.</h1>
-          <p>Uma malha que parte do que você avaliou e revela histórias próximas por gênero, pessoas e época.</p>
         </div>
         <div className="taste-map-header-note"><span>↗</span><p>As conexões indicam por que uma sugestão apareceu para você.</p></div>
       </header>
@@ -69,7 +115,7 @@ export function TasteMap({ onOpenMovie, revision = 0 }: { onOpenMovie: (id: stri
       <div className="taste-map-content">
         <section className="taste-map-controls" aria-label="Controles do mapa de gostos">
           <label className="taste-map-search"><Icon name="search" /><span className="sr-only">Pesquisar dentro do mapa</span><input value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Buscar um filme na malha" /></label>
-          <button className="taste-map-refresh" type="button" onClick={() => { setErro(''); setTentativa((valor) => valor + 1) }}>↻ Atualizar mapa</button>
+          <button className="taste-map-refresh" type="button" disabled={carregando} onClick={atualizar}>↻ {carregando ? 'Buscando sugestões…' : 'Atualizar mapa'}</button>
         </section>
 
         {erro ? (
@@ -78,15 +124,15 @@ export function TasteMap({ onOpenMovie, revision = 0 }: { onOpenMovie: (id: stri
           <section className="taste-map-loading" aria-label="Montando o mapa de gostos"><span className="skeleton" /><span className="skeleton" /><span className="skeleton" /></section>
         ) : dados.total_avaliados === 0 ? (
           <section className="taste-map-empty"><span><Icon name="film" /></span><h2>Seu mapa começa com um olhar.</h2><p>Quando você avaliar um filme, vamos conectar seus gêneros, pessoas e época a novas histórias do catálogo.</p></section>
-        ) : dados.nos.length === 0 ? (
+        ) : busca.trim() && encontrados.size === 0 ? (
           <section className="taste-map-empty"><span><Icon name="search" /></span><h2>Nenhum ponto encontrado.</h2><p>Tente outro título para voltar a enxergar sua malha.</p></section>
         ) : (
-          <section className="taste-map-workspace" aria-label="Grafo de filmes avaliados e recomendações">
+          <section className="taste-map-workspace" aria-busy={carregando} aria-label="Grafo de filmes avaliados e recomendações">
             <div className="taste-map-graph-wrap">
-              <svg className="taste-map-graph" viewBox="0 0 1000 550" role="img" aria-label="Grafo direcionado do seu mapa de gostos">
+              <svg className="taste-map-graph" viewBox="0 0 1000 550" role="group" aria-label="Grafo direcionado do seu mapa de gostos">
                 <defs>
-                  <marker id="taste-map-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
-                  {dados.nos.filter((no) => no.url_poster).map((no) => <clipPath id={`clip-${no.id}`} key={`clip-${no.id}`}><circle cx="0" cy="0" r="25" /></clipPath>)}
+                  {PALETA_DE_GENEROS.concat('#a47adf').map((cor) => <marker key={cor} id={`arrow-${cor.slice(1)}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" style={{ fill: cor }} /></marker>)}
+                  {dados.nos.filter((no) => no.url_poster).map((no) => <clipPath id={`clip-${no.id}`} key={`clip-${no.id}`}><circle cx="0" cy="0" r="14" /></clipPath>)}
                 </defs>
                 <circle className="taste-map-orbit taste-map-orbit--inner" cx="500" cy="275" r="170" />
                 <ellipse className="taste-map-orbit" cx="500" cy="275" rx="390" ry="205" />
@@ -94,17 +140,25 @@ export function TasteMap({ onOpenMovie, revision = 0 }: { onOpenMovie: (id: stri
                   const origem = posicoes.get(aresta.origem)
                   const destino = posicoes.get(aresta.destino)
                   if (!origem || !destino) return null
-                  return <line key={`${aresta.origem}-${aresta.destino}`} className="taste-map-edge" x1={origem.x} y1={origem.y} x2={destino.x} y2={destino.y} markerEnd="url(#taste-map-arrow)"><title>{aresta.explicacao}</title></line>
+                  const distancia = Math.hypot(destino.x - origem.x, destino.y - origem.y) || 1
+                  const dx = (destino.x - origem.x) / distancia
+                  const dy = (destino.y - origem.y) / distancia
+                  const cor = corDaOrigem(aresta.origem)
+                  const destaca = aresta.origem === ativo || aresta.destino === ativo
+                  return <line key={`${aresta.origem}-${aresta.destino}`} className={`taste-map-edge ${destaca ? 'is-active' : ''}`} style={{ stroke: cor, strokeWidth: 1 + aresta.peso * 2, opacity: ativo && !destaca ? 0.09 : 0.75 }} x1={origem.x + dx * 23} y1={origem.y + dy * 23} x2={destino.x - dx * 21} y2={destino.y - dy * 21} markerEnd={`url(#arrow-${cor.slice(1)})`}><title>{`${nosPorId.get(aresta.origem)?.titulo} → ${nosPorId.get(aresta.destino)?.titulo}: ${aresta.explicacao}`}</title></line>
                 })}
                 {dados.nos.map((no) => {
                   const posicao = posicoes.get(no.id)
                   if (!posicao) return null
-                  const cor = corDoGenero(no.genero_principal)
-                  return <g className={`taste-map-node taste-map-node--${no.tipo} ${selecionado?.id === no.id ? 'is-selected' : ''}`} key={no.id} transform={`translate(${posicao.x} ${posicao.y})`} tabIndex={0} role="button" aria-label={`Abrir ${no.titulo}`} onClick={() => setSelecionado(no)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelecionado(no) } }}>
-                    <circle className="taste-map-node-ring" r={no.tipo === 'avaliado' ? 35 : 30} style={{ stroke: no.tipo === 'avaliado' ? cor : undefined }} />
-                    {no.url_poster ? <image href={no.url_poster} x="-25" y="-37" width="50" height="74" preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-${no.id})`} /> : <circle className="taste-map-node-fallback" r="25" style={{ fill: no.tipo === 'avaliado' ? cor : undefined }} />}
-                    {no.tipo === 'avaliado' && <text className="taste-map-score" y="47">{no.nota_usuario?.toFixed(1)}</text>}
-                    <text className="taste-map-label" y={no.tipo === 'avaliado' ? 62 : 45}>{encurtar(no.titulo)}</text>
+                  const origem = origemPorDestino.get(no.id)
+                  const cor = origem ? corDaOrigem(origem) : corDoGenero(no.genero_principal)
+                  const apagado = (ativo && !relacionados.has(no.id)) || (busca.trim() && !encontrados.has(no.id))
+                  return <g className={`taste-map-node taste-map-node--${no.tipo} ${selecionado?.id === no.id ? 'is-selected' : ''}`} style={{ '--node-color': cor, opacity: apagado ? 0.22 : 1 } as CSSProperties} key={no.id} transform={`translate(${posicao.x} ${posicao.y})`} tabIndex={0} role="button" aria-label={`Abrir ${no.titulo}`} aria-pressed={selecionado?.id === no.id} onMouseEnter={() => setFoco(no.id)} onMouseLeave={() => setFoco(null)} onFocus={() => setFoco(no.id)} onBlur={() => setFoco(null)} onClick={() => setSelecionado(selecionado?.id === no.id ? null : no)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelecionado(no) } }}>
+                    <circle className="taste-map-node-halo" r="25" />
+                    <circle className="taste-map-node-ring" r={no.tipo === 'avaliado' ? 22 : 19} style={{ stroke: cor }} />
+                    {no.url_poster ? <image href={no.url_poster} x="-14" y="-21" width="28" height="42" preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-${no.id})`} /> : <circle className="taste-map-node-fallback" r="13" style={{ fill: no.tipo === 'avaliado' ? cor : undefined }} />}
+                    {no.tipo === 'avaliado' && <text className="taste-map-score" y="36">{no.nota_usuario?.toFixed(1)}</text>}
+                    <text className="taste-map-label" y={no.tipo === 'avaliado' ? 51 : 35}>{encurtar(no.titulo)}</text>
                   </g>
                 })}
               </svg>
@@ -117,11 +171,13 @@ export function TasteMap({ onOpenMovie, revision = 0 }: { onOpenMovie: (id: stri
                 <p>{selecionado.ano_lancamento ?? 'Ano não informado'} · {selecionado.generos.join(' · ') || 'Sem gênero informado'}</p>
                 <strong>{selecionado.tipo === 'avaliado' ? `${selecionado.nota_usuario?.toFixed(1)} / 10` : `${Math.round((selecionado.afinidade ?? 0) * 100)}% de afinidade`}</strong>
                 {selecionado.tipo === 'recomendado' && <small>{dados.arestas.find((aresta) => aresta.destino === selecionado.id)?.explicacao ?? 'Sugestão próxima ao que você avaliou.'}</small>}
+                {selecionado.tipo === 'recomendado' && <small>Vem de: {dados.arestas.filter((aresta) => aresta.destino === selecionado.id).map((aresta) => dados.nos.find((no) => no.id === aresta.origem)?.titulo).join(' · ')}</small>}
                 <button className="button button-outline" type="button" onClick={() => onOpenMovie(selecionado.id)}>Ver filme <Icon name="arrow" /></button>
               </> : <><span className="taste-map-inspector-hint">+</span><h2>Escolha um ponto</h2><p>Clique em um filme para ver o caminho que o trouxe até sua malha.</p></>}
             </aside>
           </section>
         )}
+        {dados && dados.total_avaliados > 0 && !dados.nos.some((no) => no.tipo === 'recomendado') && <p role="status" className="taste-map-footnote">Não há outras sugestões compatíveis nesta rodada. Avalie mais filmes para explorar novos caminhos.</p>}
         {dados && dados.total_avaliados > 0 && <p className="taste-map-footnote"><b>{dados.total_avaliados}</b> {dados.total_avaliados === 1 ? 'filme avaliado alimenta' : 'filmes avaliados alimentam'} este mapa. Avalie algo novo para recalcular suas conexões.</p>}
       </div>
     </main>

@@ -131,7 +131,7 @@ export function obterResumoAnalytics(
 }
 
 export function obterMapaGostos(
-  parametros: { limiteNos: number; vizinhosPorFilme: number; busca?: string },
+  parametros: { limiteNos: number; vizinhosPorFilme: number; busca?: string; excluir?: string[] },
   signal?: AbortSignal,
 ): Promise<MapaGostos> {
   const consulta = new URLSearchParams({
@@ -139,6 +139,7 @@ export function obterMapaGostos(
     vizinhos_por_filme: String(parametros.vizinhosPorFilme),
   })
   if (parametros.busca?.trim()) consulta.set('busca', parametros.busca.trim())
+  parametros.excluir?.forEach((id) => consulta.append('excluir', id))
   return requisitar<MapaGostos>(`/mapa-de-gostos?${consulta.toString()}`, {
     signal,
     cache: 'no-store',

@@ -78,10 +78,12 @@ histórico, média e comportamento após exclusão de filme.
       enviar à API.
 - [x] Implementar exclusão com confirmação e feedback de sucesso ou falha.
 - [x] Exibir detalhes completos, média de 0 a 10 e histórico de avaliações.
-- [x] Implementar formulário para nova avaliação, com seletor de 0 a 10 e
-      resenha.
+- [x] Implementar formulário para nova avaliação, com entrada decimal de 0 a 10
+      e resenha.
 - [x] Permitir editar a própria avaliação de um filme sem criar duplicidade e
       recalcular a média pública corretamente.
+- [x] Permitir apagar a própria avaliação e recalcular a média pública
+      corretamente.
 - [x] Garantir navegação por teclado, rótulos de formulário, contraste e uso
       adequado em telas móveis e desktop.
 
@@ -198,9 +200,9 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
 
 ### 11. Mapa de gostos e descoberta personalizada
 
-- [ ] Definir o modelo de similaridade dos filmes com vetores de gêneros,
+- [x] Definir o modelo de similaridade dos filmes com vetores de gêneros,
       direção, elenco, ano, sinopse e métricas disponíveis.
-- [ ] Implementar recomendações KNN com pesos configuráveis e conexões
+- [x] Implementar recomendações KNN com pesos configuráveis e conexões
       direcionadas entre filmes avaliados e sugestões próximas.
 - [x] Criar endpoint que retorne somente o subgrafo necessário para o usuário,
       limitando nós e arestas para preservar legibilidade.
@@ -210,6 +212,10 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
       filme ou avaliação dentro da malha.
 - [x] Permitir atualizar manualmente a malha sem sobrecarregar a interface com
       controles que não acrescentem valor à descoberta.
+- [x] Substituir as sugestões da rodada anterior ao atualizar, preservando os
+      filmes avaliados e informando quando não houver alternativas compatíveis.
+- [x] Destacar conexões pela cor do filme de origem, com nós compactos,
+      interação por foco/seleção e movimento suave respeitando movimento reduzido.
 - [x] Atualizar o grafo após uma nova avaliação, transformando a recomendação
       em filme avaliado e recalculando suas conexões.
 - [x] Exibir uma explicação para cada conexão, como gênero, direção ou elenco
@@ -221,8 +227,8 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
       erro já usados no restante da aplicação.
 
 **Critério de saída:** o usuário visualiza seus filmes avaliados, recebe
-recomendações explicáveis, pode explorar e pesquisar a malha, ajustar sua
-densidade e atualizá-la ao avaliar novos filmes, com uma interface roxa
+recomendações explicáveis, pode explorar, pesquisar e atualizar a malha ao
+avaliar novos filmes, com uma interface roxa
 consistente com as demais páginas e testes cobrindo o cálculo, a autorização e
 os estados principais.
 
@@ -241,3 +247,30 @@ os estados principais.
 **Critério de saída:** cada recurso opcional marcado como concluído possui fluxo
 utilizável, documentação e validação proporcional ao seu impacto, sem regredir
 os requisitos obrigatórios ou expor dados sensíveis.
+
+### 13. Revisão final de escopo e entrega
+
+- [ ] Otimizar o mapa de gostos no banco antes de carregar candidatos, evitando
+      materializar o catálogo completo e suas relações a cada atualização.
+- [ ] Medir novamente o tempo e o consumo de memória do mapa usando o catálogo
+      completo, mantendo o limite visual, as explicações e a qualidade das
+      recomendações.
+- [ ] Alinhar o README, `docs/api-v1.md` e `docs/frontend.md` ao produto atual,
+      incluindo contas, listas, amizades, comunidades, analytics, TMDB, trailer
+      e mapa de gostos.
+- [ ] Atualizar na documentação a contagem real de testes, a data da validação
+      e o comportamento atual da entrada de notas decimais.
+- [ ] Garantir no banco que cada conta tenha no máximo uma avaliação por filme
+      mesmo em envios simultâneos, e distinguir no contrato a criação da edição.
+- [ ] Executar um smoke test com Docker Compose em banco/volume limpos,
+      cobrindo health check, seed, sessão de demonstração e carregamento do
+      frontend.
+- [ ] Revisar arquivos sem uso, como dados mockados que não participam do fluxo
+      de produção, removendo-os ou documentando sua finalidade.
+- [ ] Fazer a revisão final do diff, dos arquivos sensíveis e dos comandos
+      documentados antes do commit de encerramento.
+
+**Critério de saída:** o mapa mantém desempenho aceitável com o catálogo real,
+as documentações refletem as funcionalidades entregues, avaliações permanecem
+consistentes sob concorrência e um clone limpo sobe pelo Docker com os fluxos
+principais verificáveis.

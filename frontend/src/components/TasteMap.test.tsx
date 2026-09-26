@@ -29,7 +29,26 @@ it('exibe a malha, explica uma sugestão e abre o filme selecionado', async () =
 
   await user.click(screen.getByRole('button', { name: /Atualizar mapa/ }))
   await waitFor(() => expect(fetcher).toHaveBeenLastCalledWith(
-    expect.stringContaining('limite_nos=24'),
+    expect.stringContaining('excluir=sugestao'),
     expect.any(Object),
   ))
+})
+
+it('troca as sugestões ao atualizar e pesquisa a rodada atual sem refazer a consulta', async () => {
+  const base = { total_avaliados: 1, limite_nos: 24, vizinhos_por_filme: 3, arestas: [] }
+  const rated = { id: 'rated', titulo: 'Meu filme', tipo: 'avaliado', nota_usuario: 9, generos: ['Drama'], genero_principal: 'Drama', url_poster: null }
+  const candidate = { id: 'old', titulo: 'Sugestão anterior', tipo: 'recomendado', generos: ['Drama'], genero_principal: 'Drama', url_poster: null }
+  const fetcher = vi.fn()
+    .mockImplementationOnce(() => json({ ...base, nos: [rated, candidate] }))
+    .mockImplementationOnce(() => json({ ...base, nos: [rated, { ...candidate, id: 'new', titulo: 'Nova sugestão' }] }))
+  vi.stubGlobal('fetch', fetcher)
+  const user = userEvent.setup()
+  render(<TasteMap onOpenMovie={vi.fn()} />)
+  await screen.findByRole('button', { name: 'Abrir Sugestão anterior' })
+  await user.click(screen.getByRole('button', { name: /Atualizar mapa/ }))
+  await screen.findByRole('button', { name: 'Abrir Nova sugestão' })
+  expect(screen.queryByRole('button', { name: 'Abrir Sugestão anterior' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Abrir Meu filme' })).toBeInTheDocument()
+  await user.type(screen.getByLabelText('Pesquisar dentro do mapa'), 'Nova')
+  expect(fetcher).toHaveBeenCalledTimes(2)
 })

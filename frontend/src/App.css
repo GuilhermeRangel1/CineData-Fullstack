@@ -2419,13 +2419,24 @@ fieldset:disabled {
 .taste-map-graph { display: block; width: 100%; height: 100%; min-height: 550px; overflow: visible; }
 .taste-map-orbit { fill: none; stroke: #dba8ff18; stroke-width: 1; stroke-dasharray: 4 11; }
 .taste-map-orbit--inner { stroke: #efc8ff24; }
-.taste-map-edge { stroke: #c592e776; stroke-width: 1.15; stroke-linecap: round; marker-end: url(#taste-map-arrow); }
+.taste-map-edge { stroke-linecap: round; stroke-dasharray: 5 9; transition: opacity .2s ease, stroke-width .2s ease; }
+.taste-map-edge.is-active { stroke-dasharray: 8 5; animation: taste-map-flow 2s linear infinite; }
 .taste-map-graph marker path { fill: #c592e7; }
-.taste-map-node { cursor: pointer; outline: none; }
+.taste-map-node { cursor: pointer; outline: none; transition: opacity .2s ease; animation: taste-map-enter .28s ease-out both; }
+.taste-map-node-halo { fill: none; stroke: var(--node-color); opacity: .18; stroke-width: 1; transform-box: fill-box; transform-origin: center; }
+.taste-map-node:hover .taste-map-node-halo, .taste-map-node:focus .taste-map-node-halo, .taste-map-node.is-selected .taste-map-node-halo { animation: taste-map-breathe 2.5s ease-in-out infinite; }
+.taste-map-node--recomendado image { opacity: .45; transition: opacity .2s; }
+.taste-map-node:hover image, .taste-map-node:focus image, .taste-map-node.is-selected image { opacity: 1; }
+.taste-map-node--avaliado .taste-map-node-ring { stroke-width: 2.5; }
 .taste-map-node-ring { fill: #18111fe8; stroke: #7f668e; stroke-width: 2; transition: r .2s ease, stroke-width .2s ease; }
 .taste-map-node--recomendado .taste-map-node-ring { stroke: #52405d; }
 .taste-map-node:hover .taste-map-node-ring, .taste-map-node:focus .taste-map-node-ring, .taste-map-node.is-selected .taste-map-node-ring { stroke: #f0c1ff; stroke-width: 3.5; }
-.taste-map-node:hover .taste-map-node-ring, .taste-map-node:focus .taste-map-node-ring { r: 38px; }
+.taste-map-node:hover .taste-map-node-ring, .taste-map-node:focus .taste-map-node-ring { r: 24px; }
+.taste-map-refresh:disabled { opacity: .55; cursor: wait; }
+@keyframes taste-map-flow { to { stroke-dashoffset: -70; } }
+@keyframes taste-map-breathe { 50% { opacity: .45; transform: scale(1.12); } }
+@keyframes taste-map-enter { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .taste-map-edge, .taste-map-node, .taste-map-node-halo { animation: none; } .taste-map-node, .taste-map-edge, .taste-map-node-ring { transition: none; } }
 .taste-map-node-fallback { fill: #523369; stroke: #dfb0f7; stroke-width: 1; }
 .taste-map-node--recomendado .taste-map-node-fallback { fill: #352a3d; stroke: #89758f; }
 .taste-map-label { fill: #e9dfed; font-family: Inter, sans-serif; font-size: 11px; text-anchor: middle; paint-order: stroke; stroke: #16101d; stroke-width: 4px; stroke-linejoin: round; }

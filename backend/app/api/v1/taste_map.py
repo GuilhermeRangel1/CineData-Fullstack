@@ -21,6 +21,7 @@ async def obter_mapa_de_gostos(
     limite_nos: Annotated[int, Query(ge=6, le=48)] = 24,
     vizinhos_por_filme: Annotated[int, Query(ge=1, le=6)] = 3,
     busca: Annotated[str | None, Query(min_length=1, max_length=100)] = None,
+    excluir: Annotated[list[str] | None, Query(max_length=48)] = None,
 ) -> MapaGostos:
     """Entrega somente uma malha navegável para a conta autenticada."""
 
@@ -29,4 +30,5 @@ async def obter_mapa_de_gostos(
         limite_nos=limite_nos,
         vizinhos_por_filme=vizinhos_por_filme,
         busca=busca,
+        excluir=set(excluir or []),
     )
