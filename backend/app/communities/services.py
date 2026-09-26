@@ -84,7 +84,11 @@ class ComunidadesService:
 
     async def criar(self, dados: ComunidadeCriacao) -> ComunidadeLeitura:
         try:
-            comunidade = Community(nome=dados.nome, descricao=dados.descricao)
+            comunidade = Community(
+                nome=dados.nome,
+                descricao=dados.descricao,
+                imagem_url=dados.imagem_url,
+            )
             self._session.add(comunidade)
             await self._session.commit()
             await self._session.refresh(comunidade)
@@ -301,6 +305,7 @@ class ComunidadesService:
             id=comunidade.id,
             nome=comunidade.nome,
             descricao=comunidade.descricao,
+            imagem_url=comunidade.imagem_url,
             quantidade_membros=quantidade_membros or 0,
             visualizacoes=comunidade.visualizacoes,
             criada_em=comunidade.created_at,

@@ -1,8 +1,20 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { atualizarComunidade, criarComunidade, entrarNaComunidade, ErroDaApi, listarComunidades, listarMembrosComunidade, registrarVisualizacaoComunidade, removerComunidade } from '../api/client'
 import type { ComunidadeLeitura, UsuarioLeitura } from '../types/api'
 import { CommunityChat } from './CommunityChat'
 import { Dialog } from './Dialog'
+import { Icon } from './Icon'
+
+const ACCEPTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
+
+function readImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Não foi possível ler a imagem.'))
+    reader.onload = () => resolve(String(reader.result))
+    reader.readAsDataURL(file)
+  })
+}
 
 export function CommunityHub({ usuario, onLoginRequested, onOpenMovie, onBusyChange }: {
   usuario: UsuarioLeitura | null
@@ -19,6 +31,7 @@ export function CommunityHub({ usuario, onLoginRequested, onOpenMovie, onBusyCha
   const [editor, setEditor] = useState<'create' | ComunidadeLeitura | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [image, setImage] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<ComunidadeLeitura | null>(null)
   const firstNewCard = useRef<HTMLElement | null>(null)
   const previousCount = useRef(4)
@@ -63,7 +76,20 @@ export function CommunityHub({ usuario, onLoginRequested, onOpenMovie, onBusyCha
     setError('')
     setName(community === 'create' ? '' : community.nome)
     setDescription(community === 'create' ? '' : community.descricao)
+    setImage(community === 'create' ? null : community.imagem_url)
     setEditor(community)
+  }
+
+  function chooseImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!ACCEPTED_IMAGE_TYPES.has(file.type) || file.size > 1_000_000) {
+      setError('Escolha uma imagem PNG, JPEG ou WebP de até 1 MB.')
+      event.target.value = ''
+      return
+    }
+    setError('')
+    void readImage(file).then(setImage).catch((failure: Error) => setError(failure.message))
   }
 
   async function manage(task: () => Promise<void>) {
@@ -79,7 +105,7 @@ export function CommunityHub({ usuario, onLoginRequested, onOpenMovie, onBusyCha
     event.preventDefault()
     if (!editor || !name.trim() || !description.trim()) return
     await manage(async () => {
-      const data = { nome: name.trim(), descricao: description.trim() }
+      const data = { nome: name.trim(), descricao: description.trim(), imagem_url: image }
       const saved = editor === 'create' ? await criarComunidade(data) : await atualizarComunidade(editor.id, data)
       setCommunities((items) => [...items.filter((item) => item.id !== saved.id), saved])
       setEditor(null)
@@ -105,7 +131,7 @@ export function CommunityHub({ usuario, onLoginRequested, onOpenMovie, onBusyCha
             <div className="community-grid">
               {ordered.slice(0, visibleCount).map((community, index) => (
                 <article className="community-discovery-card" key={community.id} tabIndex={-1} ref={index === previousCount.current ? firstNewCard : undefined}>
-                  <div className="community-card-art" aria-hidden="true"><span>{community.nome.slice(0, 1).toUpperCase()}</span><small>{String(index + 1).padStart(2, '0')}</small></div>
+                  <div className={`community-card-art ${community.imagem_url ? 'has-image' : ''}`} aria-hidden="true">{community.imagem_url ? <img src={community.imagem_url} alt="" /> : <Icon name="film" />}<small>{String(index + 1).padStart(2, '0')}</small></div>
                   <div className="community-card-copy">
                     <h3>{community.nome}</h3><p>{community.descricao}</p>
                     <div className="community-card-bottom">
@@ -127,6 +153,10 @@ export function CommunityHub({ usuario, onLoginRequested, onOpenMovie, onBusyCha
           <h2>{editor === 'create' ? 'Nova comunidade' : 'Editar comunidade'}</h2>
           <label>Nome<input data-initial-focus value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required /></label>
           <label>Descrição<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={1000} rows={3} required /></label>
+          <div className="community-image-field">
+            <span>Imagem da comunidade</span>
+            <div className="community-image-editor">{image ? <img src={image} alt="Prévia da imagem da comunidade" /> : <span className="community-image-fallback"><Icon name="film" /></span>}<div><label className="button button-outline community-image-upload">{image ? 'Trocar imagem' : 'Enviar imagem'}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={chooseImage} /></label><small>PNG, JPEG ou WebP, até 1 MB.</small>{image && <button type="button" className="text-button profile-remove" onClick={() => setImage(null)}>Remover imagem</button>}</div></div>
+          </div>
           {error && <p className="form-error" role="alert">{error}</p>}
           <div className="form-actions"><button type="button" className="button button-outline" onClick={() => setEditor(null)} disabled={busy}>Cancelar</button><button className="button button-light" disabled={busy}>Salvar comunidade</button></div>
         </form>

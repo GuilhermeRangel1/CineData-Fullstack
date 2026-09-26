@@ -199,6 +199,7 @@ export interface ComunidadeLeitura {
   id: string
   nome: string
   descricao: string
+  imagem_url: string | null
   quantidade_membros: number
   visualizacoes: number
   criada_em: string
@@ -207,6 +208,7 @@ export interface ComunidadeLeitura {
 export interface ComunidadeCriacao {
   nome: string
   descricao: string
+  imagem_url?: string | null
 }
 
 export interface ComentarioComunidade {

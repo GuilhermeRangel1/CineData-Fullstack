@@ -110,6 +110,7 @@ async def test_admin_manages_communities_and_people_can_participate(
                 json={
                     "nome": "Fãs de fantasia",
                     "descricao": "Conversas sobre mundos imaginários.",
+                    "imagem_url": "data:image/png;base64,aGVsbG8=",
                 },
             )
             community_id = created.json()["id"]
@@ -118,7 +119,8 @@ async def test_admin_manages_communities_and_people_can_participate(
             duplicate_join = await client.post(f"/api/v1/comunidades/{community_id}/participacao")
             members = await client.get(f"/api/v1/comunidades/{community_id}/membros")
             updated = await client.patch(
-                f"/api/v1/comunidades/{community_id}", json={"descricao": "Fantasia no cinema."}
+                f"/api/v1/comunidades/{community_id}",
+                json={"descricao": "Fantasia no cinema.", "imagem_url": None},
             )
             left = await client.delete(f"/api/v1/comunidades/{community_id}/participacao")
             deleted = await client.delete(f"/api/v1/comunidades/{community_id}")
@@ -126,11 +128,13 @@ async def test_admin_manages_communities_and_people_can_participate(
         app.dependency_overrides.clear()
 
     assert created.status_code == 201
+    assert created.json()["imagem_url"] == "data:image/png;base64,aGVsbG8="
     assert listed.json()[0]["quantidade_membros"] == 0
     assert joined.status_code == 204
     assert duplicate_join.status_code == 409
     assert members.json() == [{"id": "ana", "nome": "Ana", "avatar_url": None}]
     assert updated.json()["descricao"] == "Fantasia no cinema."
+    assert updated.json()["imagem_url"] is None
     assert left.status_code == 204
     assert deleted.status_code == 204
 

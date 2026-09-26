@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { comentarPublicacao, criarPublicacaoComunidade, entrarNaComunidade, listarFilmes, listarMembrosComunidade, listarPublicacoesComunidade, reagirPublicacao, removerReacaoPublicacao, sairDaComunidade } from '../api/client'
 import type { ComunidadeLeitura, FilmeResumo, PessoaComunidade, PublicacaoComunidade, TipoReacao, UsuarioLeitura } from '../types/api'
 import { Dialog } from './Dialog'
+import { Icon } from './Icon'
 import { PersonAvatar, PublicProfile } from './PublicProfile'
 
 const REACTIONS: Record<TipoReacao, string> = { curtir: 'Curtir', amei: 'Amei', interessante: 'Interessante' }
@@ -147,7 +148,7 @@ export function CommunityChat({ community, usuario, onClose, onLoginRequested, o
   return (
     <Dialog title={`Conversa · ${community.nome}`} className="community-chat-dialog" busy={busy} onClose={onClose}>
       <div className="community-chat">
-        <header className="chat-heading"><div className="chat-community-icon" aria-hidden="true">{community.nome.slice(0, 1).toUpperCase()}</div><div><p>COMUNIDADE</p><h2>{community.nome}</h2><span>{members.length} {members.length === 1 ? 'membro' : 'membros'}</span></div></header>
+        <header className="chat-heading"><div className={`chat-community-icon ${community.imagem_url ? 'has-image' : ''}`} aria-hidden="true">{community.imagem_url ? <img src={community.imagem_url} alt="" /> : <Icon name="film" />}</div><div><p>COMUNIDADE</p><h2>{community.nome}</h2><span>{members.length} {members.length === 1 ? 'membro' : 'membros'}</span></div></header>
         <div className="chat-subheading"><p>{community.descricao}</p>{participating && <button className="text-button" disabled={busy} onClick={() => void perform(async () => { await sairDaComunidade(community.id); onMembershipChange(-1); onClose() })}>Sair da comunidade</button>}</div>
         {error && <p className="form-error chat-alert" role="alert">{error}</p>}
         {syncError && <p className="chat-alert" role="status">Não foi possível atualizar a conversa. <button className="text-button" onClick={() => setRevision((value) => value + 1)}>Tentar novamente</button></p>}
