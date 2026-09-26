@@ -30,6 +30,7 @@ export function MovieForm({
   const [tmdbError, setTmdbError] = useState('')
   const [tmdbLoading, setTmdbLoading] = useState(false)
   const form = useRef<HTMLFormElement>(null)
+  const tmdbFields = useRef<Set<keyof MovieFields>>(new Set())
   const { pending, error, run } = useMutation(onBusyChange)
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -58,8 +59,10 @@ export function MovieForm({
       'aria-labelledby': `label-${key}`,
       'aria-invalid': Boolean(errors[key]),
       'aria-describedby': errors[key] ? `error-${key}` : undefined,
-      onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-        setFields({ ...fields, [key]: event.target.value }),
+      onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFields({ ...fields, [key]: event.target.value })
+        tmdbFields.current.delete(key)
+      },
     }
   }
   const message = (key: keyof MovieFields) =>
@@ -89,8 +92,12 @@ export function MovieForm({
     setTmdbError('')
     try {
       const data = await obterFilmeTmdb(id)
-      setFields((current) => preencherCamposVazios(current, data))
-      setNotice('Dados do TMDB preenchidos somente nos campos que estavam vazios.')
+      setFields((current) => {
+        const next = aplicarDadosTmdb(current, data, tmdbFields.current)
+        tmdbFields.current = next.camposTmdb
+        return next.campos
+      })
+      setNotice('Dados do TMDB preenchidos. Alterações manuais são preservadas.')
       setTmdbOpen(false)
     } catch (error) {
       setTmdbError(error instanceof Error ? error.message : 'Não foi possível obter os dados do TMDB.')
@@ -138,7 +145,7 @@ export function MovieForm({
                 {tmdbLoading ? 'Buscando…' : 'Buscar'}
               </button>
             </div>
-            <p>Os dados escolhidos completam apenas os campos ainda vazios.</p>
+            <p>Uma nova escolha atualiza os dados importados; alterações manuais são preservadas.</p>
             {tmdbError && <p className="form-error" role="alert">{tmdbError}</p>}
             <div className="tmdb-import__results">
               {tmdbResults.map((result) => (
@@ -253,7 +260,11 @@ export function MovieForm({
   )
 }
 
-function preencherCamposVazios(fields: MovieFields, dados: TmdbImportacao): MovieFields {
+function aplicarDadosTmdb(
+  fields: MovieFields,
+  dados: TmdbImportacao,
+  camposTmdb: Set<keyof MovieFields>,
+): { campos: MovieFields; camposTmdb: Set<keyof MovieFields> } {
   const valores: Partial<MovieFields> = {
     titulo: dados.titulo ?? '',
     diretor: dados.diretor ?? '',
@@ -265,7 +276,14 @@ function preencherCamposVazios(fields: MovieFields, dados: TmdbImportacao): Movi
     url_backdrop: dados.url_backdrop ?? '',
     url_trailer: dados.url_trailer ?? '',
   }
-  return Object.fromEntries(
-    Object.entries(fields).map(([key, value]) => [key, value.trim() ? value : valores[key as keyof MovieFields] ?? '']),
+  const proximosCamposTmdb = new Set(camposTmdb)
+  const campos = Object.fromEntries(
+    Object.entries(fields).map(([key, value]) => {
+      const field = key as keyof MovieFields
+      if (value.trim() && !camposTmdb.has(field)) return [field, value]
+      proximosCamposTmdb.add(field)
+      return [field, valores[field] ?? '']
+    }),
   ) as MovieFields
+  return { campos, camposTmdb: proximosCamposTmdb }
 }

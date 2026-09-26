@@ -163,9 +163,46 @@ describe('Formulário de filme', () => {
     await userEvent.type(screen.getByLabelText('Título no TMDB'), 'Castelo')
     await userEvent.click(screen.getByRole('button', { name: 'Buscar' }))
     await userEvent.click(await screen.findByRole('button', { name: /O Castelo Animado/ }))
-    expect(await screen.findByRole('status')).toHaveTextContent('campos que estavam vazios')
+    expect(await screen.findByRole('status')).toHaveTextContent('Alterações manuais são preservadas')
     expect(screen.getByLabelText('Título *')).toHaveValue('Meu título manual')
     expect(screen.getByLabelText('Diretor *')).toHaveValue('Hayao Miyazaki')
     expect(screen.getByLabelText('Gêneros *')).toHaveValue('Animação, Fantasia')
+  })
+
+  it('substitui uma importação anterior, mas preserva o que foi alterado manualmente', async () => {
+    const fetcher = vi.fn((url: string) => {
+      if (url.includes('/busca'))
+        return json([
+          { id: 1, titulo: 'Primeiro filme', ano_lancamento: 2001, url_poster: null },
+          { id: 2, titulo: 'Segundo filme', ano_lancamento: 2002, url_poster: null },
+        ])
+      if (url.endsWith('/1'))
+        return json({
+          titulo: 'Primeiro filme', diretor: 'Primeira direção', generos: ['Drama'],
+          sinopse: 'Sinopse original.', ano_lancamento: 2001, data_lancamento: '2001-01-01',
+          url_poster: null, url_backdrop: null, url_trailer: null,
+        })
+      return json({
+        titulo: 'Segundo filme', diretor: 'Segunda direção', generos: ['Aventura'],
+        sinopse: 'Outra sinopse.', ano_lancamento: 2002, data_lancamento: '2002-02-02',
+        url_poster: null, url_backdrop: null, url_trailer: null,
+      })
+    })
+    vi.stubGlobal('fetch', fetcher)
+    render(<MovieForm onSaved={vi.fn()} onCancel={vi.fn()} onBusyChange={vi.fn()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar dados no TMDB' }))
+    await userEvent.type(screen.getByLabelText('Título no TMDB'), 'filme')
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    await userEvent.click(await screen.findByRole('button', { name: /Primeiro filme/ }))
+    expect(screen.getByLabelText('Diretor *')).toHaveValue('Primeira direção')
+
+    fireEvent.change(screen.getByLabelText('Sinopse'), { target: { value: 'Minha sinopse.' } })
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar dados no TMDB' }))
+    await userEvent.click(screen.getByRole('button', { name: /Segundo filme/ }))
+
+    expect(await screen.findByLabelText('Título *')).toHaveValue('Segundo filme')
+    expect(screen.getByLabelText('Diretor *')).toHaveValue('Segunda direção')
+    expect(screen.getByLabelText('Sinopse')).toHaveValue('Minha sinopse.')
   })
 })
