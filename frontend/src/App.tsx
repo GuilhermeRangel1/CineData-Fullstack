@@ -9,11 +9,12 @@ import { MovieForm } from './components/MovieForm'
 import { AuthForm } from './components/AuthForm'
 import { ProfileForm } from './components/ProfileForm'
 import { CommunityHub } from './components/CommunityHub'
+import { ListHub } from './components/ListHub'
 import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, type Sessao } from './auth/session'
 import './App.css'
 
 function App() {
-  const [page, setPage] = useState<'home' | 'communities'>('home')
+  const [page, setPage] = useState<'home' | 'lists' | 'communities'>('home')
   const [selected, setSelected] = useState<string | null>(null)
   const [genre, setGenre] = useState('')
   const [catalogVersion, setCatalogVersion] = useState(0)
@@ -28,6 +29,9 @@ function App() {
   function showHome() {
     setPage('home')
   }
+  function showLists() {
+    setPage('lists')
+  }
   function explore(value: string) {
     setGenre(value)
     setCatalogVersion((version) => version + 1)
@@ -39,10 +43,10 @@ function App() {
   }
   return (
     <div className="app-shell">
-      <a className="skip-link" href={page === 'home' ? '#catalogo' : '#comunidades'}>
+      <a className="skip-link" href={page === 'home' ? '#catalogo' : page === 'lists' ? '#minhas-listas' : '#comunidades'}>
         Pular para o conteúdo
       </a>
-      <header className={`topbar ${page === 'communities' ? 'topbar--solid' : ''}`}>
+      <header className={`topbar ${page !== 'home' ? 'topbar--solid' : ''}`}>
         <a className="brand" href="#inicio" aria-label="CineData Analytics, início" onClick={showHome}>
           <span className="brand-symbol">
             <Icon name="film" />
@@ -53,8 +57,7 @@ function App() {
         </a>
         <nav className="main-nav" aria-label="Navegação principal">
           <a href="#inicio" onClick={showHome}>Início</a>
-          <a href="#colecoes" onClick={showHome}>Coleções</a>
-          <a href="#catalogo" onClick={showHome}>Catálogo</a>
+          <button type="button" aria-current={page === 'lists' ? 'page' : undefined} onClick={showLists}>Minhas listas</button>
           <button type="button" aria-current={page === 'communities' ? 'page' : undefined} onClick={() => setPage('communities')}>Comunidades</button>
         </nav>
         <a href="#catalogo" className="header-search" onClick={showHome}>
@@ -134,6 +137,13 @@ function App() {
           />
           </div>
         </main>
+      ) : page === 'lists' ? (
+        <ListHub
+          key={session?.usuario.id ?? 'guest'}
+          usuario={session?.usuario ?? null}
+          onLoginRequested={() => setAuthMode('login')}
+          onOpenMovie={setSelected}
+        />
       ) : (
         <main id="comunidades">
           <CommunityHub
@@ -233,7 +243,7 @@ function App() {
       )}
       {selected && (
         <MovieDetail
-          key={selected}
+          key={`${selected}-${session?.usuario.id ?? 'guest'}`}
           id={selected}
           onClose={() => setSelected(null)}
           onChanged={refresh}
@@ -244,6 +254,10 @@ function App() {
           }}
           usuario={session?.usuario ?? null}
           onLoginRequested={() => setAuthMode('login')}
+          onOpenLists={() => {
+            setSelected(null)
+            setPage('lists')
+          }}
         />
       )}
     </div>

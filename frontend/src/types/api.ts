@@ -197,3 +197,18 @@ export interface PerfilPublico {
   avaliacoes: (AvaliacaoLeitura & { filme: FilmeResumo })[]
   listas_publicas: { id: string; nome: string; quantidade_filmes: number; filmes: FilmeResumo[] }[]
 }
+
+export type VisibilidadeLista = 'publica' | 'privada'
+
+export interface ListaLeitura {
+  id: string
+  nome: string
+  visibilidade: VisibilidadeLista
+  quantidade_filmes: number
+  capa_url: string | null
+  criada_em: string
+}
+
+export interface ListaDetalhe extends ListaLeitura {
+  filmes: FilmeResumo[]
+}

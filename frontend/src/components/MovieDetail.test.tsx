@@ -38,15 +38,18 @@ const movie: FilmeDetalhe = {
 }
 describe('Detalhes de um filme real', () => {
   it('mantém confirmação aberta após falha de exclusão e só fecha depois do 204', async () => {
-    const fetcher = vi
-      .fn()
-      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(movie))))
-      .mockImplementationOnce(() =>
-        Promise.resolve(
-          new Response(JSON.stringify({ mensagem: 'Não foi possível excluir.' }), { status: 500 }),
-        ),
-      )
-      .mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 204 })))
+    let deleteAttempts = 0
+    const fetcher = vi.fn((url: string, init?: RequestInit) => {
+      const path = new URL(url).pathname
+      if (path.endsWith('/minha-conta/listas')) return Promise.resolve(new Response(JSON.stringify([])))
+      if (init?.method === 'DELETE') {
+        deleteAttempts += 1
+        return deleteAttempts === 1
+          ? Promise.resolve(new Response(JSON.stringify({ mensagem: 'Não foi possível excluir.' }), { status: 500 }))
+          : Promise.resolve(new Response(null, { status: 204 }))
+      }
+      return Promise.resolve(new Response(JSON.stringify(movie)))
+    })
     vi.stubGlobal('fetch', fetcher)
     const close = vi.fn(),
       deleted = vi.fn()
@@ -61,14 +64,19 @@ describe('Detalhes de um filme real', () => {
   })
 
   it('distingue avaliação publicada de uma falha posterior ao atualizar detalhes', async () => {
-    const fetcher = vi
-      .fn()
-      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(movie))))
-      .mockImplementationOnce(() =>
-        Promise.resolve(new Response(JSON.stringify(movie.avaliacoes[0]), { status: 201 })),
-      )
-      .mockRejectedValueOnce(new TypeError('offline'))
-      .mockImplementation(() => Promise.resolve(new Response(JSON.stringify(movie))))
+    let movieReads = 0
+    const fetcher = vi.fn((url: string, init?: RequestInit) => {
+      const path = new URL(url).pathname
+      if (path.endsWith('/minha-conta/listas')) return Promise.resolve(new Response(JSON.stringify([])))
+      if (init?.method === 'POST' && path.endsWith('/avaliacoes')) {
+        return Promise.resolve(new Response(JSON.stringify(movie.avaliacoes[0]), { status: 201 }))
+      }
+      if (path.endsWith('/filmes/1')) {
+        movieReads += 1
+        return movieReads === 2 ? Promise.reject(new TypeError('offline')) : Promise.resolve(new Response(JSON.stringify(movie)))
+      }
+      throw new Error(`Requisição inesperada: ${path}`)
+    })
     vi.stubGlobal('fetch', fetcher)
     const changed = vi.fn()
     render(<MovieDetail id="1" onClose={vi.fn()} onChanged={changed} usuario={user} />)
@@ -96,6 +104,26 @@ describe('Detalhes de um filme real', () => {
     expect(screen.getByText('8.5 / 10')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Fechar' }))
     expect(close).toHaveBeenCalled()
+  })
+
+  it('deixa a pessoa salvar o filme em uma lista escolhida', async () => {
+    const list = { id: 'favoritos', nome: 'Favoritos', visibilidade: 'privada', quantidade_filmes: 0, capa_url: null, criada_em: '2026-09-26T00:00:00Z' }
+    const fetcher = vi.fn((url: string, init?: RequestInit) => {
+      const path = new URL(url).pathname
+      if (path.endsWith('/minha-conta/listas') && !init?.method) return Promise.resolve(new Response(JSON.stringify([list])))
+      if (init?.method === 'POST' && path.endsWith('/minha-conta/listas/favoritos/filmes/1')) {
+        return Promise.resolve(new Response(JSON.stringify({ ...list, quantidade_filmes: 1, filmes: [movie] })))
+      }
+      if (path.endsWith('/filmes/1')) return Promise.resolve(new Response(JSON.stringify(movie)))
+      throw new Error(`Requisição inesperada: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetcher)
+
+    render(<MovieDetail id="1" onClose={vi.fn()} usuario={user} />)
+    await userEvent.selectOptions(await screen.findByLabelText('Escolha uma lista'), 'favoritos')
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar na lista' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Adicionado a Favoritos.')
+    expect(fetcher.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(true)
   })
 
   it('mostra um erro seguro para filme inexistente', async () => {

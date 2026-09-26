@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { obterFilme, removerFilme } from '../api/client'
+import { adicionarFilmeALista, listarListas, obterFilme, removerFilme } from '../api/client'
 import { useResource } from '../hooks/useResource'
 import { useMutation } from '../hooks/useMutation'
 import { Dialog } from './Dialog'
 import { MovieForm } from './MovieForm'
 import { ReviewForm } from './ReviewForm'
 import { youtubeEmbedUrl } from '../lib/youtube'
-import type { UsuarioLeitura } from '../types/api'
+import type { ListaLeitura, UsuarioLeitura } from '../types/api'
 
 const number = (value: number | null | undefined) =>
   value == null ? 'Não informado' : value.toLocaleString('pt-BR')
@@ -18,6 +18,7 @@ export function MovieDetail({
   onDeleted,
   usuario = null,
   onLoginRequested = () => undefined,
+  onOpenLists = () => undefined,
 }: {
   id: string
   onClose: () => void
@@ -25,15 +26,20 @@ export function MovieDetail({
   onDeleted?: () => void
   usuario?: UsuarioLeitura | null
   onLoginRequested?: () => void
+  onOpenLists?: () => void
 }) {
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [failedCoverUrl, setFailedCoverUrl] = useState('')
+  const [personalLists, setPersonalLists] = useState<ListaLeitura[] | null>(() => usuario ? null : [])
+  const [selectedListId, setSelectedListId] = useState('')
+  const [savedListName, setSavedListName] = useState('')
   const focusAfterChange = useRef(false)
   const feedback = useRef<HTMLParagraphElement>(null)
   const editButton = useRef<HTMLButtonElement>(null)
   const deletion = useMutation()
+  const listMutation = useMutation()
   const loader = useCallback((signal: AbortSignal) => obterFilme(id, signal), [id])
   const { data: movie, loading, error, retry } = useResource(loader)
   useEffect(() => {
@@ -42,6 +48,16 @@ export function MovieDetail({
       focusAfterChange.current = false
     }
   }, [mode, loading, error])
+  useEffect(() => {
+    if (!usuario) return
+    const controller = new AbortController()
+    void listarListas(controller.signal)
+      .then((lists) => setPersonalLists(Array.isArray(lists) ? lists : []))
+      .catch(() => {
+        if (!controller.signal.aborted) setPersonalLists([])
+      })
+    return () => controller.abort()
+  }, [usuario])
   const people = (role: string) =>
     movie?.pessoas
       .filter((person) => person.papel === role)
@@ -49,6 +65,14 @@ export function MovieDetail({
       .join(', ') || 'Não informado'
   const coverUrl = movie?.url_backdrop ?? movie?.url_poster
   const trailerUrl = movie?.url_trailer ? youtubeEmbedUrl(movie.url_trailer) : null
+  const selectedList = personalLists?.find((list) => list.id === selectedListId)
+  function saveToSelectedList() {
+    if (!selectedList) return
+    void listMutation.run(
+      () => adicionarFilmeALista(selectedList.id, id),
+      () => setSavedListName(selectedList.nome),
+    )
+  }
   return (
     <Dialog
       title={
@@ -207,6 +231,31 @@ export function MovieDetail({
                   </span>
                 </div>
               </div>
+              <section className="save-to-list" aria-labelledby="save-to-list-title">
+                <div>
+                  <p className="eyebrow">SUA CURADORIA</p>
+                  <h3 id="save-to-list-title">Salvar em uma lista</h3>
+                </div>
+                {!usuario ? (
+                  <button className="button button-outline" onClick={onLoginRequested}>Entrar para salvar</button>
+                ) : personalLists === null ? (
+                  <p className="muted">Carregando suas listas…</p>
+                ) : personalLists.length === 0 ? (
+                  <p className="muted">Você ainda não criou uma lista. <button className="text-button" onClick={onOpenLists}>Criar uma lista</button></p>
+                ) : (
+                  <div className="list-picker">
+                    <label htmlFor="movie-list-picker">Escolha uma lista
+                      <select id="movie-list-picker" value={selectedListId} onChange={(event) => setSelectedListId(event.target.value)} disabled={listMutation.pending}>
+                        <option value="">Selecione uma lista</option>
+                        {personalLists.map((list) => <option key={list.id} value={list.id}>{list.nome} · {list.quantidade_filmes} {list.quantidade_filmes === 1 ? 'filme' : 'filmes'}</option>)}
+                      </select>
+                    </label>
+                    <button className="button button-outline" disabled={!selectedList || listMutation.pending} onClick={saveToSelectedList}>{listMutation.pending ? 'Salvando…' : 'Salvar na lista'}</button>
+                  </div>
+                )}
+                {savedListName && <p className="success-message" role="status">Adicionado a {savedListName}.</p>}
+                {listMutation.error && <p className="form-error" role="alert">{listMutation.error}</p>}
+              </section>
               <h3>Sinopse</h3>
               <p className="synopsis">{movie.sinopse || 'Ainda não há sinopse para este filme.'}</p>
               {trailerUrl && (

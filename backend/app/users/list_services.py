@@ -203,10 +203,14 @@ class ListasService:
 
     @staticmethod
     def _para_leitura(lista: UserList) -> ListaLeitura:
+        primeiro_filme = lista.movies[0] if lista.movies else None
         return ListaLeitura(
             id=lista.id,
             nome=lista.nome,
             visibilidade=lista.visibilidade,
             quantidade_filmes=len(lista.movies),
+            capa_url=(primeiro_filme.url_poster or primeiro_filme.url_backdrop)
+            if primeiro_filme
+            else None,
             criada_em=lista.created_at,
         )

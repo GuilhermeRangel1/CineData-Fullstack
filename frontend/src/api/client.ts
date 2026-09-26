@@ -17,6 +17,9 @@ import type {
   PublicacaoComunidade,
   ReacaoComunidade,
   TipoReacao,
+  ListaDetalhe,
+  ListaLeitura,
+  VisibilidadeLista,
 } from '../types/api'
 import { obterTokenSessao } from '../auth/session'
 
@@ -248,4 +251,48 @@ export function removerReacaoPublicacao(id: string): Promise<void> {
   return requisitar<void>(`/comunidades/publicacoes/${encodeURIComponent(id)}/reacoes`, {
     method: 'DELETE',
   })
+}
+
+export function listarListas(signal?: AbortSignal): Promise<ListaLeitura[]> {
+  return requisitar<ListaLeitura[]>('/minha-conta/listas', { signal, cache: 'no-store' })
+}
+
+export function obterLista(id: string, signal?: AbortSignal): Promise<ListaDetalhe> {
+  return requisitar<ListaDetalhe>(`/minha-conta/listas/${encodeURIComponent(id)}`, { signal, cache: 'no-store' })
+}
+
+export function criarLista(dados: { nome: string; visibilidade: VisibilidadeLista }): Promise<ListaLeitura> {
+  return requisitar<ListaLeitura>('/minha-conta/listas', { method: 'POST', body: JSON.stringify(dados) })
+}
+
+export function atualizarLista(id: string, dados: { nome?: string; visibilidade?: VisibilidadeLista }): Promise<ListaLeitura> {
+  return requisitar<ListaLeitura>(`/minha-conta/listas/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(dados) })
+}
+
+export function removerLista(id: string): Promise<void> {
+  return requisitar<void>(`/minha-conta/listas/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export function adicionarFilmeALista(listaId: string, filmeId: string): Promise<ListaDetalhe> {
+  return requisitar<ListaDetalhe>(`/minha-conta/listas/${encodeURIComponent(listaId)}/filmes/${encodeURIComponent(filmeId)}`, { method: 'POST' })
+}
+
+export function removerFilmeDaLista(listaId: string, filmeId: string): Promise<void> {
+  return requisitar<void>(`/minha-conta/listas/${encodeURIComponent(listaId)}/filmes/${encodeURIComponent(filmeId)}`, { method: 'DELETE' })
+}
+
+export function listarAssistirDepois(signal?: AbortSignal): Promise<FilmeResumo[]> {
+  return requisitar<FilmeResumo[]>('/minha-conta/assistir-depois', { signal, cache: 'no-store' })
+}
+
+export function adicionarAssistirDepois(filmeId: string): Promise<void> {
+  return requisitar<void>(`/minha-conta/assistir-depois/${encodeURIComponent(filmeId)}`, { method: 'PUT' })
+}
+
+export function removerAssistirDepois(filmeId: string): Promise<void> {
+  return requisitar<void>(`/minha-conta/assistir-depois/${encodeURIComponent(filmeId)}`, { method: 'DELETE' })
+}
+
+export function listarFilmesAvaliados(signal?: AbortSignal): Promise<FilmeResumo[]> {
+  return requisitar<FilmeResumo[]>('/minha-conta/filmes-avaliados', { signal, cache: 'no-store' })
 }

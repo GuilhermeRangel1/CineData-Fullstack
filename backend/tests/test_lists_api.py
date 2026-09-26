@@ -32,7 +32,12 @@ async def lists_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSessi
             [
                 User(id="user-1", email="ana@example.com", nome="Ana", password_hash="hash"),
                 User(id="user-2", email="bia@example.com", nome="Bia", password_hash="hash"),
-                DimMovie(id_filme="movie-1", titulo="A Chegada", genres=[drama]),
+                DimMovie(
+                    id_filme="movie-1",
+                    titulo="A Chegada",
+                    url_poster="https://example.com/a-chegada.jpg",
+                    genres=[drama],
+                ),
                 DimMovie(id_filme="movie-2", titulo="Zodíaco", genres=[drama]),
             ]
         )
@@ -62,6 +67,7 @@ async def test_user_can_manage_a_private_custom_list_with_catalog_movies(
             created = await client.post("/api/v1/minha-conta/listas", json={"nome": "Favoritos"})
             list_id = created.json()["id"]
             added = await client.post(f"/api/v1/minha-conta/listas/{list_id}/filmes/movie-1")
+            listed = await client.get("/api/v1/minha-conta/listas")
             duplicate = await client.post(f"/api/v1/minha-conta/listas/{list_id}/filmes/movie-1")
             updated = await client.patch(
                 f"/api/v1/minha-conta/listas/{list_id}",
@@ -78,6 +84,8 @@ async def test_user_can_manage_a_private_custom_list_with_catalog_movies(
     assert created.json()["quantidade_filmes"] == 0
     assert added.status_code == 200
     assert added.json()["filmes"][0]["id"] == "movie-1"
+    assert listed.status_code == 200
+    assert listed.json()[0]["capa_url"] == "https://example.com/a-chegada.jpg"
     assert duplicate.status_code == 409
     assert duplicate.json()["codigo"] == "FILME_JA_ESTA_NA_LISTA"
     assert updated.status_code == 200

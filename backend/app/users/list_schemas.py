@@ -37,6 +37,7 @@ class ListaLeitura(ContratoListas):
     nome: str = Field(min_length=1, max_length=120)
     visibilidade: Literal["publica", "privada"]
     quantidade_filmes: int = Field(ge=0)
+    capa_url: str | None = None
     criada_em: datetime
 
 

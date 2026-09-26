@@ -22,6 +22,12 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
   esse cache antes de as consultas serem atualizadas, evitando dados obsoletos.
 - Cadastro, login e encerramento de sessão locais pelo cabeçalho. A sessão JWT
   é mantida no navegador e enviada nas escritas da API.
+- A navegação principal dá acesso a **Minhas listas**. Contas autenticadas podem
+  criar, editar e apagar listas pessoais, definir sua visibilidade e ver os
+  filmes como cards com capa. Pelo detalhe de qualquer filme do catálogo, a
+  pessoa escolhe diretamente em qual lista pessoal quer salvá-lo; a área de
+  listas também permite buscar e remover filmes. Filmes avaliados aparecem como
+  uma coleção automática visual, sem obrigar o uso de uma lista "assistir depois".
 - O botão **Adicionar filme**, a edição e a exclusão ficam visíveis apenas para
   administradores. O formulário oferece título, diretor, ano, gêneros, sinopse,
   data completa e links opcionais de imagens.
