@@ -81,7 +81,7 @@ describe('Detalhes de um filme real', () => {
     const changed = vi.fn()
     render(<MovieDetail id="1" onClose={vi.fn()} onChanged={changed} usuario={user} />)
     await screen.findByLabelText('Sua nota (0 a 10)')
-    await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), '8.5')
+    await userEvent.type(screen.getByLabelText('Sua nota (0 a 10)'), '8.5')
     fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: 'Excelente.' } })
     await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível conectar')

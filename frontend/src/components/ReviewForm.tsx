@@ -18,12 +18,13 @@ export function ReviewForm({
   const { pending, error, run } = useMutation(onBusyChange)
   function submit(event: FormEvent) {
     event.preventDefault()
+    const numericScore = Number(score.replace(',', '.'))
     if (
       !comment.trim() ||
       score === '' ||
-      !Number.isFinite(Number(score)) ||
-      Number(score) < 0 ||
-      Number(score) > 10 ||
+      !Number.isFinite(numericScore) ||
+      numericScore < 0 ||
+      numericScore > 10 ||
       comment.trim().length > 4000
     ) {
       setValidation('Escolha uma nota entre 0 e 10 e escreva sua resenha.')
@@ -33,7 +34,7 @@ export function ReviewForm({
     void run(
       () =>
         criarAvaliacao(movieId, {
-          nota: Number(score),
+          nota: numericScore,
           comentario: comment.trim(),
           visibilidade: visibility,
         }),
@@ -52,14 +53,14 @@ export function ReviewForm({
       <fieldset className="form-grid" disabled={pending}>
         <label>
           Sua nota (0 a 10)
-          <select value={score} onChange={(event) => setScore(event.target.value)} required>
-            <option value="">Escolha uma nota</option>
-            {Array.from({ length: 21 }, (_, index) => index / 2).map((value) => (
-              <option key={value} value={value}>
-                {value.toLocaleString('pt-BR')} / 10
-              </option>
-            ))}
-          </select>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={score}
+            onChange={(event) => setScore(event.target.value)}
+            placeholder="Ex.: 8,5"
+            required
+          />
         </label>
         <label className="full-field">
           Sua resenha
@@ -78,8 +79,8 @@ export function ReviewForm({
             value={visibility}
             onChange={(event) => setVisibility(event.target.value as 'publica' | 'privada')}
           >
-            <option value="publica">Pública — aparece no seu perfil</option>
-            <option value="privada">Privada — visível somente para você</option>
+            <option value="publica">Pública</option>
+            <option value="privada">Privada</option>
           </select>
         </label>
       </fieldset>

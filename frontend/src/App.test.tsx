@@ -81,7 +81,8 @@ it('completa cadastro, edição, avaliação e exclusão atualizando todas as li
       screen.getAllByRole('button', { name: 'Ver detalhes de História revisada' }),
     ).toHaveLength(3),
   )
-  await userEvent.selectOptions(within(detail).getByLabelText('Sua nota (0 a 10)'), '10')
+  const score = within(detail).getByLabelText('Sua nota (0 a 10)')
+  await userEvent.type(score, '10')
   fireEvent.change(within(detail).getByLabelText('Sua resenha'), {
     target: { value: 'Uma ótima sessão.' },
   })

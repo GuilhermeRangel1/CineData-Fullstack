@@ -10,7 +10,7 @@ describe('Nova avaliação', () => {
       saved = vi.fn()
     vi.stubGlobal('fetch', fetcher)
     render(<ReviewForm movieId="1" onSaved={saved} onBusyChange={vi.fn()} />)
-    await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), score)
+    await userEvent.type(screen.getByLabelText('Sua nota (0 a 10)'), score)
     fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: ' Meu olhar. ' } })
     await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
     expect(fetcher).toHaveBeenCalledWith(
@@ -38,7 +38,7 @@ describe('Nova avaliação', () => {
     fireEvent.submit(screen.getByRole('form'))
     expect(screen.getByRole('alert')).toHaveTextContent('Escolha uma nota')
     expect(fetcher).not.toHaveBeenCalled()
-    await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), '8.5')
+    await userEvent.type(screen.getByLabelText('Sua nota (0 a 10)'), '8.5')
     fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: 'Gostei muito.' } })
     await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
     await waitFor(() =>
@@ -52,7 +52,7 @@ describe('Nova avaliação', () => {
     const fetcher = vi.fn(() => json({ id: 'r' }, 201))
     vi.stubGlobal('fetch', fetcher)
     render(<ReviewForm movieId="1" onSaved={vi.fn()} onBusyChange={vi.fn()} />)
-    await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), '8')
+    await userEvent.type(screen.getByLabelText('Sua nota (0 a 10)'), '8')
     await userEvent.selectOptions(screen.getByLabelText('Visibilidade'), 'privada')
     fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: 'Só minha.' } })
     await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
