@@ -7,7 +7,8 @@ import { Catalog } from './pages/Catalog'
 import { Dialog } from './components/Dialog'
 import { MovieForm } from './components/MovieForm'
 import { AuthForm } from './components/AuthForm'
-import { carregarSessao, encerrarSessao, type Sessao } from './auth/session'
+import { ProfileForm } from './components/ProfileForm'
+import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, type Sessao } from './auth/session'
 import './App.css'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
   const [notice, setNotice] = useState('')
   const [session, setSession] = useState<Sessao | null>(() => carregarSessao())
   const [authMode, setAuthMode] = useState<'login' | 'cadastro' | null>(null)
+  const [profileOpen, setProfileOpen] = useState(false)
   const refresh = () => setRevision((value) => value + 1)
   function explore(value: string) {
     setGenre(value)
@@ -55,7 +57,10 @@ function App() {
         </a>
         {session ? (
           <div className="account-actions">
-            <span>Olá, {session.usuario.nome}</span>
+            <button className="profile-trigger" onClick={() => setProfileOpen(true)} aria-label="Abrir seu perfil">
+              {session.usuario.avatar_url ? <img src={session.usuario.avatar_url} alt="" /> : <span>{session.usuario.nome.slice(0, 1).toUpperCase()}</span>}
+              <span>Olá, {session.usuario.nome}</span>
+            </button>
             {session.usuario.role === 'admin' && (
               <button
                 className="button button-outline add-movie"
@@ -187,6 +192,20 @@ function App() {
               setSession(newSession)
               setAuthMode(null)
               setNotice(`Sessão iniciada como ${newSession.usuario.nome}.`)
+            }}
+          />
+        </Dialog>
+      )}
+      {profileOpen && session && (
+        <Dialog title="Seu perfil" className="editor-dialog" busy={busy} onClose={() => setProfileOpen(false)}>
+          <ProfileForm
+            user={session.usuario}
+            onBusyChange={setBusy}
+            onSaved={(user) => {
+              const updated = atualizarUsuarioSessao(user)
+              if (updated) setSession(updated)
+              setNotice('Perfil atualizado.')
+              setProfileOpen(false)
             }}
           />
         </Dialog>

@@ -7,7 +7,7 @@ avaliações, listas e comunidades serão introduzidas em migrações próprias.
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, String, Table, func
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, String, Table, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -82,6 +82,7 @@ class User(Base):
         server_default="user",
         index=True,
     )
+    avatar_url: Mapped[str | None] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

@@ -135,9 +135,9 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 - [x] Permitir listas personalizadas com nome e filmes do catálogo.
 - [x] Implementar a lista "assistir depois".
 - [x] Definir visibilidade das listas públicas e privadas.
-- [ ] Criar perfis públicos com avaliações, listas públicas e quantidade de
+- [x] Criar perfis públicos com avaliações, listas públicas e quantidade de
       amigos.
-- [ ] Adicionar trailer opcional ao detalhe do filme quando houver uma fonte
+- [x] Adicionar trailer opcional ao detalhe do filme quando houver uma fonte
       válida, sem alterar os CSVs originais.
 
 ### 9. Comunidades

@@ -82,6 +82,16 @@ export function entrar(dados: { email: string; senha: string }): Promise<TokenAc
   })
 }
 
+export function atualizarPerfil(dados: {
+  nome?: string
+  avatar_url?: string | null
+}): Promise<UsuarioLeitura> {
+  return requisitar<UsuarioLeitura>('/auth/perfil', {
+    method: 'PATCH',
+    body: JSON.stringify(dados),
+  })
+}
+
 export function listarFilmes(
   parametros: URLSearchParams,
   signal?: AbortSignal,

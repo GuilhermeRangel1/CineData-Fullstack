@@ -65,6 +65,7 @@ async def test_public_registration_creates_only_a_standard_user(
         "nome": "Ana Exemplo",
         "role": "user",
         "created_at": response.json()["created_at"],
+        "avatar_url": None,
     }
 
     async with user_session_factory() as session:
@@ -181,6 +182,51 @@ async def test_login_does_not_reveal_which_credential_is_invalid(
         "codigo": "CREDENCIAIS_INVALIDAS",
         "mensagem": "E-mail ou senha inválidos.",
     }
+
+
+async def test_user_can_update_avatar_and_expose_a_safe_public_profile(
+    user_session_factory: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("JWT_SECRET_KEY", "segredo-de-teste-com-tamanho-suficiente")
+    get_settings.cache_clear()
+    async with user_session_factory() as session:
+        usuario = User(
+            id="user-profile",
+            email="perfil@example.com",
+            nome="Perfil",
+            password_hash=gerar_hash_senha("senha-local-segura"),
+        )
+        session.add(usuario)
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with user_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.patch(
+                "/api/v1/auth/perfil",
+                headers={"Authorization": f"Bearer {criar_token_acesso(usuario).access_token}"},
+                json={
+                    "nome": "Perfil Atualizado",
+                    "avatar_url": "data:image/png;base64,aGVsbG8=",
+                },
+            )
+            public_profile = await client.get("/api/v1/perfis/user-profile")
+    finally:
+        app.dependency_overrides.clear()
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    assert response.json()["nome"] == "Perfil Atualizado"
+    assert response.json()["avatar_url"] == "data:image/png;base64,aGVsbG8="
+    assert public_profile.status_code == 200
+    assert public_profile.json()["quantidade_amigos"] == 0
+    assert public_profile.json()["avatar_url"] == "data:image/png;base64,aGVsbG8="
+    assert "email" not in public_profile.json()
 
 
 async def test_bootstrap_creates_the_initial_administrator_only_once(

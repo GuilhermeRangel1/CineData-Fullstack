@@ -28,6 +28,14 @@ export function encerrarSessao(): void {
   window.localStorage.removeItem(SESSION_KEY)
 }
 
+export function atualizarUsuarioSessao(usuario: UsuarioLeitura): Sessao | null {
+  const sessao = carregarSessao()
+  if (!sessao) return null
+  const atualizada = { ...sessao, usuario }
+  window.localStorage.setItem(SESSION_KEY, JSON.stringify(atualizada))
+  return atualizada
+}
+
 export function obterTokenSessao(): string | null {
   return carregarSessao()?.token ?? null
 }

@@ -6,7 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import CredenciaisInvalidasError, UsuarioJaExisteError
 from app.users.models import User
-from app.users.schemas import CredenciaisLogin, TokenAcesso, UsuarioCadastro, UsuarioLeitura
+from app.users.schemas import (
+    CredenciaisLogin,
+    TokenAcesso,
+    UsuarioAtualizacao,
+    UsuarioCadastro,
+    UsuarioLeitura,
+)
 from app.users.security import gerar_hash_senha, verificar_senha
 from app.users.tokens import criar_token_acesso
 
@@ -30,6 +36,19 @@ class AuthService:
         if usuario is None or not verificar_senha(dados.senha, usuario.password_hash):
             raise CredenciaisInvalidasError
         return criar_token_acesso(usuario)
+
+    async def atualizar_perfil(self, usuario: User, dados: UsuarioAtualizacao) -> UsuarioLeitura:
+        """Atualiza os dados visíveis da própria conta, inclusive seu avatar local."""
+
+        for campo in dados.model_fields_set:
+            setattr(usuario, campo, getattr(dados, campo))
+        try:
+            await self._session.commit()
+            await self._session.refresh(usuario)
+        except SQLAlchemyError:
+            await self._session.rollback()
+            raise
+        return UsuarioLeitura.model_validate(usuario)
 
     async def criar_administrador_inicial(
         self,

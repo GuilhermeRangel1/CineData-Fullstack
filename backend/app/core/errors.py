@@ -89,3 +89,11 @@ class FilmeJaEstaNaListaError(ErroDominio):
     status_code = 409
     codigo = "FILME_JA_ESTA_NA_LISTA"
     mensagem = "Este filme já está na lista."
+
+
+class PerfilNaoEncontradoError(ErroDominio):
+    """Perfil público solicitado não existe."""
+
+    status_code = 404
+    codigo = "PERFIL_NAO_ENCONTRADO"
+    mensagem = "Perfil não encontrado."

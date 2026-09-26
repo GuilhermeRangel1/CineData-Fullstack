@@ -52,6 +52,7 @@ export interface UsuarioLeitura {
   nome: string
   role: 'user' | 'admin'
   created_at: string
+  avatar_url?: string | null
 }
 
 export interface TokenAcesso {

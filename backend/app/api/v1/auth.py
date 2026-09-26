@@ -6,7 +6,15 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.users.schemas import CredenciaisLogin, TokenAcesso, UsuarioCadastro, UsuarioLeitura
+from app.users.dependencies import get_current_user
+from app.users.models import User
+from app.users.schemas import (
+    CredenciaisLogin,
+    TokenAcesso,
+    UsuarioAtualizacao,
+    UsuarioCadastro,
+    UsuarioLeitura,
+)
 from app.users.services import AuthService
 
 auth_router = APIRouter(prefix="/auth", tags=["autenticação"])
@@ -30,3 +38,14 @@ async def login(
     """Inicia uma sessão local e devolve um token Bearer JWT."""
 
     return await AuthService(session).autenticar(dados)
+
+
+@auth_router.patch("/perfil", response_model=UsuarioLeitura)
+async def atualizar_perfil(
+    dados: UsuarioAtualizacao,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    usuario: Annotated[User, Depends(get_current_user)],
+) -> UsuarioLeitura:
+    """Atualiza o nome ou a foto de perfil da conta autenticada."""
+
+    return await AuthService(session).atualizar_perfil(usuario, dados)
