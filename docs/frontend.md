@@ -1,4 +1,4 @@
-# Interface e mídia — etapa 5
+# Interface e mídia
 
 O frontend usa React, TypeScript e CSS, com componentes separados para destaque,
 fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
@@ -22,6 +22,8 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
   esse cache antes de as consultas serem atualizadas, evitando dados obsoletos.
 - Cadastro, login e encerramento de sessão locais pelo cabeçalho. A sessão JWT
   é mantida no navegador e enviada nas escritas da API.
+- Perfil próprio editável com avatar, além de mini perfis públicos com
+  avaliações recentes, listas públicas, comunidades e contagem de amizades.
 - A navegação principal dá acesso a **Minhas listas**. Contas autenticadas podem
   criar, editar e apagar listas pessoais, definir sua visibilidade e ver os
   filmes como cards com capa. Pelo detalhe de qualquer filme do catálogo, a
@@ -35,9 +37,24 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
   relações não editadas são preservados. Se houver vários diretores, a interface
   avisa que alterar esse campo substitui a direção pelo único nome informado.
 - Exclusão exige confirmação e informa que avaliações também serão removidas.
-- Avaliação com a identidade da conta, nota de 0 a 10 (seletor em intervalos de
-  0,5) e resenha. Sem sessão, a interface convida a pessoa a entrar. Catálogo,
-  coleções, histórico e média são consultados novamente após escritas.
+- Avaliação com a identidade da conta, nota digitável em qualquer valor decimal
+  de 0 a 10 e resenha. A pessoa pode editar ou apagar a própria avaliação. Sem
+  sessão, a interface convida a entrar. Catálogo, listas, histórico e média são
+  consultados novamente após escritas.
+- **Amigos** permite pesquisar contas, enviar e responder solicitações, remover
+  amizades e abrir perfis. Cada bloco limita a prévia e oferece acesso à lista
+  completa.
+- **Comunidades** reúne descoberta, entrada e saída, publicações, comentários,
+  menções de filmes e reações. A conversa atualiza por polling enquanto está
+  aberta e visível; administradores mantêm comunidades.
+- **Analytics** é restrito a administradores e consulta agregados do banco para
+  atividade recente, gêneros avaliados, filmes e comunidades em alta.
+- **Mapa de gostos** é pessoal e exige login. O backend seleciona candidatos
+  por gêneros, pessoas e termos de sinopse, calcula similaridade com os demais
+  sinais do catálogo e devolve uma malha pequena, explicável e atualizável.
+- O cadastro administrativo pode buscar detalhes, imagens e trailer no TMDB;
+  a credencial fica no backend. O trailer da home usa o iframe oficial do
+  YouTube e depende das regras de reprodução do navegador.
 - Campos inválidos recebem mensagens; falhas de escrita preservam o formulário.
   Durante o envio, controles e fechamento da janela ficam bloqueados para
   evitar requisições duplicadas. Uma falha de atualização posterior não é
@@ -81,13 +98,12 @@ do navegador podem impedir o vídeo.
 ## Verificações
 
 Execute em `frontend/`: `npm run lint`, `npm run test` e `npm run build`.
-Os 30 testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
-buscas fora de ordem, erros e nova tentativa, detalhes, pôster indisponível e
-os estados e controles do player com a API externa simulada. Também cobrem
-cadastro, PATCH mínimo, campos opcionais apagados com null, validação antes do
-envio, prevenção de envio duplicado, preservação de texto em falhas, notas 0 e 10,
-confirmação/cancelamento/falha de exclusão e atualização das três listas após
-alterações. O fluxo integrado completo usa respostas HTTP simuladas no Vitest.
+Os 53 testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
+buscas fora de ordem, erros e nova tentativa, detalhes, pôster indisponível,
+player, autenticação, listas, amizades, perfis, comunidades, analytics e mapa de
+gostos. Também cobrem formulários, validações, prevenção de envios duplicados,
+preservação de texto em falhas e atualização de dados após alterações. Os testes
+usam respostas HTTP simuladas; o backend possui testes de integração próprios.
 
 A interface foi inspecionada no navegador em desktop e áreas de 390 e 320 pixels,
 incluindo formulários, confirmação, foco inicial e retorno por Escape. Cadastro,
@@ -97,4 +113,4 @@ pela API retornou 204, e sua ausência gerou a mensagem de 404 esperada na inter
 A execução do botão de exclusão é coberta no teste integrado do frontend;
 a confirmação visual foi inspecionada sem remover registros da base importada.
 O trailer oficial, no fundo e na janela própria, já havia sido verificado no
-checkpoint visual. A revisão final de entrega permanece na etapa 6.
+checkpoint visual.

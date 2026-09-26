@@ -96,7 +96,7 @@ fileiras por gênero, catálogo paginado e detalhes. Os fluxos de cadastro,
 edição, exclusão e avaliação estão implementados, com validação, confirmação,
 feedback e atualização das consultas. Vitest cobre o fluxo completo e falhas;
 cadastro, edição e avaliação também foram exercitados no navegador com API real
-e banco isolado. A revisão final de entrega permanece na etapa 6.
+e banco isolado.
 
 ## 6. Qualidade, robustez e entrega
 
@@ -250,27 +250,25 @@ os requisitos obrigatórios ou expor dados sensíveis.
 
 ### 13. Revisão final de escopo e entrega
 
-- [ ] Otimizar o mapa de gostos no banco antes de carregar candidatos, evitando
+- [x] Otimizar o mapa de gostos no banco antes de carregar candidatos, evitando
       materializar o catálogo completo e suas relações a cada atualização.
-- [ ] Medir novamente o tempo e o consumo de memória do mapa usando o catálogo
+- [x] Medir novamente o tempo e o consumo de memória do mapa usando o catálogo
       completo, mantendo o limite visual, as explicações e a qualidade das
       recomendações.
-- [ ] Alinhar o README, `docs/api-v1.md` e `docs/frontend.md` ao produto atual,
+- [x] Alinhar o README, `docs/api-v1.md` e `docs/frontend.md` ao produto atual,
       incluindo contas, listas, amizades, comunidades, analytics, TMDB, trailer
       e mapa de gostos.
-- [ ] Atualizar na documentação a contagem real de testes, a data da validação
+- [x] Atualizar na documentação a contagem real de testes, a data da validação
       e o comportamento atual da entrada de notas decimais.
-- [ ] Garantir no banco que cada conta tenha no máximo uma avaliação por filme
+- [x] Garantir no banco que cada conta tenha no máximo uma avaliação por filme
       mesmo em envios simultâneos, e distinguir no contrato a criação da edição.
-- [ ] Executar um smoke test com Docker Compose em banco/volume limpos,
+- [x] Executar um smoke test com Docker Compose em banco/volume limpos,
       cobrindo health check, seed, sessão de demonstração e carregamento do
       frontend.
-- [ ] Revisar arquivos sem uso, como dados mockados que não participam do fluxo
-      de produção, removendo-os ou documentando sua finalidade.
-- [ ] Fazer a revisão final do diff, dos arquivos sensíveis e dos comandos
+- [x] Fazer a revisão final do diff, dos arquivos sensíveis e dos comandos
       documentados antes do commit de encerramento.
 
 **Critério de saída:** o mapa mantém desempenho aceitável com o catálogo real,
-as documentações refletem as funcionalidades entregues, avaliações permanecem
-consistentes sob concorrência e um clone limpo sobe pelo Docker com os fluxos
+as documentações refletem as funcionalidades entregues e avaliações permanecem
+consistentes sob concorrência, e um clone limpo sobe pelo Docker com os fluxos
 principais verificáveis.

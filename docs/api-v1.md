@@ -21,17 +21,30 @@ significa apenas a primeira versão da API; não acrescenta nenhuma funcionalida
 
 ## Rotas disponíveis
 
-| Método | Rota | Finalidade | Acesso | Resposta |
-| --- | --- | --- | --- | --- |
-| `POST` | `/api/v1/auth/cadastro` | Cria uma conta local | Público | `201 Created` |
-| `POST` | `/api/v1/auth/login` | Inicia sessão local | Público | `200 OK` |
-| `POST` | `/api/v1/filmes` | Cadastra filme | `admin` | `201 Created` |
-| `GET` | `/api/v1/filmes` | Lista o catálogo paginado | Público | `200 OK` |
-| `GET` | `/api/v1/filmes/{filme_id}` | Consulta detalhes do filme | Público | `200 OK` |
-| `PATCH` | `/api/v1/filmes/{filme_id}` | Atualiza parcialmente um filme | `admin` | `200 OK` |
-| `DELETE` | `/api/v1/filmes/{filme_id}` | Remove um filme | `admin` | `204 No Content` |
-| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Consulta o histórico de avaliações | Público | `200 OK` |
-| `POST` | `/api/v1/filmes/{filme_id}/avaliacoes` | Adiciona uma avaliação | Autenticado | `201 Created` |
+| Método | Rota | Finalidade | Acesso |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/cadastro` | Cria conta de usuário | Público |
+| `POST` | `/api/v1/auth/login` | Inicia sessão e devolve JWT | Público |
+| `GET`, `PATCH` | `/api/v1/auth/perfil` | Consulta ou edita o próprio perfil | Autenticado |
+| `GET` | `/api/v1/perfis/{usuario_id}` | Consulta perfil público | Público |
+| `GET` | `/api/v1/filmes` | Catálogo, busca, filtros e paginação | Público |
+| `GET` | `/api/v1/filmes/{filme_id}` | Detalhes de filme | Público |
+| `POST`, `PATCH`, `DELETE` | `/api/v1/filmes[/{filme_id}]` | Gestão do catálogo | `admin` |
+| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Histórico público de avaliações | Público |
+| `GET`, `POST`, `DELETE` | `/api/v1/filmes/{filme_id}/minha-avaliacao` ou `/avaliacoes` | Consulta, cria/edita ou apaga a própria avaliação | Autenticado |
+| `GET` | `/api/v1/filmes/{filme_id}/trailer` | Consulta trailer disponível | Público |
+| `GET` | `/api/v1/minha-conta/listas...` | Lista personalizada e filmes avaliados | Autenticado |
+| `GET`, `PUT`, `DELETE` | `/api/v1/minha-conta/assistir-depois...` | Lista especial “assistir depois” | Autenticado |
+| `GET`, `POST`, `PATCH`, `DELETE` | `/api/v1/minha-conta/amigos...` | Pesquisa, pedidos e amizades | Autenticado |
+| `GET`, `POST`, `PATCH`, `DELETE` | `/api/v1/comunidades...` | Comunidades, participação e publicações | Público/autenticado/`admin` conforme operação |
+| `GET` | `/api/v1/admin/analytics/resumo` | Indicadores agregados da plataforma | `admin` |
+| `GET` | `/api/v1/admin/fontes/tmdb...` | Busca e consulta de dados TMDB | `admin` |
+| `GET` | `/api/v1/mapa-de-gostos` | Subgrafo pessoal de recomendações | Autenticado |
+
+As rotas exatas de cada grupo estão nos routers do backend e também na
+documentação OpenAPI em `/docs` durante a execução local. A sessão de teste do
+Compose (`POST /api/v1/auth/sessao-teste`) só existe no ambiente Docker e fica
+oculta da OpenAPI.
 
 ### Contas e sessão
 
@@ -48,10 +61,16 @@ criado pelo comando de bootstrap da infraestrutura, nunca pelo cadastro público
 | --- | --- | --- |
 | `busca` | - | Busca no título, sem diferenciar maiúsculas e minúsculas. |
 | `genero` | - | Filtra pelo nome do gênero. |
+| `pessoa` | - | Filtra por pessoa associada ao filme. |
+| `produtora` | - | Filtra por produtora. |
+| `ano_inicial`, `ano_final` | - | Limites inclusivos do ano de lançamento. |
+| `duracao_minima`, `duracao_maxima` | - | Limites inclusivos em minutos. |
+| `nota_minima` | - | Nota externa mínima disponível. |
 | `pagina` | `1` | Mínimo `1`. |
 | `tamanho_pagina` | `12` | Entre `1` e `100`. |
 | `ordenar_por` | `titulo` | Aceita `titulo` ou `ano_lancamento`. |
 | `direcao` | `asc` | Aceita `asc` ou `desc`. |
+| `priorizar_capa`, `priorizar_trailer`, `somente_com_trailer` | `false` | Ordena por mídia disponível ou restringe a filmes com trailer. |
 
 Em empates, a API ordena por título e ID. Isso evita que itens mudem de página
 entre duas consultas iguais.
@@ -78,16 +97,37 @@ Resposta paginada:
 
 ### Avaliações
 
-`POST /api/v1/filmes/{filme_id}/avaliacoes` recebe `nota` e `comentario` e
-exige uma sessão válida. O autor é derivado da conta autenticada, e a nova
-avaliação é vinculada a ela. A nota é um número entre `0` e `10`, inclusive.
-A inclusão cria o item no histórico e atualiza a quantidade e a média do filme
-na mesma transação. Para preservar o consolidado importado pelos CSVs, a nova
-média é ponderada pela quantidade já registrada no resumo do filme.
+`POST /api/v1/filmes/{filme_id}/avaliacoes` recebe `nota`, `comentario` e, se
+desejado, `visibilidade`; exige uma sessão válida. A nota aceita qualquer valor
+numérico entre `0` e `10`, inclusive. A conta pode ter no máximo uma avaliação
+por filme: a primeira gravação retorna `201 Created`; novas chamadas atualizam
+a mesma avaliação e retornam `200 OK`. O banco aplica uma restrição única para
+proteger também envios simultâneos. A operação atualiza quantidade e média do
+filme; avaliações importadas sem conta permanecem separadas.
 
 `GET /api/v1/filmes/{filme_id}/avaliacoes` retorna o histórico disponível, da
 avaliação mais recente para a mais antiga. Ambas as rotas retornam `404` quando
 o filme não existe.
+
+`GET /api/v1/filmes/{filme_id}/minha-avaliacao` retorna a avaliação privada ou
+pública da conta autenticada. `DELETE` no mesmo caminho apaga somente a
+avaliação da conta e recompõe o resumo do filme.
+
+### Listas, comunidades e descoberta
+
+As rotas sob `/api/v1/minha-conta/listas` e `/assistir-depois` só expõem dados da
+conta autenticada. O perfil público contém apenas avaliações e listas públicas;
+`GET /api/v1/auth/perfil` permite ao dono ver também os próprios itens privados.
+
+As operações de comunidade que alteram a conversa exigem participação; a
+criação, edição e remoção de comunidades exige `admin`. O painel em
+`/api/v1/admin/analytics/resumo?periodo_dias=30` agrega atividade e rankings, com
+um intervalo configurável de 1 a 90 dias. O mapa aceita `limite_nos` (6 a 48),
+`vizinhos_por_filme` (1 a 6), `busca` e parâmetros repetidos `excluir` para
+renovar sugestões sem repetir os nós recomendados da rodada anterior.
+
+`/api/v1/admin/fontes/tmdb` é protegido por papel `admin`; o token TMDB é lido
+somente pelo backend e nunca faz parte da resposta ao navegador.
 
 ## Erros
 
