@@ -44,7 +44,7 @@ class PerfilPublicoService:
         )
         avaliacoes = await self._session.scalars(
             select(MovieReview)
-            .where(MovieReview.user_id == usuario.id)
+            .where(MovieReview.user_id == usuario.id, MovieReview.visibilidade == "publica")
             .options(
                 selectinload(MovieReview.movie).selectinload(DimMovie.genres),
                 selectinload(MovieReview.movie).selectinload(DimMovie.reviews_summary),

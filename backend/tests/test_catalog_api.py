@@ -426,6 +426,36 @@ async def test_review_endpoints_validate_payload_and_return_not_found(
     }
 
 
+async def test_private_reviews_do_not_appear_in_public_movie_history(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/v1/filmes/movie-1/avaliacoes",
+                json={
+                    "nota": 8,
+                    "comentario": "Uma resenha privada.",
+                    "visibilidade": "privada",
+                },
+            )
+            history = await client.get("/api/v1/filmes/movie-1/avaliacoes")
+            detail = await client.get("/api/v1/filmes/movie-1")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert created.status_code == 201
+    assert created.json()["visibilidade"] == "privada"
+    assert [review["nome"] for review in history.json()] == ["Maria"]
+    assert [review["nome"] for review in detail.json()["avaliacoes"]] == ["Maria"]
+
+
 async def test_update_movie_endpoint_changes_only_sent_fields_and_relationships(
     catalog_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:

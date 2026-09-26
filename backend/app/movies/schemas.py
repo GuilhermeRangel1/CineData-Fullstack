@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 PapelPessoa = Literal["Ator", "Diretor", "Roteirista"]
 OrdenacaoFilme = Literal["titulo", "ano_lancamento"]
 DirecaoOrdenacao = Literal["asc", "desc"]
+Visibilidade = Literal["publica", "privada"]
 NomeGenero = Annotated[str, Field(min_length=1, max_length=50)]
 NomePessoa = Annotated[str, Field(min_length=1, max_length=255)]
 NomeProdutora = Annotated[str, Field(min_length=1, max_length=255)]
@@ -54,6 +55,7 @@ class PessoaResumo(ContratoFilmes):
 class AvaliacaoCriacao(ContratoFilmes):
     nota: float = Field(ge=0, le=10)
     comentario: str = Field(min_length=1, max_length=4000)
+    visibilidade: Visibilidade = "publica"
 
 
 class AvaliacaoLeitura(AvaliacaoCriacao):

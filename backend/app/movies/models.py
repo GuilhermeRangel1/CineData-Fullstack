@@ -161,6 +161,7 @@ class DimCompany(Base):
 
 PERSON_TYPES: tuple[str, ...] = ("Ator", "Diretor", "Roteirista")
 PersonType = Literal["Ator", "Diretor", "Roteirista"]
+REVIEW_VISIBILITIES: tuple[str, ...] = ("publica", "privada")
 
 
 class DimPerson(Base):
@@ -215,7 +216,15 @@ class MovieReview(Base):
     """Avaliação individual de um filme na escala de 0 a 10."""
 
     __tablename__ = "movie_reviews"
-    __table_args__ = (CheckConstraint("nota >= 0 AND nota <= 10", name="nota_range"),)
+    __table_args__ = (
+        CheckConstraint("nota >= 0 AND nota <= 10", name="nota_range"),
+        CheckConstraint(
+            "visibilidade IN ("
+            + ", ".join(f"'{visibility}'" for visibility in REVIEW_VISIBILITIES)
+            + ")",
+            name="visibility_valid",
+        ),
+    )
 
     sk_movie_review_id: Mapped[str] = mapped_column(
         String(64), primary_key=True, default=generate_surrogate_key
@@ -232,6 +241,9 @@ class MovieReview(Base):
     nome: Mapped[str] = mapped_column(String(120))
     nota: Mapped[float] = mapped_column(Double)
     comentario: Mapped[str] = mapped_column(String(4000))
+    visibilidade: Mapped[str] = mapped_column(
+        String(20), default="publica", server_default="publica", index=True
+    )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     movie: Mapped[DimMovie] = relationship(back_populates="reviews")

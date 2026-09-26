@@ -164,7 +164,7 @@ lint e build passam sem alterar os CSVs originais.
 
 - [x] Criar solicitações de amizade com estados pendente, aceita e bloqueada.
 - [x] Permitir consultar amigos e quantidade de amigos no perfil.
-- [ ] Respeitar a visibilidade definida para listas e avaliações.
+- [x] Respeitar a visibilidade definida para listas e avaliações.
 
 ### 11. Recursos opcionais
 

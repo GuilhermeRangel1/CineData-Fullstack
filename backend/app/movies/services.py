@@ -163,7 +163,7 @@ class AvaliacoesService:
         avaliacoes = await self._session.scalars(
             select(MovieReview)
             .join(MovieReview.movie)
-            .where(DimMovie.id_filme == filme_id)
+            .where(DimMovie.id_filme == filme_id, MovieReview.visibilidade == "publica")
             .order_by(MovieReview.created_at.desc(), MovieReview.sk_movie_review_id.desc())
         )
         return [self._para_leitura(avaliacao) for avaliacao in avaliacoes]
@@ -184,6 +184,7 @@ class AvaliacoesService:
                 nome=usuario.nome,
                 nota=dados.nota,
                 comentario=dados.comentario,
+                visibilidade=dados.visibilidade,
             )
             self._session.add(avaliacao)
             await self._session.flush()
@@ -234,6 +235,7 @@ class AvaliacoesService:
             nome=avaliacao.nome,
             nota=avaliacao.nota,
             comentario=avaliacao.comentario,
+            visibilidade=avaliacao.visibilidade,
             criada_em=avaliacao.created_at,
         )
 
@@ -455,8 +457,10 @@ class GestaoFilmesService:
                     nome=avaliacao.nome,
                     nota=avaliacao.nota,
                     comentario=avaliacao.comentario,
+                    visibilidade=avaliacao.visibilidade,
                     criada_em=avaliacao.created_at,
                 )
                 for avaliacao in filme.reviews
+                if avaliacao.visibilidade == "publica"
             ],
         )

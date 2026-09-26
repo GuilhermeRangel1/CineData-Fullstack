@@ -17,7 +17,11 @@ describe('Nova avaliação', () => {
       expect.stringContaining('/filmes/1/avaliacoes'),
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ nota: Number(score), comentario: 'Meu olhar.' }),
+        body: JSON.stringify({
+          nota: Number(score),
+          comentario: 'Meu olhar.',
+          visibilidade: 'publica',
+        }),
       }),
     )
     expect(saved).toHaveBeenCalledOnce()
@@ -42,5 +46,22 @@ describe('Nova avaliação', () => {
     )
     expect(screen.getByLabelText('Sua resenha')).toHaveValue('Gostei muito.')
     expect(saved).not.toHaveBeenCalled()
+  })
+
+  it('permite publicar uma resenha privada', async () => {
+    const fetcher = vi.fn(() => json({ id: 'r' }, 201))
+    vi.stubGlobal('fetch', fetcher)
+    render(<ReviewForm movieId="1" onSaved={vi.fn()} onBusyChange={vi.fn()} />)
+    await userEvent.selectOptions(screen.getByLabelText('Sua nota (0 a 10)'), '8')
+    await userEvent.selectOptions(screen.getByLabelText('Visibilidade'), 'privada')
+    fireEvent.change(screen.getByLabelText('Sua resenha'), { target: { value: 'Só minha.' } })
+    await userEvent.click(screen.getByRole('button', { name: 'Publicar avaliação' }))
+
+    expect(fetcher).toHaveBeenCalledWith(
+      expect.stringContaining('/filmes/1/avaliacoes'),
+      expect.objectContaining({
+        body: JSON.stringify({ nota: 8, comentario: 'Só minha.', visibilidade: 'privada' }),
+      }),
+    )
   })
 })

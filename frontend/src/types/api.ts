@@ -38,6 +38,7 @@ export interface PessoaResumo {
 export interface AvaliacaoCriacao {
   nota: number
   comentario: string
+  visibilidade?: 'publica' | 'privada'
 }
 
 export interface AvaliacaoLeitura extends AvaliacaoCriacao {

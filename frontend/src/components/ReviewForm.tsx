@@ -13,6 +13,7 @@ export function ReviewForm({
 }) {
   const [score, setScore] = useState('')
   const [comment, setComment] = useState('')
+  const [visibility, setVisibility] = useState<'publica' | 'privada'>('publica')
   const [validation, setValidation] = useState('')
   const { pending, error, run } = useMutation(onBusyChange)
   function submit(event: FormEvent) {
@@ -34,10 +35,12 @@ export function ReviewForm({
         criarAvaliacao(movieId, {
           nota: Number(score),
           comentario: comment.trim(),
+          visibilidade: visibility,
         }),
       () => {
         setScore('')
         setComment('')
+        setVisibility('publica')
         onSaved()
       },
     )
@@ -68,6 +71,16 @@ export function ReviewForm({
             rows={3}
             placeholder="Conte o que ficou com você depois dos créditos."
           />
+        </label>
+        <label>
+          Visibilidade
+          <select
+            value={visibility}
+            onChange={(event) => setVisibility(event.target.value as 'publica' | 'privada')}
+          >
+            <option value="publica">Pública — aparece no seu perfil</option>
+            <option value="privada">Privada — visível somente para você</option>
+          </select>
         </label>
       </fieldset>
       {(error || validation) && (

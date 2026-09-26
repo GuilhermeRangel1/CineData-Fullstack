@@ -30,6 +30,12 @@ def test_review_contract_rejects_rating_outside_zero_to_ten_scale() -> None:
         AvaliacaoCriacao(nota=10.1, comentario="Ótimo filme.")
 
 
+def test_review_contract_defaults_to_public_visibility_and_rejects_invalid_values() -> None:
+    assert AvaliacaoCriacao(nota=8, comentario="Ótimo filme.").visibilidade == "publica"
+    with pytest.raises(ValidationError):
+        AvaliacaoCriacao(nota=8, comentario="Ótimo filme.", visibilidade="amigos")
+
+
 def test_catalog_query_contract_defines_stable_default_order() -> None:
     consulta = ConsultaCatalogo()
 

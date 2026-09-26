@@ -32,6 +32,7 @@ def test_movie_review_columns_match_shared_csv() -> None:
     assert {"sk_movie_review_id", "sk_movie_id", "nome", "nota", "comentario"} <= set(
         table.columns.keys()
     )
+    assert "visibilidade" in table.columns
     assert table.primary_key.columns.keys() == ["sk_movie_review_id"]
 
 
