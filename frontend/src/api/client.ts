@@ -26,6 +26,7 @@ import type {
   TmdbImportacao,
   TmdbResultado,
   ResumoAnalytics,
+  MapaGostos,
 } from '../types/api'
 import { obterTokenSessao } from '../auth/session'
 
@@ -124,6 +125,21 @@ export function obterResumoAnalytics(
   signal?: AbortSignal,
 ): Promise<ResumoAnalytics> {
   return requisitar<ResumoAnalytics>(`/admin/analytics/resumo?periodo_dias=${periodoDias}`, {
+    signal,
+    cache: 'no-store',
+  })
+}
+
+export function obterMapaGostos(
+  parametros: { limiteNos: number; vizinhosPorFilme: number; busca?: string },
+  signal?: AbortSignal,
+): Promise<MapaGostos> {
+  const consulta = new URLSearchParams({
+    limite_nos: String(parametros.limiteNos),
+    vizinhos_por_filme: String(parametros.vizinhosPorFilme),
+  })
+  if (parametros.busca?.trim()) consulta.set('busca', parametros.busca.trim())
+  return requisitar<MapaGostos>(`/mapa-de-gostos?${consulta.toString()}`, {
     signal,
     cache: 'no-store',
   })

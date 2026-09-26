@@ -219,6 +219,33 @@ export interface ResumoAnalytics {
   comunidades_em_alta: ComunidadeAnalytics[]
 }
 
+export interface NoMapaGostos {
+  id: string
+  titulo: string
+  ano_lancamento: number | null
+  url_poster: string | null
+  genero_principal: string | null
+  generos: string[]
+  nota_usuario: number | null
+  tipo: 'avaliado' | 'recomendado'
+  afinidade: number | null
+}
+
+export interface ArestaMapaGostos {
+  origem: string
+  destino: string
+  peso: number
+  explicacao: string
+}
+
+export interface MapaGostos {
+  nos: NoMapaGostos[]
+  arestas: ArestaMapaGostos[]
+  total_avaliados: number
+  limite_nos: number
+  vizinhos_por_filme: number
+}
+
 
 export interface PessoaComunidade {
   id: string

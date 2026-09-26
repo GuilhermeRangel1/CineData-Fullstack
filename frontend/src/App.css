@@ -2387,3 +2387,70 @@ fieldset:disabled {
 .analytics-state p { margin: 0 0 20px; color: #c6afb2; font-size: 13px; line-height: 1.7; }
 @media (max-width: 1050px) { .analytics-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } .analytics-movie-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .analytics-page { padding-top: 125px; } .analytics-header { min-height: 250px; align-items: start; flex-direction: column; padding: 45px 22px; } .analytics-header h1 { font-size: 52px; } .analytics-period { width: 100%; flex-wrap: wrap; } .analytics-period > span { width: 100%; margin: 2px 4px; } .analytics-content { width: calc(100% - 36px); padding-top: 32px; } .analytics-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .analytics-metrics article { min-height: 128px; padding: 16px; } .analytics-metrics strong { font-size: 37px; } .analytics-chart-panel, .analytics-panel { padding: 20px 16px; } .analytics-section-heading { align-items: start; flex-direction: column; gap: 7px; } .analytics-two-columns { grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; } .analytics-movie-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } .analytics-loading { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Personal taste map. */
+.taste-map-page { min-height: 100vh; padding: 90px 0 92px; background: #100b18; }
+.taste-map-header { position: relative; display: flex; min-height: 282px; align-items: center; justify-content: space-between; gap: 38px; overflow: hidden; padding: 64px max(var(--gutter), calc((100vw - 1420px) / 2)); border-bottom: 1px solid #c58cff35; background: radial-gradient(circle at 78% 24%, #a268ed70, transparent 22%), linear-gradient(114deg, #181020 0%, #35204f 53%, #6b3d8f 100%); }
+.taste-map-header::before, .taste-map-header::after { position: absolute; border: 1px solid #e4c6ff1c; border-radius: 50%; content: ''; pointer-events: none; }
+.taste-map-header::before { width: 370px; height: 370px; right: 13%; top: -144px; box-shadow: 0 0 0 52px #e4c6ff08, 0 0 0 116px #e4c6ff06; }
+.taste-map-header::after { width: 550px; height: 230px; right: -170px; bottom: -160px; transform: rotate(-18deg); }
+.taste-map-header > * { position: relative; z-index: 1; }
+.taste-map-header .eyebrow { margin-bottom: 18px; color: #e4bfff; }
+.taste-map-header h1 { margin: 0 0 12px; font: 600 clamp(48px, 6vw, 76px)/1 'Barlow Condensed', sans-serif; letter-spacing: -.025em; text-transform: uppercase; }
+.taste-map-header > div:first-child > p:last-child { max-width: 560px; margin: 0; color: #e6d6ef; font-size: 13px; line-height: 1.7; }
+.taste-map-header-note { display: flex; width: 215px; align-items: start; gap: 12px; padding: 16px; border: 1px solid #f2d9ff33; border-radius: 12px; background: #160d2380; backdrop-filter: blur(12px); }
+.taste-map-header-note span { color: #e7b3ff; font-size: 23px; line-height: 1; }
+.taste-map-header-note p { margin: 0; color: #d9bde8; font-size: 11px; line-height: 1.55; }
+.taste-map-content { width: min(1420px, calc(100% - 2 * var(--gutter))); margin: 0 auto; padding-top: 32px; }
+.taste-map-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.taste-map-controls > label:not(.taste-map-search) { display: flex; align-items: center; gap: 9px; color: #cdbdd8; font-size: 11px; white-space: nowrap; }
+.taste-map-controls select { height: 38px; border: 1px solid #d5a7ee44; border-radius: 8px; padding: 0 29px 0 10px; color: #f4eafa; background: #1b1325; font: inherit; }
+.taste-map-search { display: flex; min-width: min(340px, 100%); height: 42px; align-items: center; gap: 10px; margin-right: auto; border: 1px solid #d5a7ee3b; border-radius: 9px; padding: 0 13px; color: #bf9ed2; background: #17101f; }
+.taste-map-search:focus-within { border-color: #d8a0ff; box-shadow: 0 0 0 3px #b67fe126; }
+.taste-map-search svg { width: 17px; height: 17px; }
+.taste-map-search input { width: 100%; border: 0; outline: 0; color: #f7eefb; background: transparent; font: inherit; font-size: 12px; }
+.taste-map-search input::placeholder { color: #8e7c99; }
+.taste-map-refresh { min-height: 42px; border: 1px solid #d5a7ee5c; border-radius: 9px; padding: 0 15px; color: #efd9fb; background: #25162f; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.taste-map-refresh:hover { border-color: #e7b6ff; background: #352044; }
+.taste-map-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 260px; min-height: 600px; overflow: hidden; border: 1px solid #c998ee30; border-radius: 15px; background: radial-gradient(circle at 45% 48%, #56317223, transparent 31%), #16101d; }
+.taste-map-graph-wrap { min-width: 0; padding: 16px; background-image: radial-gradient(#e5c3fa16 1px, transparent 1px); background-size: 21px 21px; }
+.taste-map-graph { display: block; width: 100%; height: 100%; min-height: 550px; overflow: visible; }
+.taste-map-orbit { fill: none; stroke: #dba8ff18; stroke-width: 1; stroke-dasharray: 4 11; }
+.taste-map-orbit--inner { stroke: #efc8ff24; }
+.taste-map-edge { stroke: #c592e776; stroke-width: 1.15; stroke-linecap: round; marker-end: url(#taste-map-arrow); }
+.taste-map-graph marker path { fill: #c592e7; }
+.taste-map-node { cursor: pointer; outline: none; }
+.taste-map-node-ring { fill: #18111fe8; stroke: #7f668e; stroke-width: 2; transition: r .2s ease, stroke-width .2s ease; }
+.taste-map-node--recomendado .taste-map-node-ring { stroke: #52405d; }
+.taste-map-node:hover .taste-map-node-ring, .taste-map-node:focus .taste-map-node-ring, .taste-map-node.is-selected .taste-map-node-ring { stroke: #f0c1ff; stroke-width: 3.5; }
+.taste-map-node:hover .taste-map-node-ring, .taste-map-node:focus .taste-map-node-ring { r: 38px; }
+.taste-map-node-fallback { fill: #523369; stroke: #dfb0f7; stroke-width: 1; }
+.taste-map-node--recomendado .taste-map-node-fallback { fill: #352a3d; stroke: #89758f; }
+.taste-map-label { fill: #e9dfed; font-family: Inter, sans-serif; font-size: 11px; text-anchor: middle; paint-order: stroke; stroke: #16101d; stroke-width: 4px; stroke-linejoin: round; }
+.taste-map-score { fill: #ffd577; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; text-anchor: middle; }
+.taste-map-inspector { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; padding: 30px 24px; border-left: 1px solid #c998ee2d; background: linear-gradient(155deg, #25192e, #151019 68%); }
+.taste-map-inspector > img, .taste-map-inspector-fallback { width: 74px; height: 108px; margin-bottom: 25px; border-radius: 8px; object-fit: cover; }
+.taste-map-inspector-fallback { display: grid; place-items: center; color: #dcb6f4; background: #463052; }
+.taste-map-inspector-fallback svg { width: 30px; height: 30px; }
+.taste-map-inspector .eyebrow { margin: 0 0 8px; color: #dfb5f7; font-size: 9px; }
+.taste-map-inspector h2 { margin: 0 0 9px; color: #fbf4ff; font-size: 23px; letter-spacing: -.03em; }
+.taste-map-inspector p { margin: 0 0 17px; color: #b6a7bf; font-size: 11px; line-height: 1.6; }
+.taste-map-inspector strong { margin-bottom: 18px; color: #ffdc81; font: 600 27px/1 'Barlow Condensed', sans-serif; }
+.taste-map-inspector small { margin: -7px 0 19px; color: #d1b5df; font-size: 11px; line-height: 1.6; }
+.taste-map-inspector .button { display: inline-flex; align-items: center; gap: 8px; margin-top: auto; border-color: #c897e369; color: #f0dafa; }
+.taste-map-inspector .button svg { width: 16px; height: 16px; }
+.taste-map-inspector-hint { display: grid; width: 51px; height: 51px; place-items: center; margin: 65px 0 22px; border: 1px dashed #d3a1ec5e; border-radius: 50%; color: #d9adee; font-size: 27px; }
+.taste-map-state, .taste-map-empty { max-width: 660px; padding: 38px; border: 1px solid #d395e452; border-radius: 14px; background: #201427; }
+.taste-map-state h2, .taste-map-empty h2 { margin: 0 0 10px; color: #fff6ff; font-size: 26px; }
+.taste-map-state p, .taste-map-empty p { max-width: 490px; margin: 0 0 22px; color: #cdbbd6; font-size: 13px; line-height: 1.7; }
+.taste-map-empty { max-width: none; min-height: 310px; display: grid; place-content: center; text-align: center; background: radial-gradient(circle at 50% 20%, #8c54a933, transparent 36%), #17101e; }
+.taste-map-empty > span { display: grid; width: 48px; height: 48px; place-items: center; margin: 0 auto 17px; border: 1px solid #dba4f061; border-radius: 50%; color: #e3b5f3; }
+.taste-map-empty > span svg { width: 22px; height: 22px; }
+.taste-map-empty p { margin: 0 auto; }
+.taste-map-loading { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+.taste-map-loading .skeleton:first-child { grid-row: span 2; min-height: 590px; border-radius: 15px; }
+.taste-map-loading .skeleton:not(:first-child) { min-height: 286px; border-radius: 13px; }
+.taste-map-footnote { margin: 16px 2px 0; color: #a996b5; font-size: 11px; line-height: 1.6; }
+.taste-map-footnote b { color: #e3b0f5; }
+@media (max-width: 1050px) { .taste-map-workspace { grid-template-columns: 1fr; } .taste-map-inspector { min-height: 210px; display: grid; grid-template-columns: 74px minmax(0, 1fr); column-gap: 17px; border-top: 1px solid #c998ee2d; border-left: 0; } .taste-map-inspector > img, .taste-map-inspector-fallback { grid-row: span 5; margin: 0; } .taste-map-inspector .button { margin: 4px 0 0; justify-self: start; } .taste-map-inspector-hint { grid-row: span 2; margin: 0; } }
+@media (max-width: 700px) { .taste-map-page { padding-top: 125px; } .taste-map-header { min-height: 250px; align-items: start; flex-direction: column; padding: 45px 22px; } .taste-map-header h1 { font-size: 52px; } .taste-map-header-note { width: min(100%, 310px); } .taste-map-content { width: calc(100% - 36px); padding-top: 24px; } .taste-map-controls { align-items: stretch; flex-wrap: wrap; } .taste-map-search { width: 100%; min-width: 100%; margin: 0; } .taste-map-controls > label:not(.taste-map-search) { flex: 1; justify-content: space-between; } .taste-map-graph-wrap { padding: 4px; overflow-x: auto; } .taste-map-graph { min-width: 760px; min-height: 470px; } .taste-map-inspector { padding: 22px 17px; } .taste-map-loading { grid-template-columns: 1fr; } .taste-map-loading .skeleton:first-child { grid-row: auto; min-height: 400px; } .taste-map-loading .skeleton:not(:first-child) { display: none; } }

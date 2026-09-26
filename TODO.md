@@ -202,20 +202,21 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
       direção, elenco, ano, sinopse e métricas disponíveis.
 - [ ] Implementar recomendações KNN com pesos configuráveis e conexões
       direcionadas entre filmes avaliados e sugestões próximas.
-- [ ] Criar endpoint que retorne somente o subgrafo necessário para o usuário,
+- [x] Criar endpoint que retorne somente o subgrafo necessário para o usuário,
       limitando nós e arestas para preservar legibilidade.
-- [ ] Exibir filmes avaliados como nós principais e recomendações não avaliadas
+- [x] Exibir filmes avaliados como nós principais e recomendações não avaliadas
       como nós escuros, colorindo os filmes conforme o gênero dominante.
-- [ ] Permitir clicar em qualquer nó para abrir seus detalhes e pesquisar um
+- [x] Permitir clicar em qualquer nó para abrir seus detalhes e pesquisar um
       filme ou avaliação dentro da malha.
-- [ ] Permitir controlar quantidade de nós, vizinhos e conexões exibidas.
-- [ ] Atualizar o grafo após uma nova avaliação, transformando a recomendação
+- [x] Permitir atualizar manualmente a malha sem sobrecarregar a interface com
+      controles que não acrescentem valor à descoberta.
+- [x] Atualizar o grafo após uma nova avaliação, transformando a recomendação
       em filme avaliado e recalculando suas conexões.
-- [ ] Exibir uma explicação para cada conexão, como gênero, direção ou elenco
+- [x] Exibir uma explicação para cada conexão, como gênero, direção ou elenco
       compartilhado.
-- [ ] Construir a página seguindo a mesma estrutura, responsividade,
+- [x] Construir a página seguindo a mesma estrutura, responsividade,
       acessibilidade e hierarquia visual das demais áreas do CineData.
-- [ ] Aplicar identidade visual roxa própria para o mapa de gostos, mantendo
+- [x] Aplicar identidade visual roxa própria para o mapa de gostos, mantendo
       os padrões de espaçamento, cards, modais, estados de carregamento, vazio e
       erro já usados no restante da aplicação.
 

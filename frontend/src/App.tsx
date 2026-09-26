@@ -12,12 +12,13 @@ import { CommunityHub } from './components/CommunityHub'
 import { ListHub } from './components/ListHub'
 import { FriendshipHub } from './components/FriendshipHub'
 import { AnalyticsDashboard } from './components/AnalyticsDashboard'
+import { TasteMap } from './components/TasteMap'
 import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, salvarSessao, type Sessao } from './auth/session'
 import { entrarComoAdministradorDeTeste } from './api/client'
 import './App.css'
 
 function App() {
-  const [page, setPage] = useState<'home' | 'lists' | 'friends' | 'communities' | 'analytics'>('home')
+  const [page, setPage] = useState<'home' | 'lists' | 'friends' | 'communities' | 'analytics' | 'taste-map'>('home')
   const [selected, setSelected] = useState<string | null>(null)
   const [genre, setGenre] = useState('')
   const [catalogVersion, setCatalogVersion] = useState(0)
@@ -52,7 +53,7 @@ function App() {
   }
   return (
     <div className="app-shell">
-      <a className="skip-link" href={page === 'home' ? '#catalogo' : page === 'lists' ? '#minhas-listas' : page === 'friends' ? '#amigos' : page === 'analytics' ? '#analytics' : '#comunidades'}>
+      <a className="skip-link" href={page === 'home' ? '#catalogo' : page === 'lists' ? '#minhas-listas' : page === 'friends' ? '#amigos' : page === 'analytics' ? '#analytics' : page === 'taste-map' ? '#mapa-de-gostos' : '#comunidades'}>
         Pular para o conteúdo
       </a>
       <header className={`topbar ${page !== 'home' ? 'topbar--solid' : ''}`}>
@@ -67,6 +68,7 @@ function App() {
           <button type="button" aria-current={page === 'lists' ? 'page' : undefined} onClick={showLists}>Minhas listas</button>
           <button type="button" aria-current={page === 'friends' ? 'page' : undefined} onClick={() => setPage('friends')}>Amigos</button>
           <button type="button" aria-current={page === 'communities' ? 'page' : undefined} onClick={() => setPage('communities')}>Comunidades</button>
+          {session && <button type="button" aria-current={page === 'taste-map' ? 'page' : undefined} onClick={() => setPage('taste-map')}>Mapa de gostos</button>}
           {session?.usuario.role === 'admin' && <button type="button" aria-current={page === 'analytics' ? 'page' : undefined} onClick={() => setPage('analytics')}>Analytics</button>}
         </nav>
         <a href="#catalogo" className="header-search" onClick={showHome}>
@@ -161,6 +163,8 @@ function App() {
         />
       ) : page === 'analytics' ? (
         <AnalyticsDashboard onOpenMovie={setSelected} />
+      ) : page === 'taste-map' ? (
+        <TasteMap onOpenMovie={setSelected} revision={revision} />
       ) : (
         <main id="comunidades">
           <CommunityHub
