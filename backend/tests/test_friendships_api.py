@@ -27,7 +27,10 @@ async def friendship_session_factory() -> AsyncIterator[async_sessionmaker[Async
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
         ana = User(id="ana", email="ana@example.com", nome="Ana", password_hash="hash")
-        filme = DimMovie(id_filme="movie-profile", titulo="Filme do perfil")
+        filmes = [
+            DimMovie(id_filme=f"movie-profile-{indice}", titulo=f"Filme {indice}")
+            for indice in range(6)
+        ]
         session.add_all(
             [
                 ana,
@@ -39,14 +42,14 @@ async def friendship_session_factory() -> AsyncIterator[async_sessionmaker[Async
                     descricao="Conversas sobre produções nacionais.",
                     members=[ana],
                 ),
-                filme,
+                *filmes,
             ]
         )
         await session.flush()
         session.add_all(
             [
                 MovieReview(
-                    sk_movie_id=filme.sk_movie_id,
+                    sk_movie_id=filmes[indice].sk_movie_id,
                     user_id="ana",
                     nome="Ana",
                     nota=indice + 4,

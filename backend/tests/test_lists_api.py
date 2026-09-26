@@ -130,7 +130,8 @@ async def test_virtual_reviewed_and_watch_later_lists_are_unique_and_personal(
 ) -> None:
     async with lists_session_factory() as session:
         movie = await session.scalar(select(DimMovie).where(DimMovie.id_filme == "movie-1"))
-        assert movie is not None
+        movie_2 = await session.scalar(select(DimMovie).where(DimMovie.id_filme == "movie-2"))
+        assert movie is not None and movie_2 is not None
         session.add_all(
             [
                 MovieReview(
@@ -142,11 +143,11 @@ async def test_virtual_reviewed_and_watch_later_lists_are_unique_and_personal(
                     created_at=datetime(2025, 1, 1),
                 ),
                 MovieReview(
-                    sk_movie_id=movie.sk_movie_id,
+                    sk_movie_id=movie_2.sk_movie_id,
                     user_id="user-1",
                     nome="Ana",
                     nota=9,
-                    comentario="Avaliação mais nova.",
+                    comentario="Avaliação em outro filme.",
                     created_at=datetime(2025, 2, 1),
                 ),
             ]
@@ -173,7 +174,7 @@ async def test_virtual_reviewed_and_watch_later_lists_are_unique_and_personal(
         app.dependency_overrides.clear()
 
     assert reviewed.status_code == 200
-    assert [movie["id"] for movie in reviewed.json()] == ["movie-1"]
+    assert {movie["id"] for movie in reviewed.json()} == {"movie-1", "movie-2"}
     assert added.status_code == 204
     assert [movie["id"] for movie in watch_later.json()] == ["movie-2"]
     assert duplicate.status_code == 409

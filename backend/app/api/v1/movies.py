@@ -99,10 +99,14 @@ async def criar_avaliacao(
     dados: AvaliacaoCriacao,
     session: Annotated[AsyncSession, Depends(get_db)],
     usuario: Annotated[User, Depends(get_current_user)],
+    response: Response,
 ) -> AvaliacaoLeitura:
-    """Registra uma avaliação e atualiza a média pública do filme."""
+    """Cria ou atualiza a avaliação da conta e recalcula a média pública."""
 
-    return await AvaliacoesService(session).criar(filme_id, dados, usuario)
+    service = AvaliacoesService(session)
+    existente = await service.obter_do_usuario(filme_id, usuario)
+    response.status_code = status.HTTP_200_OK if existente else status.HTTP_201_CREATED
+    return await service.criar(filme_id, dados, usuario)
 
 
 @movies_router.get("/{filme_id}", response_model=FilmeDetalhe)

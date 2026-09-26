@@ -16,12 +16,14 @@ from sqlalchemy import (
     Date,
     Double,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
     Table,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -217,6 +219,14 @@ class MovieReview(Base):
 
     __tablename__ = "movie_reviews"
     __table_args__ = (
+        Index(
+            "uq_movie_reviews_user_movie",
+            "user_id",
+            "sk_movie_id",
+            unique=True,
+            sqlite_where=text("user_id IS NOT NULL"),
+            postgresql_where=text("user_id IS NOT NULL"),
+        ),
         CheckConstraint("nota >= 0 AND nota <= 10", name="nota_range"),
         CheckConstraint(
             "visibilidade IN ("

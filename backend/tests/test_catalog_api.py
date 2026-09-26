@@ -573,7 +573,7 @@ async def test_reviews_endpoints_create_history_and_keep_average_consistent(
     assert created["id"]
     assert created["nota"] == 10
     assert created["criada_em"]
-    assert update_response.status_code == 201
+    assert update_response.status_code == 200
     assert update_response.json()["id"] == created["id"]
     assert update_response.json()["nota"] == 6
     assert mine_response.status_code == 200
