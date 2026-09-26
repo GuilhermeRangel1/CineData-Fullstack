@@ -183,6 +183,10 @@ export function obterPerfilPublico(id: string, signal?: AbortSignal): Promise<Pe
   return requisitar<PerfilPublico>(`/perfis/${encodeURIComponent(id)}`, { signal })
 }
 
+export function entrarComoAdministradorDeTeste(): Promise<TokenAcesso> {
+  return requisitar<TokenAcesso>('/auth/sessao-teste', { method: 'POST' })
+}
+
 export function obterPerfilProprio(signal?: AbortSignal): Promise<PerfilProprio> {
   return requisitar<PerfilProprio>('/auth/perfil', { signal, cache: 'no-store' })
 }

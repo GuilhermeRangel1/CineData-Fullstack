@@ -213,6 +213,48 @@ async def test_login_does_not_reveal_which_credential_is_invalid(
     }
 
 
+async def test_docker_demo_session_starts_with_the_administrator(
+    user_session_factory: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "docker")
+    monkeypatch.setenv("JWT_SECRET_KEY", "segredo-de-teste-com-tamanho-suficiente")
+    get_settings.cache_clear()
+    async with user_session_factory() as session:
+        session.add(
+            User(
+                id="admin-demo",
+                email="admin-demo@example.com",
+                nome="Administrador de teste",
+                password_hash=gerar_hash_senha("senha-local-segura1"),
+                role="admin",
+            )
+        )
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with user_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post("/api/v1/auth/sessao-teste")
+    finally:
+        app.dependency_overrides.clear()
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    assert response.json()["usuario"] == {
+        "id": "admin-demo",
+        "email": "admin-demo@example.com",
+        "nome": "Administrador de teste",
+        "role": "admin",
+        "created_at": response.json()["usuario"]["created_at"],
+        "avatar_url": None,
+    }
+
+
 async def test_user_can_update_avatar_and_expose_a_safe_public_profile(
     user_session_factory: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
 ) -> None:

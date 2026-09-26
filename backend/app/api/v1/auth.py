@@ -2,9 +2,11 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.db.session import get_db
 from app.users.dependencies import get_current_user
 from app.users.models import User
@@ -18,8 +20,28 @@ from app.users.schemas import (
     UsuarioLeitura,
 )
 from app.users.services import AuthService
+from app.users.tokens import criar_token_acesso
 
 auth_router = APIRouter(prefix="/auth", tags=["autenticação"])
+
+
+@auth_router.post("/sessao-teste", response_model=TokenAcesso, include_in_schema=False)
+async def iniciar_sessao_de_teste(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> TokenAcesso:
+    """Disponibiliza a conta administrativa apenas no Docker de demonstração."""
+
+    if get_settings().environment != "docker":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    administrador = await session.scalar(
+        select(User).where(User.role == "admin").order_by(User.created_at, User.id)
+    )
+    if administrador is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="A conta de demonstração ainda não foi preparada.",
+        )
+    return criar_token_acesso(administrador)
 
 
 @auth_router.get("/perfil", response_model=PerfilProprio)

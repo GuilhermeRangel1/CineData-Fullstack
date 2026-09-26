@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Hero } from './components/Hero'
 import { Icon } from './components/Icon'
 import { MovieDetail } from './components/MovieDetail'
@@ -11,7 +11,8 @@ import { OwnProfile } from './components/OwnProfile'
 import { CommunityHub } from './components/CommunityHub'
 import { ListHub } from './components/ListHub'
 import { FriendshipHub } from './components/FriendshipHub'
-import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, type Sessao } from './auth/session'
+import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, salvarSessao, type Sessao } from './auth/session'
+import { entrarComoAdministradorDeTeste } from './api/client'
 import './App.css'
 
 function App() {
@@ -27,6 +28,12 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'cadastro' | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   const refresh = () => setRevision((value) => value + 1)
+  useEffect(() => {
+    if (carregarSessao()) return
+    void entrarComoAdministradorDeTeste()
+      .then((response) => setSession(salvarSessao(response)))
+      .catch(() => undefined)
+  }, [])
   function showHome() {
     setPage('home')
   }
