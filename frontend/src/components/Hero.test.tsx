@@ -1,6 +1,6 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Hero } from './Hero'
 import { loadYouTube } from '../lib/youtube'
 
@@ -8,56 +8,17 @@ vi.mock('../lib/youtube', async (original) => ({
   ...(await original<typeof import('../lib/youtube')>()),
   loadYouTube: vi.fn(),
 }))
+
 const load = vi.mocked(loadYouTube)
-afterEach(() => { vi.useRealTimers() })
 
-beforeEach(() => {
+afterEach(() => {
+  vi.useRealTimers()
   load.mockReset()
-  vi.mocked(window.matchMedia).mockImplementation(
-    (query: string) =>
-      ({
-        matches: false,
-        media: query,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      }) as unknown as MediaQueryList,
-  )
 })
+
 describe('Destaque cinematográfico', () => {
-  it('retorna à imagem se o iframe nunca ficar pronto', async () => {
+  it('mantém a imagem até o trailer realmente começar a tocar', async () => {
     vi.useFakeTimers()
-    class PendingPlayer { destroy() {} }
-    load.mockResolvedValue({ Player: PendingPlayer } as unknown as Awaited<ReturnType<typeof loadYouTube>>)
-    render(<Hero onExplore={vi.fn()} />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(18000) })
-    expect(screen.getByText('PRÉVIA EM IMAGEM')).toBeInTheDocument()
-  })
-  it('mantém a imagem e o link oficial quando o player falha', async () => {
-    load.mockRejectedValue(new Error('blocked'))
-    render(<Hero onExplore={vi.fn()} />)
-    expect(await screen.findByText('PRÉVIA EM IMAGEM')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Assistir trailer' }))
-    expect(screen.getByRole('dialog')).toHaveAccessibleName('Trailer de O Castelo Animado')
-    expect(screen.getByRole('link', { name: /canal oficial da GKIDS/ })).toHaveAttribute(
-      'href',
-      'https://www.youtube.com/watch?v=2x5SejvTMeA',
-    )
-  })
-
-  it('não carrega vídeo automaticamente com movimento reduzido', async () => {
-    vi.spyOn(window, 'matchMedia').mockReturnValue({
-      matches: true,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    } as unknown as MediaQueryList)
-    load.mockRejectedValue(new Error('offline'))
-    render(<Hero onExplore={vi.fn()} />)
-    expect(load).not.toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('button', { name: 'Reproduzir vídeo de fundo' }))
-    await waitFor(() => expect(load).toHaveBeenCalledTimes(1))
-  })
-
-  it('controla pausa e som e destrói o player ao desmontar', async () => {
     const pauseVideo = vi.fn()
     const playVideo = vi.fn()
     const mute = vi.fn()
@@ -66,8 +27,8 @@ describe('Destaque cinematográfico', () => {
     type Options = ConstructorParameters<Awaited<ReturnType<typeof loadYouTube>>['Player']>[1]
     let options!: Options
     const target = {
-      playVideo,
       pauseVideo,
+      playVideo,
       mute,
       unMute,
       destroy,
@@ -80,20 +41,96 @@ describe('Destaque cinematográfico', () => {
       }
     }
     load.mockResolvedValue({ Player } as unknown as Awaited<ReturnType<typeof loadYouTube>>)
-    const { unmount } = render(<Hero onExplore={vi.fn()} />)
-    await waitFor(() => expect(options).toBeDefined())
+
+    render(<Hero onExplore={vi.fn()} />)
+    expect(screen.getByText('PRÉVIA EM IMAGEM')).toBeInTheDocument()
+    expect(document.querySelector('.hero-video')).not.toHaveClass('is-ready')
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(450)
+      await Promise.resolve()
+    })
+    expect(options).toBeDefined()
+    expect(document.querySelector('.hero-video')).not.toHaveClass('is-ready')
+
     act(() => {
       options.events.onReady({ target })
       options.events.onStateChange({ target, data: 1 })
     })
+
+    expect(document.querySelector('.hero-video')).not.toHaveClass('is-ready')
+    await act(async () => { await vi.advanceTimersByTimeAsync(4200) })
+    expect(document.querySelector('.hero-video')).toHaveClass('is-ready')
     expect(mute).toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('button', { name: 'Pausar vídeo de fundo' }))
-    expect(pauseVideo).toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('button', { name: 'Ativar som do vídeo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ativar som do vídeo' }))
     expect(unMute).toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('button', { name: 'Silenciar vídeo' }))
-    expect(mute).toHaveBeenCalledTimes(2)
-    unmount()
+  })
+
+  it('volta à imagem e desmonta o player ao sair da área', async () => {
+    vi.useFakeTimers()
+    let observer: { trigger: (visible: boolean) => void } | undefined
+    class ControlledObserver {
+      constructor(callback: IntersectionObserverCallback) {
+        observer = {
+          trigger: (visible: boolean) => callback(
+            [{ isIntersecting: visible } as IntersectionObserverEntry],
+            {} as IntersectionObserver,
+          ),
+        }
+      }
+      observe() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('IntersectionObserver', ControlledObserver)
+    const destroy = vi.fn()
+    type Options = ConstructorParameters<Awaited<ReturnType<typeof loadYouTube>>['Player']>[1]
+    let options!: Options
+    const target = {
+      pauseVideo: vi.fn(),
+      playVideo: vi.fn(),
+      mute: vi.fn(),
+      unMute: vi.fn(),
+      destroy,
+      getIframe: () => document.createElement('iframe'),
+    }
+    class Player {
+      constructor(_element: HTMLElement, passed: Options) {
+        options = passed
+        return target
+      }
+    }
+    load.mockResolvedValue({ Player } as unknown as Awaited<ReturnType<typeof loadYouTube>>)
+
+    render(<Hero onExplore={vi.fn()} />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(450)
+      await Promise.resolve()
+    })
+    expect(options).toBeDefined()
+    act(() => options.events.onStateChange({ target, data: 1 }))
+    await act(async () => { await vi.advanceTimersByTimeAsync(4200) })
+    expect(document.querySelector('.hero-video')).toHaveClass('is-ready')
+
+    act(() => observer?.trigger(false))
+    expect(document.querySelector('.hero-video')).not.toHaveClass('is-ready')
     expect(destroy).toHaveBeenCalled()
+
+    act(() => observer?.trigger(true))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(450)
+      await Promise.resolve()
+    })
+    expect(load).toHaveBeenCalledTimes(2)
+  })
+
+  it('abre o trailer completo somente quando a pessoa solicita', async () => {
+    render(<Hero onExplore={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Assistir trailer' }))
+
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Trailer de O Castelo Animado')
+    expect(screen.getByTitle('Assistir ao trailer oficial de O Castelo Animado')).toHaveAttribute(
+      'src',
+      expect.stringContaining('autoplay=1'),
+    )
   })
 })

@@ -9,43 +9,114 @@ import {
 import { Dialog } from './Dialog'
 import { Icon } from './Icon'
 
+const DELAY_DE_ABERTURA_MS = 450
+const DELAY_DE_REVELACAO_MS = 4200
+
 export function Hero({ onExplore, paused = false }: { onExplore: () => void; paused?: boolean }) {
   const host = useRef<HTMLDivElement>(null)
   const section = useRef<HTMLElement>(null)
   const player = useRef<YouTubePlayer | null>(null)
+  const delay = useRef<number | null>(null)
+  const revealDelay = useRef<number | null>(null)
+  const userPaused = useRef(false)
+  const [shouldLoad, setShouldLoad] = useState(false)
   const [ready, setReady] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
-  const [trailerOpen, setTrailerOpen] = useState(false)
   const [unavailable, setUnavailable] = useState(false)
-  const [motionAllowed, setMotionAllowed] = useState(
-    () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  )
-  const userPaused = useRef(false)
+  const [trailerOpen, setTrailerOpen] = useState(false)
 
   useEffect(() => {
-    const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const update = () => setMotionAllowed(!preference.matches)
-    preference.addEventListener('change', update)
-    return () => preference.removeEventListener('change', update)
-  }, [])
+    function clearDelay() {
+      if (delay.current !== null) window.clearTimeout(delay.current)
+      delay.current = null
+    }
+    function reset() {
+      clearDelay()
+      if (revealDelay.current !== null) window.clearTimeout(revealDelay.current)
+      revealDelay.current = null
+      userPaused.current = false
+      setShouldLoad(false)
+      setReady(false)
+      setPlaying(false)
+    }
+    function start() {
+      if (paused || trailerOpen || userPaused.current) return
+      clearDelay()
+      setUnavailable(false)
+      delay.current = window.setTimeout(() => {
+        setShouldLoad(true)
+        delay.current = null
+      }, DELAY_DE_ABERTURA_MS)
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) start()
+        else reset()
+      },
+      { threshold: 0.2 },
+    )
+    if (section.current) observer.observe(section.current)
+    start()
+    return () => {
+      clearDelay()
+      observer.disconnect()
+    }
+  }, [paused, trailerOpen])
 
   useEffect(() => {
-    if (!motionAllowed) return
+    if (!shouldLoad) return
     let active = true
     let instance: YouTubePlayer | undefined
-    // Keep the still visible until PLAYING, never a black rectangle or an error embed.
-    const timeout = window.setTimeout(() => {
-      if (active) {
-        setUnavailable(true)
-        player.current?.pauseVideo()
+    const hostElement = host.current
+    let fallbackShown = false
+    let fallbackTimer: number | undefined
+    const clearFallbackTimer = () => {
+      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer)
+      fallbackTimer = undefined
+    }
+    const revealVideo = () => {
+      if (revealDelay.current !== null) window.clearTimeout(revealDelay.current)
+      revealDelay.current = window.setTimeout(() => {
+        if (active) setReady(true)
+        revealDelay.current = null
+      }, DELAY_DE_REVELACAO_MS)
+    }
+    const showFallback = () => {
+      if (!active || !hostElement) return
+      fallbackShown = true
+      clearFallbackTimer()
+      const iframe = document.createElement('iframe')
+      iframe.title = 'Trailer oficial de O Castelo Animado'
+      iframe.src = `https://www.youtube-nocookie.com/embed/${GHIBLI_TRAILER_ID}?autoplay=1&mute=1&controls=0&loop=1&playlist=${GHIBLI_TRAILER_ID}&rel=0`
+      iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture'
+      iframe.allowFullscreen = true
+      iframe.referrerPolicy = 'strict-origin-when-cross-origin'
+      iframe.onload = () => {
+        if (!active) return
+        setPlaying(true)
+        setUnavailable(false)
+        revealVideo()
       }
+      hostElement.replaceChildren(iframe)
+      setReady(false)
+      setPlaying(false)
+      setUnavailable(false)
+    }
+    fallbackTimer = window.setTimeout(showFallback, 3500)
+    const timeout = window.setTimeout(() => {
+      if (!active) return
+      setUnavailable(true)
+      setPlaying(false)
+      setReady(false)
     }, 18000)
-    loadYouTube()
+
+    void loadYouTube()
       .then((api) => {
-        if (!active || !host.current) return
+        if (!active || !hostElement || fallbackShown) return
+        clearFallbackTimer()
         const mount = document.createElement('div')
-        host.current.replaceChildren(mount)
+        hostElement.replaceChildren(mount)
         instance = new api.Player(mount, {
           host: 'https://www.youtube-nocookie.com',
           videoId: GHIBLI_TRAILER_ID,
@@ -53,6 +124,8 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             autoplay: 1,
             mute: 1,
             controls: 0,
+            disablekb: 1,
+            modestbranding: 1,
             playsinline: 1,
             loop: 1,
             playlist: GHIBLI_TRAILER_ID,
@@ -71,90 +144,79 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             },
             onStateChange: ({ data }) => {
               if (!active) return
-              setPlaying(data === 1)
               if (data === 1) {
-                clearTimeout(timeout)
-                setReady(true)
+                window.clearTimeout(timeout)
+                setPlaying(true)
                 setUnavailable(false)
-              }
-            },
-            onError: () => {
-              if (active) {
-                clearTimeout(timeout)
-                setUnavailable(true)
+                revealVideo()
+              } else if (data === 2) {
+                if (revealDelay.current !== null) window.clearTimeout(revealDelay.current)
+                revealDelay.current = null
                 setPlaying(false)
               }
             },
+            onError: () => {
+              if (!active) return
+              window.clearTimeout(timeout)
+              showFallback()
+            },
             onAutoplayBlocked: () => {
-              if (active) {
-                clearTimeout(timeout)
-                setUnavailable(true)
-              }
+              if (!active) return
+              window.clearTimeout(timeout)
+              setPlaying(false)
             },
           },
         })
       })
       .catch(() => {
-        if (active) {
-          clearTimeout(timeout)
-          setUnavailable(true)
-        }
+        if (!active) return
+        window.clearTimeout(timeout)
+        showFallback()
       })
+
     return () => {
       active = false
-      clearTimeout(timeout)
+      clearFallbackTimer()
+      if (revealDelay.current !== null) window.clearTimeout(revealDelay.current)
+      revealDelay.current = null
+      window.clearTimeout(timeout)
       instance?.destroy()
       player.current = null
-      setReady(false)
-      setPlaying(false)
+      hostElement?.replaceChildren()
     }
-  }, [motionAllowed])
-
-  useEffect(() => {
-    const visible = { current: true }
-    const synchronize = () => {
-      if (document.hidden || !visible.current || trailerOpen || paused || userPaused.current)
-        player.current?.pauseVideo()
-      else if (ready && !unavailable) player.current?.playVideo()
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        visible.current = entry.isIntersecting
-        synchronize()
-      },
-      { threshold: 0.15 },
-    )
-    if (section.current) observer.observe(section.current)
-    document.addEventListener('visibilitychange', synchronize)
-    synchronize()
-    return () => {
-      observer.disconnect()
-      document.removeEventListener('visibilitychange', synchronize)
-    }
-  }, [ready, trailerOpen, unavailable, paused])
+  }, [shouldLoad])
 
   function togglePlayback() {
-    if (!motionAllowed) {
-      userPaused.current = false
-      setMotionAllowed(true)
+    if (playing) {
+      userPaused.current = true
+      player.current?.pauseVideo()
+      setPlaying(false)
       return
     }
-    userPaused.current = playing
-    if (playing) player.current?.pauseVideo()
-    else player.current?.playVideo()
+    userPaused.current = false
+    player.current?.playVideo()
   }
+
   function toggleSound() {
     if (muted) player.current?.unMute()
     else player.current?.mute()
     setMuted(!muted)
   }
 
+  const status = unavailable
+    ? 'PRÉVIA EM IMAGEM'
+    : playing
+      ? 'TRAILER OFICIAL'
+      : shouldLoad
+        ? 'PREPARANDO TRAILER'
+        : 'PRÉVIA EM IMAGEM'
+
   return (
     <>
       <section className="hero" id="inicio" aria-labelledby="hero-title" ref={section}>
         <img className="hero-still" src={GHIBLI_STILL} alt="" fetchPriority="high" />
         <div
-          className={`hero-video ${ready && !unavailable && motionAllowed ? 'is-ready' : ''}`}
+          className={`hero-video ${ready && playing && !unavailable ? 'is-ready' : ''}`}
           ref={host}
           aria-hidden="true"
         />
@@ -197,29 +259,25 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             DESCUBRA OUTRAS HISTÓRIAS <span>↓</span>
           </a>
           <div className="playback-controls">
-            {!unavailable && (
-              <>
-                <button
-                  className="icon-button"
-                  onClick={togglePlayback}
-                  aria-label={playing ? 'Pausar vídeo de fundo' : 'Reproduzir vídeo de fundo'}
-                >
-                  <Icon name={playing ? 'pause' : 'play'} />
-                </button>
-                {ready && (
-                  <button
-                    className="icon-button"
-                    onClick={toggleSound}
-                    aria-label={muted ? 'Ativar som do vídeo' : 'Silenciar vídeo'}
-                  >
-                    <Icon name={muted ? 'mute' : 'volume'} />
-                  </button>
-                )}
-              </>
+            {shouldLoad && !unavailable && (
+              <button
+                className="icon-button"
+                onClick={togglePlayback}
+                aria-label={playing ? 'Pausar vídeo de fundo' : 'Reproduzir vídeo de fundo'}
+              >
+                <Icon name={playing ? 'pause' : 'play'} />
+              </button>
             )}
-            <span>
-              {unavailable ? 'PRÉVIA EM IMAGEM' : playing ? 'TRAILER OFICIAL' : 'STUDIO GHIBLI'}
-            </span>
+            {ready && !unavailable && (
+              <button
+                className="icon-button"
+                onClick={toggleSound}
+                aria-label={muted ? 'Ativar som do vídeo' : 'Silenciar vídeo'}
+              >
+                <Icon name={muted ? 'mute' : 'volume'} />
+              </button>
+            )}
+            <span>{status}</span>
           </div>
         </div>
       </section>

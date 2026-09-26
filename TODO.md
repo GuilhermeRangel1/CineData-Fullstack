@@ -202,7 +202,9 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
       usuário, recomendações próximas e conexões explicadas por afinidades
       como gênero, direção ou elenco.
 - [x] Integrar fonte externa para dados ou trailers de filmes.
-- [ ] Criar Storybook para componentes visuais.
+- [x] Refinar o destaque editorial: manter a imagem durante o carregamento do
+      trailer, reiniciar a prévia ao voltar à home e oferecer controles próprios
+      de reprodução e som.
 - [x] Manter cache de consultas de leitura no frontend.
 - [x] Disponibilizar execução local via Docker Compose.
 - [x] Colocar dashboards analíticos para admin
