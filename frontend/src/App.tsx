@@ -77,7 +77,7 @@ function App() {
               {session.usuario.avatar_url ? <img src={session.usuario.avatar_url} alt="" /> : <span>{session.usuario.nome.slice(0, 1).toUpperCase()}</span>}
               <span>Olá, {session.usuario.nome}</span>
             </button>
-            {session.usuario.role === 'admin' && page === 'home' && (
+            {session.usuario.role === 'admin' && (
               <button
                 className="button button-outline add-movie"
                 data-dialog-focus-return
