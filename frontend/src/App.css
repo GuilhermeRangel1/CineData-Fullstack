@@ -12,11 +12,13 @@
 }
 .topbar {
   height: 90px;
+  min-height: 90px;
+  box-sizing: border-box;
   padding: 0 var(--gutter);
   display: flex;
   align-items: center;
   gap: 50px;
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -25,6 +27,7 @@
 }
 .brand {
   display: inline-flex;
+  height: 41px;
   gap: 12px;
   align-items: center;
   text-decoration: none;
@@ -1918,10 +1921,12 @@ fieldset:disabled {
 
 /* Community discovery and floating conversations. */
 .topbar--solid {
-  position: absolute;
+  position: fixed;
   height: 90px;
+  min-height: 90px;
+  box-sizing: border-box;
   background: #0a0b0df5;
-  border-bottom: 1px solid #ffffff10;
+  box-shadow: inset 0 -1px #ffffff10;
 }
 .topbar--solid .main-nav button[aria-current='page'] { color: white; box-shadow: inset 0 -2px var(--red); }
 .list-page { min-height: 100vh; padding: 90px 0 92px; background: var(--page); }
