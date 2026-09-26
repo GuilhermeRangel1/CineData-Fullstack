@@ -172,6 +172,53 @@ export interface TmdbImportacao {
   url_trailer: string | null
 }
 
+export interface MetricaAnalytics {
+  chave: 'filmes' | 'usuarios' | 'avaliacoes' | 'listas' | 'comunidades'
+  rotulo: string
+  valor: number
+  detalhe: string
+}
+
+export interface PontoEvolucaoAnalytics {
+  data: string
+  usuarios: number
+  avaliacoes: number
+  listas: number
+  publicacoes: number
+}
+
+export interface GeneroAnalytics {
+  nome: string
+  quantidade: number
+  nota_media: number | null
+}
+
+export interface FilmeAnalytics {
+  id: string
+  titulo: string
+  url_poster: string | null
+  quantidade_avaliacoes: number
+  nota_media: number | null
+}
+
+export interface ComunidadeAnalytics {
+  id: string
+  nome: string
+  imagem_url: string | null
+  membros: number
+  publicacoes: number
+  visualizacoes: number
+}
+
+export interface ResumoAnalytics {
+  periodo_dias: number
+  metricas: MetricaAnalytics[]
+  evolucao: PontoEvolucaoAnalytics[]
+  generos: GeneroAnalytics[]
+  filmes_mais_avaliados: FilmeAnalytics[]
+  comunidades_em_alta: ComunidadeAnalytics[]
+}
+
 
 export interface PessoaComunidade {
   id: string

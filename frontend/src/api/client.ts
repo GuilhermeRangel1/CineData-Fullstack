@@ -25,6 +25,7 @@ import type {
   SolicitacaoAmizade,
   TmdbImportacao,
   TmdbResultado,
+  ResumoAnalytics,
 } from '../types/api'
 import { obterTokenSessao } from '../auth/session'
 
@@ -116,6 +117,16 @@ export function buscarFilmesTmdb(busca: string): Promise<TmdbResultado[]> {
 
 export function obterFilmeTmdb(id: number): Promise<TmdbImportacao> {
   return requisitar<TmdbImportacao>(`/admin/fontes/tmdb/${id}`, { cache: 'no-store' })
+}
+
+export function obterResumoAnalytics(
+  periodoDias: number,
+  signal?: AbortSignal,
+): Promise<ResumoAnalytics> {
+  return requisitar<ResumoAnalytics>(`/admin/analytics/resumo?periodo_dias=${periodoDias}`, {
+    signal,
+    cache: 'no-store',
+  })
 }
 
 export function listarFilmes(

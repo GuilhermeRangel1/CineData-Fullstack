@@ -204,10 +204,8 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
 - [x] Integrar fonte externa para dados ou trailers de filmes.
 - [ ] Criar Storybook para componentes visuais.
 - [x] Manter cache de consultas de leitura no frontend.
-- [ ] Adicionar métricas externas e observabilidade.
-- [ ] Criar pipeline de CI/CD.
 - [x] Disponibilizar execução local via Docker Compose.
-- [ ] Colocar dashboards analíticos para admin
+- [x] Colocar dashboards analíticos para admin
 
 **Critério de saída:** cada item opcional marcado como concluído possui fluxo
 utilizável, documentação e validação proporcional ao seu impacto, sem regredir

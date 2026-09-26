@@ -11,12 +11,13 @@ import { OwnProfile } from './components/OwnProfile'
 import { CommunityHub } from './components/CommunityHub'
 import { ListHub } from './components/ListHub'
 import { FriendshipHub } from './components/FriendshipHub'
+import { AnalyticsDashboard } from './components/AnalyticsDashboard'
 import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, salvarSessao, type Sessao } from './auth/session'
 import { entrarComoAdministradorDeTeste } from './api/client'
 import './App.css'
 
 function App() {
-  const [page, setPage] = useState<'home' | 'lists' | 'friends' | 'communities'>('home')
+  const [page, setPage] = useState<'home' | 'lists' | 'friends' | 'communities' | 'analytics'>('home')
   const [selected, setSelected] = useState<string | null>(null)
   const [genre, setGenre] = useState('')
   const [catalogVersion, setCatalogVersion] = useState(0)
@@ -51,7 +52,7 @@ function App() {
   }
   return (
     <div className="app-shell">
-      <a className="skip-link" href={page === 'home' ? '#catalogo' : page === 'lists' ? '#minhas-listas' : page === 'friends' ? '#amigos' : '#comunidades'}>
+      <a className="skip-link" href={page === 'home' ? '#catalogo' : page === 'lists' ? '#minhas-listas' : page === 'friends' ? '#amigos' : page === 'analytics' ? '#analytics' : '#comunidades'}>
         Pular para o conteúdo
       </a>
       <header className={`topbar ${page !== 'home' ? 'topbar--solid' : ''}`}>
@@ -66,6 +67,7 @@ function App() {
           <button type="button" aria-current={page === 'lists' ? 'page' : undefined} onClick={showLists}>Minhas listas</button>
           <button type="button" aria-current={page === 'friends' ? 'page' : undefined} onClick={() => setPage('friends')}>Amigos</button>
           <button type="button" aria-current={page === 'communities' ? 'page' : undefined} onClick={() => setPage('communities')}>Comunidades</button>
+          {session?.usuario.role === 'admin' && <button type="button" aria-current={page === 'analytics' ? 'page' : undefined} onClick={() => setPage('analytics')}>Analytics</button>}
         </nav>
         <a href="#catalogo" className="header-search" onClick={showHome}>
           <Icon name="search" />
@@ -157,6 +159,8 @@ function App() {
           onLoginRequested={() => setAuthMode('login')}
           onOpenMovie={setSelected}
         />
+      ) : page === 'analytics' ? (
+        <AnalyticsDashboard onOpenMovie={setSelected} />
       ) : (
         <main id="comunidades">
           <CommunityHub
