@@ -264,6 +264,7 @@ class GestaoFilmesService:
                 sinopse=dados.sinopse,
                 url_poster=dados.url_poster,
                 url_backdrop=dados.url_backdrop,
+                url_trailer=dados.url_trailer,
                 genres=generos,
                 people=[diretor, *atores, *roteiristas],
                 companies=produtoras,
@@ -295,6 +296,7 @@ class GestaoFilmesService:
                 "status_filme",
                 "url_poster",
                 "url_backdrop",
+                "url_trailer",
             ):
                 if campo in dados.model_fields_set:
                     setattr(filme, campo, getattr(dados, campo))
@@ -408,6 +410,7 @@ class GestaoFilmesService:
             status_filme=filme.status_filme,
             sinopse=filme.sinopse,
             url_backdrop=filme.url_backdrop,
+            url_trailer=filme.url_trailer,
             pessoas=[
                 PessoaResumo(
                     id=pessoa.sk_person_id, nome=pessoa.nome_pessoa, papel=pessoa.tipo_pessoa

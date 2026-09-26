@@ -5,6 +5,7 @@ Esses schemas definem a comunicação da API e não expõem os modelos ORM.
 
 from datetime import date, datetime
 from typing import Annotated, Literal
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -14,6 +15,18 @@ DirecaoOrdenacao = Literal["asc", "desc"]
 NomeGenero = Annotated[str, Field(min_length=1, max_length=50)]
 NomePessoa = Annotated[str, Field(min_length=1, max_length=255)]
 NomeProdutora = Annotated[str, Field(min_length=1, max_length=255)]
+
+
+def validar_url_trailer(url: str | None) -> str | None:
+    """Aceita somente URLs HTTPS que podem ser incorporadas com segurança."""
+
+    if url is None:
+        return None
+    parsed = urlparse(url)
+    hosts_validos = {"youtube.com", "www.youtube.com", "youtu.be", "www.youtube-nocookie.com"}
+    if parsed.scheme != "https" or parsed.hostname not in hosts_validos:
+        raise ValueError("Informe um link HTTPS válido do YouTube para o trailer.")
+    return url
 
 
 class ContratoFilmes(BaseModel):
@@ -74,6 +87,7 @@ class FilmeCriacao(ContratoFilmes):
     status_filme: str | None = Field(default=None, max_length=50)
     url_poster: str | None = Field(default=None, max_length=2048)
     url_backdrop: str | None = Field(default=None, max_length=2048)
+    url_trailer: str | None = Field(default=None, max_length=2048)
     atores: list[NomePessoa] = Field(default_factory=list, max_length=200)
     roteiristas: list[NomePessoa] = Field(default_factory=list, max_length=200)
     produtoras: list[NomeProdutora] = Field(default_factory=list, max_length=100)
@@ -99,6 +113,8 @@ class FilmeCriacao(ContratoFilmes):
             vistos.add(chave)
         return valores
 
+    _validar_url_trailer = field_validator("url_trailer")(validar_url_trailer)
+
 
 class FilmeAtualizacao(ContratoFilmes):
     titulo: str | None = Field(default=None, min_length=1, max_length=500)
@@ -111,6 +127,7 @@ class FilmeAtualizacao(ContratoFilmes):
     status_filme: str | None = Field(default=None, max_length=50)
     url_poster: str | None = Field(default=None, max_length=2048)
     url_backdrop: str | None = Field(default=None, max_length=2048)
+    url_trailer: str | None = Field(default=None, max_length=2048)
     atores: list[NomePessoa] | None = Field(default=None, max_length=200)
     roteiristas: list[NomePessoa] | None = Field(default=None, max_length=200)
     produtoras: list[NomeProdutora] | None = Field(default=None, max_length=100)
@@ -141,6 +158,8 @@ class FilmeAtualizacao(ContratoFilmes):
             vistos.add(chave)
         return valores
 
+    _validar_url_trailer = field_validator("url_trailer")(validar_url_trailer)
+
 
 class FilmeResumo(ContratoFilmes):
     id: str = Field(min_length=1, max_length=64)
@@ -159,6 +178,7 @@ class FilmeDetalhe(FilmeResumo):
     status_filme: str | None = None
     sinopse: str | None = None
     url_backdrop: str | None = None
+    url_trailer: str | None = None
     pessoas: list[PessoaResumo]
     produtoras: list[ProdutoraResumo]
     desempenho: DesempenhoFilme | None = None

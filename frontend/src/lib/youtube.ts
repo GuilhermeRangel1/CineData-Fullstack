@@ -64,3 +64,17 @@ export function loadYouTube(): Promise<YouTubeApi> {
 export const GHIBLI_TRAILER_ID = '2x5SejvTMeA'
 export const GHIBLI_TRAILER_URL = `https://www.youtube.com/watch?v=${GHIBLI_TRAILER_ID}`
 export const GHIBLI_STILL = 'https://www.ghibli.jp/gallery/howl003.jpg'
+
+export function youtubeEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    let id = ''
+    if (parsed.hostname === 'youtu.be') id = parsed.pathname.slice(1)
+    else if (parsed.pathname.startsWith('/embed/')) id = parsed.pathname.split('/')[2] ?? ''
+    else id = parsed.searchParams.get('v') ?? ''
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return null
+    return `https://www.youtube-nocookie.com/embed/${id}?rel=0`
+  } catch {
+    return null
+  }
+}

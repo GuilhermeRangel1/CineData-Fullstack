@@ -86,6 +86,7 @@ export interface FilmeCriacao {
   status_filme?: string
   url_poster?: string
   url_backdrop?: string
+  url_trailer?: string
   atores?: string[]
   roteiristas?: string[]
   produtoras?: string[]
@@ -103,6 +104,7 @@ export type FilmeAtualizacao = Partial<
       | 'status_filme'
       | 'url_poster'
       | 'url_backdrop'
+      | 'url_trailer'
   ]?: FilmeCriacao[K] | null
 }
 
@@ -123,6 +125,7 @@ export interface FilmeDetalhe extends FilmeResumo {
   status_filme: string | null
   sinopse: string | null
   url_backdrop: string | null
+  url_trailer: string | null
   pessoas: PessoaResumo[]
   produtoras: ProdutoraResumo[]
   desempenho: DesempenhoFilme | null

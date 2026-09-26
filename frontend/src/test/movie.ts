@@ -6,6 +6,7 @@ export const movie: FilmeDetalhe = {
   ano_lancamento: 2004,
   url_poster: null,
   url_backdrop: null,
+  url_trailer: null,
   generos: [{ id: 'g', nome: 'Animation' }],
   nota_media: null,
   quantidade_avaliacoes: 0,

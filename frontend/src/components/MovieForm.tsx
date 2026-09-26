@@ -144,6 +144,12 @@ export function MovieForm({
             <input {...input('url_backdrop')} type="url" maxLength={2048} placeholder="https://…" />
             {message('url_backdrop')}
           </label>
+          <label className="full-field">
+            <span id="label-url_trailer">Link do trailer no YouTube</span>
+            <input {...input('url_trailer')} type="url" maxLength={2048} placeholder="https://www.youtube.com/watch?v=…" />
+            {message('url_trailer')}
+            <span className="field-hint">Opcional. Somente links HTTPS do YouTube são aceitos.</span>
+          </label>
         </fieldset>
         {error && (
           <p className="form-error" role="alert">

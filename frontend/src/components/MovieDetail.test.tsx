@@ -21,6 +21,7 @@ const movie: FilmeDetalhe = {
   ano_lancamento: 2016,
   url_poster: 'https://example.com/poster.jpg',
   url_backdrop: null,
+  url_trailer: null,
   generos: [{ id: 'g', nome: 'Drama' }],
   nota_media: 8.5,
   quantidade_avaliacoes: 1,

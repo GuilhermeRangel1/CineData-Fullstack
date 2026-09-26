@@ -5,6 +5,7 @@ import { useMutation } from '../hooks/useMutation'
 import { Dialog } from './Dialog'
 import { MovieForm } from './MovieForm'
 import { ReviewForm } from './ReviewForm'
+import { youtubeEmbedUrl } from '../lib/youtube'
 import type { UsuarioLeitura } from '../types/api'
 
 const number = (value: number | null | undefined) =>
@@ -47,6 +48,7 @@ export function MovieDetail({
       .map((person) => person.nome)
       .join(', ') || 'Não informado'
   const coverUrl = movie?.url_backdrop ?? movie?.url_poster
+  const trailerUrl = movie?.url_trailer ? youtubeEmbedUrl(movie.url_trailer) : null
   return (
     <Dialog
       title={
@@ -207,6 +209,17 @@ export function MovieDetail({
               </div>
               <h3>Sinopse</h3>
               <p className="synopsis">{movie.sinopse || 'Ainda não há sinopse para este filme.'}</p>
+              {trailerUrl && (
+                <section className="movie-trailer" aria-label="Trailer">
+                  <h3>Trailer</h3>
+                  <iframe
+                    title={`Trailer de ${movie.titulo}`}
+                    src={trailerUrl}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </section>
+              )}
               <dl className="credits">
                 <div>
                   <dt>Direção</dt>

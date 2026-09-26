@@ -9,6 +9,7 @@ export interface MovieFields {
   data_lancamento: string
   url_poster: string
   url_backdrop: string
+  url_trailer: string
 }
 
 export function movieFields(movie?: FilmeDetalhe): MovieFields {
@@ -21,6 +22,7 @@ export function movieFields(movie?: FilmeDetalhe): MovieFields {
     data_lancamento: movie?.data_lancamento ?? '',
     url_poster: movie?.url_poster ?? '',
     url_backdrop: movie?.url_backdrop ?? '',
+    url_trailer: movie?.url_trailer ?? '',
   }
 }
 
@@ -80,6 +82,15 @@ export function validateMovie(fields: MovieFields, original?: FilmeDetalhe) {
       errors[key] = 'Use um endereço completo de imagem (https:// ou http://).'
     }
   }
+  if (fields.url_trailer && fields.url_trailer !== initial.url_trailer) {
+    try {
+      const url = new URL(fields.url_trailer.trim())
+      const validHosts = ['youtube.com', 'www.youtube.com', 'youtu.be', 'www.youtube-nocookie.com']
+      if (url.protocol !== 'https:' || !validHosts.includes(url.hostname)) throw new Error()
+    } catch {
+      errors.url_trailer = 'Use um link HTTPS válido do YouTube.'
+    }
+  }
   return errors
 }
 
@@ -90,7 +101,7 @@ export function createPayload(fields: MovieFields): FilmeCriacao {
     generos: fields.generos.split(',').map((genre) => genre.trim()),
     ...(fields.ano_lancamento ? { ano_lancamento: Number(fields.ano_lancamento) } : {}),
     ...Object.fromEntries(
-      (['sinopse', 'data_lancamento', 'url_poster', 'url_backdrop'] as const)
+      (['sinopse', 'data_lancamento', 'url_poster', 'url_backdrop', 'url_trailer'] as const)
         .filter((key) => fields[key].trim())
         .map((key) => [key, fields[key].trim()]),
     ),
@@ -106,7 +117,7 @@ export function updatePayload(fields: MovieFields, movie: FilmeDetalhe): FilmeAt
     changes.generos = fields.generos.split(',').map((genre) => genre.trim())
   if (fields.ano_lancamento !== initial.ano_lancamento)
     changes.ano_lancamento = fields.ano_lancamento ? Number(fields.ano_lancamento) : null
-  for (const key of ['sinopse', 'data_lancamento', 'url_poster', 'url_backdrop'] as const) {
+  for (const key of ['sinopse', 'data_lancamento', 'url_poster', 'url_backdrop', 'url_trailer'] as const) {
     if (fields[key].trim() !== initial[key]) changes[key] = fields[key].trim() || null
   }
   return changes

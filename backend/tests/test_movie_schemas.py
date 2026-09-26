@@ -53,3 +53,21 @@ def test_movie_update_contract_rejects_empty_payload_and_null_required_relations
         FilmeAtualizacao()
     with pytest.raises(ValidationError):
         FilmeAtualizacao(diretor=None)
+
+
+def test_movie_contract_accepts_only_a_safe_youtube_trailer_url() -> None:
+    filme = FilmeCriacao(
+        titulo="Filme com trailer",
+        diretor="Diretora",
+        generos=["Drama"],
+        url_trailer="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    )
+
+    assert filme.url_trailer == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    with pytest.raises(ValidationError):
+        FilmeCriacao(
+            titulo="Origem inválida",
+            diretor="Diretora",
+            generos=["Drama"],
+            url_trailer="https://example.com/trailer",
+        )
