@@ -288,6 +288,7 @@ export interface ComunidadeCriacao {
 export interface ComentarioComunidade {
   id: string
   conteudo: string
+  removida_por_moderacao: boolean
   autor: PessoaComunidade
   criado_em: string
 }
@@ -303,6 +304,7 @@ export interface PublicacaoComunidade {
   id: string
   comunidade_id: string
   conteudo: string
+  removida_por_moderacao: boolean
   autor: PessoaComunidade
   filme: FilmeResumo | null
   comentarios: ComentarioComunidade[]

@@ -53,6 +53,7 @@ it('permite entrar, mencionar filme, publicar, comentar e reagir', async () => {
         id: 'p1',
         comunidade_id: 'c1',
         conteudo: body.conteudo,
+        removida_por_moderacao: false,
         autor: { id: user.id, nome: user.nome, avatar_url: null },
         filme: body.movie_id ? movie : null,
         comentarios: [],
@@ -66,6 +67,7 @@ it('permite entrar, mencionar filme, publicar, comentar e reagir', async () => {
       const comment = {
         id: 'comment-1',
         conteudo: body.conteudo,
+        removida_por_moderacao: false,
         autor: { id: user.id, nome: user.nome, avatar_url: null },
         criado_em: '2026-09-25T12:11:00Z',
       }
@@ -172,7 +174,7 @@ it('recebe novas mensagens, abre o perfil público e interrompe a consulta ao fe
   render(<CommunityHub usuario={null} onLoginRequested={vi.fn()} onOpenMovie={vi.fn()} />)
   await userEvent.click(await screen.findByRole('button', { name: 'Entrar em Drama' }))
   await screen.findByText('A conversa começa com um oi.')
-  messages = [{ id: 'p2', comunidade_id: 'c1', conteudo: 'Mensagem de outra pessoa', autor: { id: user.id, nome: user.nome, avatar_url: '/avatar.png' }, filme: null, comentarios: [], reacoes: [], criada_em: '2026-09-25T12:10:00Z' }]
+  messages = [{ id: 'p2', comunidade_id: 'c1', conteudo: 'Mensagem de outra pessoa', removida_por_moderacao: false, autor: { id: user.id, nome: user.nome, avatar_url: '/avatar.png' }, filme: null, comentarios: [], reacoes: [], criada_em: '2026-09-25T12:10:00Z' }]
   await act(async () => { const callback = interval.mock.calls.find((call) => call[1] === 5000)?.[0] as () => void; callback() })
   expect(await screen.findByText('Mensagem de outra pessoa')).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Ver perfil de Ana' }))
@@ -183,4 +185,88 @@ it('recebe novas mensagens, abre o perfil público e interrompe a consulta ao fe
   await userEvent.click(screen.getByRole('button', { name: 'Fechar' }))
   expect(clear).toHaveBeenCalled()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+it('permite ao admin moderar comentários e publicações com confirmação', async () => {
+  const admin: UsuarioLeitura = { ...user, id: 'admin', role: 'admin', nome: 'Admin' }
+  const community = {
+    id: 'c1',
+    nome: 'Animação',
+    descricao: 'Conversas sobre cinema animado.',
+    quantidade_membros: 1,
+    visualizacoes: 1,
+    criada_em: '2026-09-25T12:00:00Z',
+  }
+  const comment = {
+    id: 'comment-1',
+    conteudo: 'Comentário a moderar',
+    removida_por_moderacao: false,
+    autor: { id: 'bia', nome: 'Bia', avatar_url: null },
+    criado_em: '2026-09-25T12:02:00Z',
+  }
+  let posts: PublicacaoComunidade[] = [{
+    id: 'p1',
+    comunidade_id: 'c1',
+    conteudo: 'Publicação a moderar',
+    removida_por_moderacao: false,
+    autor: { id: 'ana', nome: 'Ana', avatar_url: null },
+    filme: null,
+    comentarios: [comment],
+    reacoes: [{ tipo: 'amei', quantidade: 1 }],
+    criada_em: '2026-09-25T12:01:00Z',
+  }]
+  const fetcher = vi.fn((url: string, init?: RequestInit) => {
+    const path = new URL(url).pathname
+    const method = init?.method ?? 'GET'
+    if (path.endsWith('/comunidades') && method === 'GET') return json([community])
+    if (path.endsWith('/visualizacoes')) return json(community)
+    if (path.endsWith('/membros')) return json([admin])
+    if (path.endsWith('/publicacoes') && method === 'GET') return json(posts)
+    if (path.endsWith('/comentarios/comment-1') && method === 'DELETE') {
+      posts = posts.map((post) => ({
+        ...post,
+        comentarios: post.comentarios.map((item) => ({
+          ...item,
+          conteudo: '',
+          removida_por_moderacao: true,
+        })),
+      }))
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    if (path.endsWith('/publicacoes/p1') && method === 'DELETE') {
+      posts = posts.map((post) => ({
+        ...post,
+        conteudo: '',
+        removida_por_moderacao: true,
+        filme: null,
+        comentarios: post.comentarios.map((item) => ({
+          ...item,
+          conteudo: '',
+          removida_por_moderacao: true,
+        })),
+        reacoes: [],
+      }))
+      return Promise.resolve(new Response(null, { status: 204 }))
+    }
+    throw new Error(`Requisição não esperada: ${method} ${path}`)
+  })
+  vi.stubGlobal('fetch', fetcher)
+  render(<CommunityHub usuario={admin} onLoginRequested={vi.fn()} onOpenMovie={vi.fn()} />)
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Entrar em Animação' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Responder' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Remover comentário de Bia' }))
+  const commentConfirmation = screen.getByRole('dialog', { name: 'Confirmar moderação' })
+  expect(within(commentConfirmation).getByText(/o texto será removido/i)).toBeInTheDocument()
+  await userEvent.click(within(commentConfirmation).getByRole('button', { name: 'Confirmar remoção' }))
+  expect(await screen.findByText('Comentário removido pela moderação.')).toBeInTheDocument()
+  expect(fetcher).toHaveBeenCalledWith(expect.stringContaining('/comunidades/comentarios/comment-1'), expect.objectContaining({ method: 'DELETE' }))
+
+  await userEvent.click(screen.getByRole('button', { name: 'Remover publicação de Ana' }))
+  const postConfirmation = screen.getByRole('dialog', { name: 'Confirmar moderação' })
+  expect(within(postConfirmation).getByText(/comentários e reações serão removidos/i)).toBeInTheDocument()
+  await userEvent.click(within(postConfirmation).getByRole('button', { name: 'Confirmar remoção' }))
+  expect(await screen.findByText('Mensagem removida pela moderação.')).toBeInTheDocument()
+  expect(fetcher).toHaveBeenCalledWith(expect.stringContaining('/comunidades/publicacoes/p1'), expect.objectContaining({ method: 'DELETE' }))
+  expect(screen.queryByText('Publicação a moderar')).not.toBeInTheDocument()
 })

@@ -27,6 +27,7 @@ from app.communities.schemas import (
     ReacaoResumo,
 )
 from app.core.errors import (
+    ComentarioComunidadeNaoEncontradoError,
     ComunidadeConflitoError,
     ComunidadeNaoEncontradaError,
     FilmeNaoEncontradoError,
@@ -34,6 +35,7 @@ from app.core.errors import (
     ParticipacaoComunidadeConflitoError,
     ParticipacaoComunidadeNecessariaError,
     PublicacaoComunidadeNaoEncontradaError,
+    PublicacaoModeradaError,
 )
 from app.movies.models import DimMovie
 from app.movies.services import CatalogoFilmesService
@@ -127,6 +129,36 @@ class ComunidadesService:
             logger.error("Remoção de comunidade interrompida por falha de persistência.")
             raise FilmePersistenceError from error
 
+    async def remover_publicacao_por_moderacao(self, post_id: str) -> None:
+        publicacao = await self._obter_publicacao(post_id)
+        if publicacao.removida_por_moderacao:
+            return
+
+        publicacao.conteudo = ""
+        publicacao.removida_por_moderacao = True
+        publicacao.sk_movie_id = None
+        for comentario in publicacao.comments:
+            comentario.conteudo = ""
+            comentario.removida_por_moderacao = True
+        await self._session.execute(
+            delete(CommunityReaction).where(CommunityReaction.post_id == publicacao.id)
+        )
+        await self._salvar_moderacao("Remoção de publicação")
+
+    async def remover_comentario_por_moderacao(self, comment_id: str) -> None:
+        comentario = await self._session.scalar(
+            select(CommunityComment)
+            .where(CommunityComment.id == comment_id)
+            .options(selectinload(CommunityComment.author))
+        )
+        if comentario is None:
+            raise ComentarioComunidadeNaoEncontradoError
+        if comentario.removida_por_moderacao:
+            return
+        comentario.conteudo = ""
+        comentario.removida_por_moderacao = True
+        await self._salvar_moderacao("Remoção de comentário")
+
     async def listar_membros(self, community_id: str) -> list[PessoaComunidade]:
         await self._obter_comunidade(community_id)
         membros = await self._session.scalars(
@@ -203,6 +235,8 @@ class ComunidadesService:
         self, post_id: str, dados: ComentarioCriacao, usuario: User
     ) -> ComentarioLeitura:
         publicacao = await self._obter_publicacao(post_id)
+        if publicacao.removida_por_moderacao:
+            raise PublicacaoModeradaError
         await self._exigir_participacao(publicacao.community_id, usuario.id)
         try:
             comentario = CommunityComment(
@@ -224,6 +258,8 @@ class ComunidadesService:
 
     async def reagir(self, post_id: str, tipo: str, usuario: User) -> list[ReacaoResumo]:
         publicacao = await self._obter_publicacao(post_id)
+        if publicacao.removida_por_moderacao:
+            raise PublicacaoModeradaError
         await self._exigir_participacao(publicacao.community_id, usuario.id)
         try:
             reacao = await self._session.get(CommunityReaction, (publicacao.id, usuario.id))
@@ -258,6 +294,14 @@ class ComunidadesService:
         except SQLAlchemyError as error:
             await self._session.rollback()
             logger.error("Remoção de reação em comunidade interrompida por falha de persistência.")
+            raise FilmePersistenceError from error
+
+    async def _salvar_moderacao(self, operacao: str) -> None:
+        try:
+            await self._session.commit()
+        except SQLAlchemyError as error:
+            await self._session.rollback()
+            logger.error("%s interrompida por falha de persistência.", operacao)
             raise FilmePersistenceError from error
 
     async def _obter_comunidade(self, community_id: str) -> Community:
@@ -319,7 +363,8 @@ class ComunidadesService:
     def _para_comentario(cls, comentario: CommunityComment) -> ComentarioLeitura:
         return ComentarioLeitura(
             id=comentario.id,
-            conteudo=comentario.conteudo,
+            conteudo="" if comentario.removida_por_moderacao else comentario.conteudo,
+            removida_por_moderacao=comentario.removida_por_moderacao,
             autor=cls._para_pessoa(comentario.author),
             criado_em=comentario.created_at,
         )
@@ -329,13 +374,14 @@ class ComunidadesService:
         return PublicacaoLeitura(
             id=publicacao.id,
             comunidade_id=publicacao.community_id,
-            conteudo=publicacao.conteudo,
+            conteudo="" if publicacao.removida_por_moderacao else publicacao.conteudo,
+            removida_por_moderacao=publicacao.removida_por_moderacao,
             autor=cls._para_pessoa(publicacao.author),
             filme=CatalogoFilmesService._para_resumo(publicacao.movie)
-            if publicacao.movie
+            if publicacao.movie and not publicacao.removida_por_moderacao
             else None,
             comentarios=[cls._para_comentario(comentario) for comentario in publicacao.comments],
-            reacoes=cls._reacoes(publicacao),
+            reacoes=[] if publicacao.removida_por_moderacao else cls._reacoes(publicacao),
             criada_em=publicacao.created_at,
         )
 

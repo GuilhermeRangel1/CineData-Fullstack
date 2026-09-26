@@ -90,6 +90,7 @@ class ReacaoResumo(BaseModel):
 class ComentarioLeitura(BaseModel):
     id: str
     conteudo: str
+    removida_por_moderacao: bool = False
     autor: PessoaComunidade
     criado_em: datetime
 
@@ -98,6 +99,7 @@ class PublicacaoLeitura(BaseModel):
     id: str
     comunidade_id: str
     conteudo: str
+    removida_por_moderacao: bool = False
     autor: PessoaComunidade
     filme: FilmeResumo | None = None
     comentarios: list[ComentarioLeitura]

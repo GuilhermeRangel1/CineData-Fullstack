@@ -141,6 +141,18 @@ class PublicacaoComunidadeNaoEncontradaError(ErroDominio):
     mensagem = "Publicação não encontrada."
 
 
+class ComentarioComunidadeNaoEncontradoError(ErroDominio):
+    status_code = 404
+    codigo = "COMENTARIO_NAO_ENCONTRADO"
+    mensagem = "Comentário não encontrado."
+
+
+class PublicacaoModeradaError(ErroDominio):
+    status_code = 409
+    codigo = "PUBLICACAO_MODERADA"
+    mensagem = "Esta mensagem foi removida pela moderação e não aceita novas interações."
+
+
 class ParticipacaoComunidadeNecessariaError(ErroDominio):
     status_code = 403
     codigo = "PARTICIPACAO_NECESSARIA"

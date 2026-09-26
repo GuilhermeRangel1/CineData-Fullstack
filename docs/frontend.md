@@ -46,7 +46,9 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
   completa.
 - **Comunidades** reúne descoberta, entrada e saída, publicações, comentários,
   menções de filmes e reações. A conversa atualiza por polling enquanto está
-  aberta e visível; administradores mantêm comunidades.
+  aberta e visível. Administradores mantêm comunidades e podem remover
+  publicações ou comentários individuais após confirmação. O conteúdo some e
+  um aviso de moderação ocupa seu lugar, sem apagar o restante da conversa.
 - **Analytics** é restrito a administradores e consulta agregados do banco para
   atividade recente, gêneros avaliados, filmes e comunidades em alta.
 - **Mapa de gostos** é pessoal e exige login. O backend seleciona candidatos
@@ -98,9 +100,10 @@ do navegador podem impedir o vídeo.
 ## Verificações
 
 Execute em `frontend/`: `npm run lint`, `npm run test` e `npm run build`.
-Os 53 testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
+Os 54 testes com Vitest e Testing Library cobrem catálogo, filtros, paginação,
 buscas fora de ordem, erros e nova tentativa, detalhes, pôster indisponível,
-player, autenticação, listas, amizades, perfis, comunidades, analytics e mapa de
+player, autenticação, listas, amizades, perfis, comunidades (incluindo
+moderação administrativa), analytics e mapa de
 gostos. Também cobrem formulários, validações, prevenção de envios duplicados,
 preservação de texto em falhas e atualização de dados após alterações. Os testes
 usam respostas HTTP simuladas; o backend possui testes de integração próprios.

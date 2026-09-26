@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from app.communities.models import Community
+from app.communities.models import Community, CommunityComment, CommunityPost, CommunityReaction
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -236,3 +236,139 @@ async def test_members_can_post_comment_and_react_to_a_mentioned_movie(
     assert posts.json()[0]["comentarios"][0]["conteudo"] == "Adoro a direção de arte."
     assert posts.json()[0]["reacoes"] == [{"tipo": "amei", "quantidade": 1}]
     assert removed_reaction.status_code == 204
+
+
+async def test_admin_moderation_redacts_post_and_preserves_conversation(
+    communities_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async with communities_session_factory() as session:
+        session.add_all(
+            [
+                Community(id="c1", nome="Animação", descricao="Conversas."),
+                CommunityPost(
+                    id="p1",
+                    community_id="c1",
+                    author_id="ana",
+                    sk_movie_id="movie-1",
+                    conteudo="Mensagem imprópria",
+                    comments=[
+                        CommunityComment(
+                            id="comment-1", author_id="bia", conteudo="Resposta imprópria"
+                        )
+                    ],
+                    reactions=[CommunityReaction(user_id="bia", tipo="amei")],
+                ),
+            ]
+        )
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with communities_session_factory() as session:
+            yield session
+
+    async def admin() -> User:
+        return User(
+            id="admin", email="admin@example.com", nome="Admin", password_hash="hash", role="admin"
+        )
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_admin] = admin
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            removed = await client.delete("/api/v1/comunidades/publicacoes/p1")
+            posts = await client.get("/api/v1/comunidades/c1/publicacoes")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert removed.status_code == 204
+    assert posts.status_code == 200
+    assert posts.json() == [
+        {
+            "id": "p1",
+            "comunidade_id": "c1",
+            "conteudo": "",
+            "removida_por_moderacao": True,
+            "autor": {"id": "ana", "nome": "Ana", "avatar_url": None},
+            "filme": None,
+            "comentarios": [
+                {
+                    "id": "comment-1",
+                    "conteudo": "",
+                    "removida_por_moderacao": True,
+                    "autor": {"id": "bia", "nome": "Bia", "avatar_url": None},
+                    "criado_em": posts.json()[0]["comentarios"][0]["criado_em"],
+                }
+            ],
+            "reacoes": [],
+            "criada_em": posts.json()[0]["criada_em"],
+        }
+    ]
+    async with communities_session_factory() as session:
+        post = await session.get(CommunityPost, "p1")
+        comment = await session.get(CommunityComment, "comment-1")
+        assert post is not None and post.conteudo == ""
+        assert comment is not None and comment.conteudo == ""
+
+
+async def test_only_admin_can_moderate_comment_and_removed_post_cannot_be_replied_to(
+    communities_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async with communities_session_factory() as session:
+        session.add_all(
+            [
+                Community(id="c1", nome="Animação", descricao="Conversas."),
+                CommunityPost(
+                    id="p1", community_id="c1", author_id="ana", conteudo="Publicação"
+                ),
+                CommunityComment(
+                    id="comment-1", post_id="p1", author_id="bia", conteudo="Comentário"
+                ),
+            ]
+        )
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with communities_session_factory() as session:
+            yield session
+
+    async def ana() -> User:
+        return User(id="ana", email="ana@example.com", nome="Ana", password_hash="hash")
+
+    async def denied_admin() -> User:
+        from app.core.errors import PermissaoNegadaError
+
+        raise PermissaoNegadaError
+
+    async def admin() -> User:
+        return User(
+            id="admin", email="admin@example.com", nome="Admin", password_hash="hash", role="admin"
+        )
+
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_user] = ana
+    app.dependency_overrides[get_current_admin] = denied_admin
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            denied = await client.delete("/api/v1/comunidades/comentarios/comment-1")
+            app.dependency_overrides[get_current_admin] = admin
+            removed = await client.delete("/api/v1/comunidades/comentarios/comment-1")
+            posts = await client.get("/api/v1/comunidades/c1/publicacoes")
+            removed_post = await client.delete("/api/v1/comunidades/publicacoes/p1")
+            reply_to_removed_post = await client.post(
+                "/api/v1/comunidades/publicacoes/p1/comentarios",
+                json={"conteudo": "Ainda posso responder?"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert denied.status_code == 403
+    assert removed.status_code == 204
+    assert posts.json()[0]["comentarios"][0]["conteudo"] == ""
+    assert posts.json()[0]["comentarios"][0]["removida_por_moderacao"] is True
+    assert removed_post.status_code == 204
+    assert reply_to_removed_post.status_code == 409
+    assert reply_to_removed_post.json()["codigo"] == "PUBLICACAO_MODERADA"

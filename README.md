@@ -19,7 +19,7 @@ TMDB para as funções principais.
 | Avaliações | Criar, editar ou apagar a própria nota e resenha; notas podem ser qualquer valor numérico entre 0 e 10. |
 | Listas | Criar curadorias pessoais, escolher a lista diretamente no detalhe de um filme e acompanhar os filmes já avaliados. |
 | Perfis e amizades | Editar o próprio nome e avatar, consultar perfis públicos e enviar ou responder a pedidos de amizade. |
-| Comunidades | Participar de conversas sobre cinema, mencionar filmes, comentar publicações e reagir. |
+| Comunidades | Participar de conversas sobre cinema, mencionar filmes, comentar publicações e reagir; admins podem moderar publicações e comentários individuais. |
 | Mapa de gostos | Explorar recomendações conectadas aos filmes avaliados, com sinais de afinidade explicáveis. |
 | Analytics | Acompanhar indicadores agregados e tendências calculados a partir da atividade registrada no banco. |
 | Ferramentas administrativas | Manter o catálogo e as comunidades, importar dados de filmes do TMDB e consultar analytics. |
@@ -84,6 +84,10 @@ administrativas para contas comuns.
   limitadas para manter a página compacta, com acesso à lista completa.
 - Comunidades têm imagem opcional, descrição, membros e conversa. Publicações
   podem mencionar filmes; pessoas participantes podem comentar e reagir.
+- Administradores podem remover uma publicação ou comentário específico. O
+  conteúdo é substituído por um aviso de moderação; remover uma publicação
+  também remove a menção ao filme, as reações e o conteúdo dos comentários
+  associados, preservando a posição da conversa.
 - Enquanto uma conversa está aberta e visível, o frontend consulta atualizações
   periodicamente. A implementação atual usa polling, não WebSocket.
 
@@ -253,8 +257,8 @@ identificador de negócio único exposto pela API.
 | `friendship_requests` | Um pedido direcionado (`id`) | Solicitante, destinatário, estado (`pendente`, `aceita`, `bloqueada`) e timestamps; não permite autorrelacionamento nem repetir o mesmo par direcionado. |
 | `communities` | Uma comunidade (`id`) | Nome único, descrição, URL de imagem opcional, contador de visualizações e timestamps. |
 | `community_memberships` | Um par comunidade/conta | Associação de participação com chave composta e data de entrada. |
-| `community_posts` | Uma publicação (`id`) | Comunidade, autor, conteúdo, timestamps e filme opcional mencionado. Se o filme for apagado, a publicação permanece sem a referência. |
-| `community_comments` | Um comentário (`id`) | Publicação, autor, conteúdo e data. Comentários pertencem a uma publicação. |
+| `community_posts` | Uma publicação (`id`) | Comunidade, autor, conteúdo, timestamps, filme opcional mencionado e indicador de remoção por moderação. Se o filme for apagado, a publicação permanece sem a referência. |
+| `community_comments` | Um comentário (`id`) | Publicação, autor, conteúdo, data e indicador de remoção por moderação. Comentários pertencem a uma publicação. |
 | `community_reactions` | Um par publicação/conta | Uma reação por pessoa e publicação; tipos permitidos: `curtir`, `amei` e `interessante`. |
 
 #### Relações e regras de integridade
@@ -282,12 +286,16 @@ identificador de negócio único exposto pela API.
 - `movie_synopsis_fts` é uma tabela virtual FTS5 do SQLite, não um modelo de
   negócio do ORM. Triggers a mantêm sincronizada com inserções, alterações de
   sinopse e exclusões em `dim_movies`.
+- Publicações e comentários moderados permanecem como registros de contexto,
+  mas o conteúdo é apagado e a API os marca com `removida_por_moderacao`. A
+  mensagem original não é retornada. Moderar uma publicação também redige seus
+  comentários, remove a menção a filme e apaga as reações associadas.
 
 ### Histórico de evolução do schema
 
 As revisões formam uma cadeia linear; a inicialização aplica todas as
-migrações pendentes com `alembic upgrade head`. As revisões 0013 e 0014 foram
-adicionadas na revisão final de consistência e desempenho.
+migrações pendentes com `alembic upgrade head`. As revisões 0013–0015 acrescentam
+integridade de avaliações, desempenho do mapa e moderação de conteúdo.
 
 | Revisão | Alteração persistente |
 | --- | --- |
@@ -305,6 +313,7 @@ adicionadas na revisão final de consistência e desempenho.
 | `0012_add_community_image` | Adiciona `communities.imagem_url`, opcional. |
 | `0013_unique_user_movie_review` | Verifica duplicatas existentes e cria índice parcial único conta/filme; falha sem apagar dados se encontrar conflitos. |
 | `0014_add_taste_map_synopsis_index` | Cria `movie_synopsis_fts`, preenche-a com sinopses atuais e adiciona triggers de sincronização para otimizar a seleção de candidatos do mapa. |
+| `0015_add_community_moderation` | Adiciona `removida_por_moderacao` a `community_posts` e `community_comments`, permitindo ocultar conteúdo sem remover o contexto da conversa. |
 
 As migrations ficam em [`backend/migrations/versions/`](backend/migrations/versions/).
 O modelo declarativo correspondente está em `backend/app/movies/models.py`,
@@ -334,10 +343,11 @@ conteúdo depende da disponibilidade da fonte externa.
 
 ## Banco, migrações e seed
 
-O schema atual tem migrações sequenciais de `0001` a `0014`. Entre outras
+O schema atual tem migrações sequenciais de `0001` a `0015`. Entre outras
 evoluções, elas adicionam contas, listas, trailers, amizades, privacidade de
-avaliações, comunidades, unicidade de avaliações por conta/filme e índice FTS5
-para apoiar a busca textual usada pelo mapa de gostos.
+avaliações, comunidades, unicidade de avaliações por conta/filme, índice FTS5
+para apoiar a busca textual usada pelo mapa de gostos e campos de moderação para
+mensagens das comunidades.
 
 O comando `python -m app.db.seed`:
 
@@ -503,11 +513,12 @@ Vitest e Testing Library cobrem a interação dos componentes com estados de
 sucesso, carregamento, erro e formulários, incluindo catálogo, avaliação,
 autenticação, listas, perfis, amizades, comunidades, analytics e mapa de gostos.
 
-Na revisão de 26 de setembro de 2026, passaram 75 testes do backend e 53 do
+Na revisão de 26 de setembro de 2026, passaram 77 testes do backend e 54 do
 frontend; Ruff, lint e build do frontend também passaram. Migrações, seed em
 banco limpo e smoke test com Docker Compose foram verificados no mesmo
-checkpoint. Os números são um retrato dessa execução: podem mudar quando novos
-testes forem adicionados.
+checkpoint. O lint mantém um aviso já existente em `MovieDetail.tsx` sobre
+atualização de estado dentro de efeito. Os números são um retrato dessa
+execução: podem mudar quando novos testes forem adicionados.
 
 ## Documentação complementar
 

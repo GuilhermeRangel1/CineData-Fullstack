@@ -309,6 +309,18 @@ export function comentarPublicacao(
   )
 }
 
+export function removerPublicacaoComunidade(id: string): Promise<void> {
+  return requisitar<void>(`/comunidades/publicacoes/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
+export function removerComentarioComunidade(id: string): Promise<void> {
+  return requisitar<void>(`/comunidades/comentarios/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
 export function reagirPublicacao(
   id: string,
   tipo: TipoReacao,

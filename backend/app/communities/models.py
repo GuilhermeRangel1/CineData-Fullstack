@@ -3,7 +3,17 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, String, Table, Text, func
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    String,
+    Table,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -80,6 +90,9 @@ class CommunityPost(Base):
         index=True,
     )
     conteudo: Mapped[str] = mapped_column(String(4000))
+    removida_por_moderacao: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
@@ -111,6 +124,9 @@ class CommunityComment(Base):
         String(32), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     conteudo: Mapped[str] = mapped_column(String(2000))
+    removida_por_moderacao: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     post: Mapped[CommunityPost] = relationship(back_populates="comments")

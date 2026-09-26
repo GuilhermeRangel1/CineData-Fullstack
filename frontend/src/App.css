@@ -2091,6 +2091,7 @@ fieldset:disabled {
 .chat-message { width: min(620px, 94%); margin-bottom: 25px; }
 .chat-message-own { margin-left: auto; }
 .chat-message > header { display: flex; align-items: center; gap: 12px; margin-bottom: 9px; flex-wrap: wrap; }
+.chat-message > header .community-moderate { margin-left: auto; font-size: 10px; }
 .chat-author { border: 0; padding: 0; display: inline-flex; align-items: center; gap: 9px; background: transparent; color: #e9dce1; text-align: left; }
 .chat-author:hover strong { text-decoration: underline; color: #ff9aa6; }
 .chat-author strong { font-size: 12px; }
@@ -2111,7 +2112,11 @@ fieldset:disabled {
 .chat-replies { color: #a89aa6; margin-top: 8px; font-size: 11px; }
 .chat-replies summary { cursor: pointer; }
 .chat-reply { border-left: 1px solid #60404c; padding: 12px 0 8px 14px; margin-top: 12px; }
+.chat-reply-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.chat-reply-heading .community-moderate { font-size: 10px; }
 .chat-reply p { margin: 8px 0; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; color: #d2c7d1; }
+.chat-bubble > .chat-moderation-notice, .chat-reply > .chat-moderation-notice { color: #c5a7ae; font-style: italic; }
+.community-moderation-author { color: #aa9ba5; font-size: 12px; }
 .chat-composer { position: relative; flex-shrink: 0; padding: 16px 28px 22px; border-top: 1px solid #ffffff12; background: #18151b; }
 .chat-composer textarea { display: block; width: 100%; resize: none; padding: 13px 15px; border: 1px solid #59404c; border-radius: 10px; background: #100e13; color: white; font: inherit; font-size: 13px; line-height: 1.6; }
 .chat-composer-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 12px; }

@@ -145,6 +145,32 @@ async def comentar_publicacao(
     return await ComunidadesService(session).comentar(publicacao_id, dados, usuario)
 
 
+@communities_router.delete(
+    "/publicacoes/{publicacao_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def moderar_publicacao(
+    publicacao_id: Annotated[str, Path(min_length=1, max_length=32)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
+) -> Response:
+    del admin
+    await ComunidadesService(session).remover_publicacao_por_moderacao(publicacao_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@communities_router.delete(
+    "/comentarios/{comentario_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def moderar_comentario(
+    comentario_id: Annotated[str, Path(min_length=1, max_length=32)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
+) -> Response:
+    del admin
+    await ComunidadesService(session).remover_comentario_por_moderacao(comentario_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @communities_router.post("/publicacoes/{publicacao_id}/reacoes", response_model=list[ReacaoResumo])
 async def reagir_a_publicacao(
     publicacao_id: Annotated[str, Path(min_length=1, max_length=32)],

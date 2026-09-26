@@ -120,7 +120,13 @@ conta autenticada. O perfil público contém apenas avaliações e listas públi
 `GET /api/v1/auth/perfil` permite ao dono ver também os próprios itens privados.
 
 As operações de comunidade que alteram a conversa exigem participação; a
-criação, edição e remoção de comunidades exige `admin`. O painel em
+criação, edição e remoção de comunidades exige `admin`. Administradores também
+podem moderar conteúdo individual com `DELETE /api/v1/comunidades/publicacoes/{id}`
+ou `DELETE /api/v1/comunidades/comentarios/{id}`. Esses endpoints limpam o texto
+e devolvem `204`; as leituras seguintes marcam o item com
+`removida_por_moderacao: true` e não expõem o texto original. Moderar uma
+publicação redige seus comentários, remove a menção a filme e suas reações.
+Publicações moderadas não aceitam novas respostas ou reações (`409`). O painel em
 `/api/v1/admin/analytics/resumo?periodo_dias=30` agrega atividade e rankings, com
 um intervalo configurável de 1 a 90 dias. O mapa aceita `limite_nos` (6 a 48),
 `vizinhos_por_filme` (1 a 6), `busca` e parâmetros repetidos `excluir` para
