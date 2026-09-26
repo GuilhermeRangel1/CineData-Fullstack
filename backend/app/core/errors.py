@@ -73,3 +73,19 @@ class PermissaoNegadaError(ErroDominio):
     status_code = 403
     codigo = "PERMISSAO_NEGADA"
     mensagem = "Sua conta não possui permissão para esta operação."
+
+
+class ListaNaoEncontradaError(ErroDominio):
+    """Lista solicitada não existe ou não pertence à conta autenticada."""
+
+    status_code = 404
+    codigo = "LISTA_NAO_ENCONTRADA"
+    mensagem = "Lista não encontrada."
+
+
+class FilmeJaEstaNaListaError(ErroDominio):
+    """Evita que a mesma lista contenha o mesmo filme mais de uma vez."""
+
+    status_code = 409
+    codigo = "FILME_JA_ESTA_NA_LISTA"
+    mensagem = "Este filme já está na lista."

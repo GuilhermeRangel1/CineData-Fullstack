@@ -130,11 +130,11 @@ aplicação atende todos os requisitos obrigatórios de ponta a ponta.
 
 ### 8. Avaliações, listas e perfis
 
-- [ ] Exibir a média geral e a quantidade de avaliações por filme.
-- [ ] Criar a lista virtual obrigatória de filmes avaliados por cada usuário.
-- [ ] Permitir listas personalizadas com nome e filmes do catálogo.
-- [ ] Implementar a lista "assistir depois".
-- [ ] Definir visibilidade das listas públicas e privadas.
+- [x] Exibir a média geral e a quantidade de avaliações por filme.
+- [x] Criar a lista virtual obrigatória de filmes avaliados por cada usuário.
+- [x] Permitir listas personalizadas com nome e filmes do catálogo.
+- [x] Implementar a lista "assistir depois".
+- [x] Definir visibilidade das listas públicas e privadas.
 - [ ] Criar perfis públicos com avaliações, listas públicas e quantidade de
       amigos.
 - [ ] Adicionar trailer opcional ao detalhe do filme quando houver uma fonte

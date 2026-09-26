@@ -7,12 +7,52 @@ avaliações, listas e comunidades serão introduzidas em migrações próprias.
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, String, Table, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.movies.models import DimMovie
 
 USER_ROLES: tuple[str, ...] = ("user", "admin")
+LIST_VISIBILITIES: tuple[str, ...] = ("publica", "privada")
+
+
+user_list_movies = Table(
+    "user_list_movies",
+    Base.metadata,
+    Column(
+        "list_id",
+        String(32),
+        ForeignKey("user_lists.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "sk_movie_id",
+        String(64),
+        ForeignKey("dim_movies.sk_movie_id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("created_at", DateTime, server_default=func.now(), nullable=False),
+)
+
+
+watch_later_movies = Table(
+    "watch_later_movies",
+    Base.metadata,
+    Column(
+        "user_id",
+        String(32),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "sk_movie_id",
+        String(64),
+        ForeignKey("dim_movies.sk_movie_id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("created_at", DateTime, server_default=func.now(), nullable=False),
+)
 
 
 def generate_user_id() -> str:
@@ -47,4 +87,40 @@ class User(Base):
         DateTime,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+    lists: Mapped[list["UserList"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", order_by="UserList.created_at.desc()"
+    )
+
+
+class UserList(Base):
+    """Lista personalizada pertencente a uma única conta local."""
+
+    __tablename__ = "user_lists"
+    __table_args__ = (
+        CheckConstraint(
+            "visibilidade IN ("
+            + ", ".join(f"'{visibility}'" for visibility in LIST_VISIBILITIES)
+            + ")",
+            name="visibility_valid",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=generate_user_id)
+    user_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    nome: Mapped[str] = mapped_column(String(120))
+    visibilidade: Mapped[str] = mapped_column(
+        String(20), default="privada", server_default="privada", index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped[User] = relationship(back_populates="lists")
+    movies: Mapped[list["DimMovie"]] = relationship(
+        secondary=user_list_movies,
+        order_by=user_list_movies.c.created_at.desc(),
     )
