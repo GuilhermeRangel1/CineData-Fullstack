@@ -80,6 +80,8 @@ histórico, média e comportamento após exclusão de filme.
 - [x] Exibir detalhes completos, média de 0 a 10 e histórico de avaliações.
 - [x] Implementar formulário para nova avaliação, com seletor de 0 a 10 e
       resenha.
+- [x] Permitir editar a própria avaliação de um filme sem criar duplicidade e
+      recalcular a média pública corretamente.
 - [x] Garantir navegação por teclado, rótulos de formulário, contraste e uso
       adequado em telas móveis e desktop.
 
@@ -194,13 +196,39 @@ amizades; o perfil público informa a quantidade correta de amigos; e listas ou
 avaliações privadas não aparecem nas consultas públicas, com testes cobrindo
 transições de solicitação, autorização, visibilidade e os fluxos de interface.
 
-### 11. Recursos opcionais
+### 11. Mapa de gostos e descoberta personalizada
+
+- [ ] Definir o modelo de similaridade dos filmes com vetores de gêneros,
+      direção, elenco, ano, sinopse e métricas disponíveis.
+- [ ] Implementar recomendações KNN com pesos configuráveis e conexões
+      direcionadas entre filmes avaliados e sugestões próximas.
+- [ ] Criar endpoint que retorne somente o subgrafo necessário para o usuário,
+      limitando nós e arestas para preservar legibilidade.
+- [ ] Exibir filmes avaliados como nós principais e recomendações não avaliadas
+      como nós escuros, colorindo os filmes conforme o gênero dominante.
+- [ ] Permitir clicar em qualquer nó para abrir seus detalhes e pesquisar um
+      filme ou avaliação dentro da malha.
+- [ ] Permitir controlar quantidade de nós, vizinhos e conexões exibidas.
+- [ ] Atualizar o grafo após uma nova avaliação, transformando a recomendação
+      em filme avaliado e recalculando suas conexões.
+- [ ] Exibir uma explicação para cada conexão, como gênero, direção ou elenco
+      compartilhado.
+- [ ] Construir a página seguindo a mesma estrutura, responsividade,
+      acessibilidade e hierarquia visual das demais áreas do CineData.
+- [ ] Aplicar identidade visual roxa própria para o mapa de gostos, mantendo
+      os padrões de espaçamento, cards, modais, estados de carregamento, vazio e
+      erro já usados no restante da aplicação.
+
+**Critério de saída:** o usuário visualiza seus filmes avaliados, recebe
+recomendações explicáveis, pode explorar e pesquisar a malha, ajustar sua
+densidade e atualizá-la ao avaliar novos filmes, com uma interface roxa
+consistente com as demais páginas e testes cobrindo o cálculo, a autorização e
+os estados principais.
+
+### 12. Recursos opcionais
 
 - [x] Implementar filtros avançados além de título, gênero, ordenação,
       paginação e em português.
-- [ ] Criar um "Mapa de gostos": grafo interativo com filmes avaliados pelo
-      usuário, recomendações próximas e conexões explicadas por afinidades
-      como gênero, direção ou elenco.
 - [x] Integrar fonte externa para dados ou trailers de filmes.
 - [x] Refinar o destaque editorial: manter a imagem durante o carregamento do
       trailer, reiniciar a prévia ao voltar à home e oferecer controles próprios
@@ -209,6 +237,6 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
 - [x] Disponibilizar execução local via Docker Compose.
 - [x] Colocar dashboards analíticos para admin
 
-**Critério de saída:** cada item opcional marcado como concluído possui fluxo
+**Critério de saída:** cada recurso opcional marcado como concluído possui fluxo
 utilizável, documentação e validação proporcional ao seu impacto, sem regredir
 os requisitos obrigatórios ou expor dados sensíveis.

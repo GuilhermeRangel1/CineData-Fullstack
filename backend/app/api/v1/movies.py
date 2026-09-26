@@ -56,6 +56,17 @@ async def listar_avaliacoes(
     return await AvaliacoesService(session).listar(filme_id)
 
 
+@movies_router.get("/{filme_id}/minha-avaliacao", response_model=AvaliacaoLeitura | None)
+async def obter_minha_avaliacao(
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    usuario: Annotated[User, Depends(get_current_user)],
+) -> AvaliacaoLeitura | None:
+    """Retorna a avaliação do usuário atual para permitir sua edição."""
+
+    return await AvaliacoesService(session).obter_do_usuario(filme_id, usuario)
+
+
 @movies_router.get("/{filme_id}/trailer", response_model=TrailerFilme)
 async def obter_trailer(
     filme_id: Annotated[str, Path(min_length=1, max_length=50)],

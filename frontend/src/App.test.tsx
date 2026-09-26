@@ -12,6 +12,7 @@ it('completa cadastro, edição, avaliação e exclusão atualizando todas as li
   const fetcher = vi.fn((url: string, init?: RequestInit) => {
     const path = new URL(url).pathname
     const body = init?.body ? JSON.parse(String(init.body)) : {}
+    if (path.endsWith('/minha-avaliacao')) return json(null)
     if (init?.method === 'POST' && path.endsWith('/avaliacoes')) {
       const review = { ...body, id: 'r', criada_em: '2026-09-24T12:00:00Z' }
       current = {

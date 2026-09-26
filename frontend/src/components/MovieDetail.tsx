@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { adicionarFilmeALista, listarListas, obterFilme, obterTrailerFilme, removerFilme } from '../api/client'
+import { adicionarFilmeALista, listarListas, obterFilme, obterMinhaAvaliacao, obterTrailerFilme, removerFilme } from '../api/client'
 import { useResource } from '../hooks/useResource'
 import { useMutation } from '../hooks/useMutation'
 import { Dialog } from './Dialog'
 import { MovieForm } from './MovieForm'
 import { ReviewForm } from './ReviewForm'
 import { youtubeEmbedUrl } from '../lib/youtube'
-import type { ListaLeitura, UsuarioLeitura } from '../types/api'
+import type { AvaliacaoLeitura, ListaLeitura, UsuarioLeitura } from '../types/api'
 
 const number = (value: number | null | undefined) =>
   value == null ? 'Não informado' : value.toLocaleString('pt-BR')
@@ -36,6 +36,7 @@ export function MovieDetail({
   const [selectedListId, setSelectedListId] = useState('')
   const [savedListName, setSavedListName] = useState('')
   const [externalTrailerUrl, setExternalTrailerUrl] = useState<string | null>(null)
+  const [myReview, setMyReview] = useState<AvaliacaoLeitura | null>(null)
   const focusAfterChange = useRef(false)
   const feedback = useRef<HTMLParagraphElement>(null)
   const editButton = useRef<HTMLButtonElement>(null)
@@ -59,6 +60,21 @@ export function MovieDetail({
       })
     return () => controller.abort()
   }, [usuario])
+  useEffect(() => {
+    if (!usuario) {
+      setMyReview(null)
+      return
+    }
+    const controller = new AbortController()
+    void obterMinhaAvaliacao(id, controller.signal)
+      .then((review) => {
+        if (!controller.signal.aborted) setMyReview(review)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setMyReview(null)
+      })
+    return () => controller.abort()
+  }, [id, usuario])
   useEffect(() => {
     if (!movie || movie.url_trailer) return
     const controller = new AbortController()
@@ -356,11 +372,14 @@ export function MovieDetail({
                 <h3>O que acharam do filme</h3>
                 {usuario ? (
                   <ReviewForm
+                    key={myReview?.id ?? `nova-${id}`}
                     movieId={id}
+                    initialReview={myReview}
                     onBusyChange={setBusy}
                     onSaved={() => {
                       focusAfterChange.current = true
                       setNotice('Avaliação publicada. Sua nota já faz parte da média.')
+                      void obterMinhaAvaliacao(id).then(setMyReview).catch(() => setMyReview(null))
                       retry()
                       onChanged?.()
                     }}

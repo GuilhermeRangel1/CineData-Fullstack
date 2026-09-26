@@ -282,6 +282,19 @@ class AvaliacoesService:
         )
         return [self._para_leitura(avaliacao) for avaliacao in avaliacoes]
 
+    async def obter_do_usuario(self, filme_id: str, usuario: User) -> AvaliacaoLeitura | None:
+        """Retorna a avaliação privada ou pública do usuário para preencher a edição."""
+
+        await self._obter_filme(filme_id)
+        avaliacao = await self._session.scalar(
+            select(MovieReview)
+            .join(MovieReview.movie)
+            .where(DimMovie.id_filme == filme_id, MovieReview.user_id == usuario.id)
+            .order_by(MovieReview.created_at.desc(), MovieReview.sk_movie_review_id.desc())
+            .limit(1)
+        )
+        return self._para_leitura(avaliacao) if avaliacao else None
+
     async def criar(
         self,
         filme_id: str,
@@ -292,32 +305,54 @@ class AvaliacoesService:
 
         filme = await self._obter_filme(filme_id)
         try:
-            avaliacao = MovieReview(
-                sk_movie_id=filme.sk_movie_id,
-                user_id=usuario.id,
-                nome=usuario.nome,
-                nota=dados.nota,
-                comentario=dados.comentario,
-                visibilidade=dados.visibilidade,
-            )
-            self._session.add(avaliacao)
-            await self._session.flush()
-
             resumo = filme.reviews_summary
-            if resumo is None:
-                resumo = DimReview(
-                    sk_movie_id=filme.sk_movie_id,
-                    qtd_avaliacoes_usuarios=1,
-                    nota_media_usuarios=dados.nota,
+            avaliacao = await self._session.scalar(
+                select(MovieReview)
+                .where(
+                    MovieReview.sk_movie_id == filme.sk_movie_id,
+                    MovieReview.user_id == usuario.id,
                 )
-                self._session.add(resumo)
+                .order_by(MovieReview.created_at.desc(), MovieReview.sk_movie_review_id.desc())
+                .limit(1)
+            )
+            if avaliacao is None:
+                avaliacao = MovieReview(
+                    sk_movie_id=filme.sk_movie_id,
+                    user_id=usuario.id,
+                    nome=usuario.nome,
+                    nota=dados.nota,
+                    comentario=dados.comentario,
+                    visibilidade=dados.visibilidade,
+                )
+                self._session.add(avaliacao)
+                await self._session.flush()
+                if resumo is None:
+                    resumo = DimReview(
+                        sk_movie_id=filme.sk_movie_id,
+                        qtd_avaliacoes_usuarios=1,
+                        nota_media_usuarios=dados.nota,
+                    )
+                    self._session.add(resumo)
+                else:
+                    quantidade_anterior = resumo.qtd_avaliacoes_usuarios
+                    media_anterior = resumo.nota_media_usuarios or 0
+                    resumo.nota_media_usuarios = (
+                        (media_anterior * quantidade_anterior) + dados.nota
+                    ) / (quantidade_anterior + 1)
+                    resumo.qtd_avaliacoes_usuarios = quantidade_anterior + 1
             else:
-                quantidade_anterior = resumo.qtd_avaliacoes_usuarios
-                media_anterior = resumo.nota_media_usuarios or 0
-                resumo.nota_media_usuarios = (
-                    (media_anterior * quantidade_anterior) + dados.nota
-                ) / (quantidade_anterior + 1)
-                resumo.qtd_avaliacoes_usuarios = quantidade_anterior + 1
+                nota_anterior = avaliacao.nota
+                avaliacao.nome = usuario.nome
+                avaliacao.nota = dados.nota
+                avaliacao.comentario = dados.comentario
+                avaliacao.visibilidade = dados.visibilidade
+                if resumo is not None and resumo.qtd_avaliacoes_usuarios:
+                    media_anterior = resumo.nota_media_usuarios or 0
+                    resumo.nota_media_usuarios = (
+                        (media_anterior * resumo.qtd_avaliacoes_usuarios)
+                        - nota_anterior
+                        + dados.nota
+                    ) / resumo.qtd_avaliacoes_usuarios
 
             await self._session.commit()
             await self._session.refresh(avaliacao)

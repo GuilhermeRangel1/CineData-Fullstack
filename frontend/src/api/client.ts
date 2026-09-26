@@ -178,6 +178,16 @@ export async function criarAvaliacao(
   return avaliacao
 }
 
+export function obterMinhaAvaliacao(
+  id: string,
+  signal?: AbortSignal,
+): Promise<AvaliacaoLeitura | null> {
+  return requisitar<AvaliacaoLeitura | null>(`/filmes/${encodeURIComponent(id)}/minha-avaliacao`, {
+    signal,
+    cache: 'no-store',
+  })
+}
+
 export function obterTrailerFilme(id: string, signal?: AbortSignal): Promise<{ url_trailer: string | null }> {
   return requisitarComCache(`/filmes/${encodeURIComponent(id)}/trailer`, signal)
 }

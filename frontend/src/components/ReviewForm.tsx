@@ -1,19 +1,22 @@
 import { useState, type FormEvent } from 'react'
 import { criarAvaliacao } from '../api/client'
 import { useMutation } from '../hooks/useMutation'
+import type { AvaliacaoLeitura } from '../types/api'
 
 export function ReviewForm({
   movieId,
+  initialReview = null,
   onSaved,
   onBusyChange,
 }: {
   movieId: string
+  initialReview?: AvaliacaoLeitura | null
   onSaved: () => void
   onBusyChange: (busy: boolean) => void
 }) {
-  const [score, setScore] = useState('')
-  const [comment, setComment] = useState('')
-  const [visibility, setVisibility] = useState<'publica' | 'privada'>('publica')
+  const [score, setScore] = useState(() => initialReview ? String(initialReview.nota).replace('.', ',') : '')
+  const [comment, setComment] = useState(() => initialReview?.comentario ?? '')
+  const [visibility, setVisibility] = useState<'publica' | 'privada'>(() => initialReview?.visibilidade ?? 'publica')
   const [validation, setValidation] = useState('')
   const { pending, error, run } = useMutation(onBusyChange)
   function submit(event: FormEvent) {
@@ -39,17 +42,19 @@ export function ReviewForm({
           visibilidade: visibility,
         }),
       () => {
-        setScore('')
-        setComment('')
-        setVisibility('publica')
+        if (!initialReview) {
+          setScore('')
+          setComment('')
+          setVisibility('publica')
+        }
         onSaved()
       },
     )
   }
   return (
     <form className="review-form" onSubmit={submit} aria-label="Avaliar filme">
-      <h4>E qual é o seu olhar?</h4>
-      <p className="muted">Sua nota faz parte da história. Todos os campos são obrigatórios.</p>
+      <h4>{initialReview ? 'Editar seu olhar' : 'E qual é o seu olhar?'}</h4>
+      <p className="muted">{initialReview ? 'Atualize sua nota e resenha quando quiser.' : 'Sua nota faz parte da história. Todos os campos são obrigatórios.'}</p>
       <fieldset className="form-grid" disabled={pending}>
         <label>
           Sua nota (0 a 10)
@@ -91,7 +96,7 @@ export function ReviewForm({
       )}
       <div className="form-actions">
         <button className="button button-light" disabled={pending}>
-          {pending ? 'Enviando…' : 'Publicar avaliação'}
+          {pending ? 'Salvando…' : initialReview ? 'Salvar alteração' : 'Publicar avaliação'}
         </button>
       </div>
     </form>

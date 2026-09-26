@@ -551,7 +551,15 @@ async def test_reviews_endpoints_create_history_and_keep_average_consistent(
                     "comentario": "Uma avaliação excelente.",
                 },
             )
+            update_response = await client.post(
+                "/api/v1/filmes/movie-1/avaliacoes",
+                json={
+                    "nota": 6,
+                    "comentario": "Revendo a avaliação depois de alguns dias.",
+                },
+            )
             history_response = await client.get("/api/v1/filmes/movie-1/avaliacoes")
+            mine_response = await client.get("/api/v1/filmes/movie-1/minha-avaliacao")
             detail_response = await client.get("/api/v1/filmes/movie-1")
             catalog_response = await client.get("/api/v1/filmes")
     finally:
@@ -562,15 +570,20 @@ async def test_reviews_endpoints_create_history_and_keep_average_consistent(
     assert created["id"]
     assert created["nota"] == 10
     assert created["criada_em"]
+    assert update_response.status_code == 201
+    assert update_response.json()["id"] == created["id"]
+    assert update_response.json()["nota"] == 6
+    assert mine_response.status_code == 200
+    assert mine_response.json()["comentario"] == "Revendo a avaliação depois de alguns dias."
     assert history_response.status_code == 200
     assert [item["nome"] for item in history_response.json()] == ["Ana", "Maria"]
     assert detail_response.json()["quantidade_avaliacoes"] == 2
-    assert detail_response.json()["nota_media"] == 9.25
+    assert detail_response.json()["nota_media"] == 7.25
     movie_in_catalog = next(
         item for item in catalog_response.json()["itens"] if item["id"] == "movie-1"
     )
     assert movie_in_catalog["quantidade_avaliacoes"] == 2
-    assert movie_in_catalog["nota_media"] == 9.25
+    assert movie_in_catalog["nota_media"] == 7.25
 
 
 async def test_review_endpoints_validate_payload_and_return_not_found(
