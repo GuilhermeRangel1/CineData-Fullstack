@@ -1,16 +1,35 @@
 """Motor leve e explicável de recomendações por similaridade de conteúdo."""
 
 import re
+from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
 from heapq import nsmallest
 from math import log1p, sqrt
 
-from sqlalchemy import select
+from sqlalchemy import (
+    Integer,
+    String,
+    case,
+    column,
+    func,
+    literal,
+    or_,
+    select,
+    table,
+    text,
+    union_all,
+)
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.movies.models import DimMovie, MovieReview
+from app.movies.models import (
+    DimMovie,
+    MovieReview,
+    bridge_movie_genre,
+    bridge_movie_person,
+)
 from app.taste_map.schemas import ArestaMapaGostos, MapaGostos, NoMapaGostos
 from app.users.models import User
 
@@ -51,6 +70,8 @@ PALAVRAS_SEM_SINAL = frozenset(
         "um",
     }
 )
+LIMITE_CANDIDATOS = 2500
+LIMITE_TERMOS_SINOPSE = 32
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,8 +151,11 @@ class MapaGostosService:
         # Prioriza o que a pessoa mais gostou e ainda deixa espaço para descobrir.
         max_avaliadas = max(1, limite_nos // 2)
         avaliadas = avaliadas[:max_avaliadas]
+        filmes_origem = [avaliacao.movie for avaliacao in avaliadas if avaliacao.movie is not None]
         candidatos = await self._catalogo_candidato(
-            {avaliacao.sk_movie_id for avaliacao in avaliacoes}, excluir or set()
+            filmes_origem,
+            {avaliacao.sk_movie_id for avaliacao in avaliacoes},
+            excluir or set(),
         )
         recomendacoes, arestas = self._construir_conexoes(
             avaliadas,
@@ -167,20 +191,165 @@ class MapaGostosService:
         return list(resultado.scalars())
 
     async def _catalogo_candidato(
-        self, ids_avaliados: set[str], excluir: set[str]
+        self,
+        filmes_origem: list[DimMovie],
+        ids_avaliados: set[str],
+        excluir: set[str],
     ) -> list[DimMovie]:
-        resultado = await self._session.execute(
-            select(DimMovie)
+        """Busca uma amostra ampla por sinais no SQL antes de carregar relações.
+
+        O catálogo inteiro não é hidratado no ORM: gêneros, pessoas e termos de
+        sinopse geram uma pontuação preliminar no banco. A similaridade completa
+        e explicável continua sendo calculada em Python para os melhores 2.500.
+        """
+
+        generos_origem = {genero.sk_genre_id for filme in filmes_origem for genero in filme.genres}
+        pessoas_origem = {pessoa.sk_person_id for filme in filmes_origem for pessoa in filme.people}
+        termos_origem = Counter(
+            termo for filme in filmes_origem for termo in self._vetor_sinopse(filme.sinopse)
+        )
+        termos_sinopse = [
+            termo
+            for termo, _ in sorted(
+                termos_origem.items(),
+                key=lambda item: (item[1], -len(item[0]), item[0]),
+            )[:LIMITE_TERMOS_SINOPSE]
+        ]
+        sinais = []
+
+        if generos_origem:
+            sinais.append(
+                select(
+                    bridge_movie_genre.c.sk_movie_id.label("movie_id"),
+                    (func.count() * 3).label("score"),
+                )
+                .where(bridge_movie_genre.c.sk_genre_id.in_(generos_origem))
+                .group_by(bridge_movie_genre.c.sk_movie_id)
+            )
+        if pessoas_origem:
+            sinais.append(
+                select(
+                    bridge_movie_person.c.sk_movie_id.label("movie_id"),
+                    (func.count() * 4).label("score"),
+                )
+                .where(bridge_movie_person.c.sk_person_id.in_(pessoas_origem))
+                .group_by(bridge_movie_person.c.sk_movie_id)
+            )
+        if termos_sinopse:
+            consulta_fts = " OR ".join(f'"{termo}"' for termo in termos_sinopse)
+            indice_sinopse = table(
+                "movie_synopsis_fts",
+                column("sk_movie_id", String),
+                column("sinopse", String),
+            )
+            busca_texto = (
+                select(
+                    indice_sinopse.c.sk_movie_id.label("movie_id"),
+                    literal(6, type_=Integer).label("score"),
+                )
+                .where(text("movie_synopsis_fts MATCH :consulta_fts"))
+                .order_by(text("bm25(movie_synopsis_fts)"))
+                .limit(LIMITE_CANDIDATOS)
+                .params(consulta_fts=consulta_fts)
+                .subquery()
+            )
+            sinais.append(select(busca_texto.c.movie_id, busca_texto.c.score))
+
+        if not sinais:
+            return []
+
+        pontuacoes = union_all(*sinais).subquery()
+        ranking = (
+            select(
+                pontuacoes.c.movie_id,
+                func.sum(pontuacoes.c.score).label("score"),
+            )
+            .join(DimMovie, DimMovie.sk_movie_id == pontuacoes.c.movie_id)
             .where(DimMovie.sk_movie_id.not_in(ids_avaliados))
             .where(DimMovie.id_filme.not_in(excluir))
+            .group_by(pontuacoes.c.movie_id)
+            .order_by(func.sum(pontuacoes.c.score).desc(), DimMovie.titulo, DimMovie.sk_movie_id)
+            .limit(LIMITE_CANDIDATOS)
+            .subquery()
+        )
+        try:
+            ids_resultado = await self._session.scalars(select(ranking.c.movie_id))
+            ids_candidatos = list(ids_resultado)
+        except OperationalError as error:
+            # Testes e bancos locais ainda em migração podem não ter o índice.
+            if "no such table: movie_synopsis_fts" not in str(error).casefold():
+                raise
+            ids_candidatos = await self._catalogo_candidato_sem_fts(
+                filmes_origem, ids_avaliados, excluir, generos_origem, pessoas_origem
+            )
+        if not ids_candidatos:
+            return []
+
+        resultado = await self._session.execute(
+            select(DimMovie)
+            .where(DimMovie.sk_movie_id.in_(ids_candidatos))
             .options(
                 selectinload(DimMovie.genres),
                 selectinload(DimMovie.people),
                 selectinload(DimMovie.performance),
             )
-            .order_by(DimMovie.titulo)
         )
         return list(resultado.scalars().unique())
+
+    async def _catalogo_candidato_sem_fts(
+        self,
+        filmes_origem: list[DimMovie],
+        ids_avaliados: set[str],
+        excluir: set[str],
+        generos_origem: set[str],
+        pessoas_origem: set[str],
+    ) -> list[str]:
+        """Fallback para bancos de teste ainda sem a migration FTS5."""
+
+        sinais = []
+        if generos_origem:
+            sinais.append(
+                select(
+                    bridge_movie_genre.c.sk_movie_id.label("movie_id"),
+                    (func.count() * 3).label("score"),
+                )
+                .where(bridge_movie_genre.c.sk_genre_id.in_(generos_origem))
+                .group_by(bridge_movie_genre.c.sk_movie_id)
+            )
+        if pessoas_origem:
+            sinais.append(
+                select(
+                    bridge_movie_person.c.sk_movie_id.label("movie_id"),
+                    (func.count() * 4).label("score"),
+                )
+                .where(bridge_movie_person.c.sk_person_id.in_(pessoas_origem))
+                .group_by(bridge_movie_person.c.sk_movie_id)
+            )
+        termos = sorted(
+            {termo for filme in filmes_origem for termo in self._vetor_sinopse(filme.sinopse)}
+        )[:LIMITE_TERMOS_SINOPSE]
+        if termos:
+            correspondencias = [DimMovie.sinopse.ilike(f"%{termo}%") for termo in termos]
+            score = sum(case((condicao, 1), else_=0) for condicao in correspondencias)
+            sinais.append(
+                select(
+                    DimMovie.sk_movie_id.label("movie_id"),
+                    score.label("score"),
+                ).where(or_(*correspondencias))
+            )
+        if not sinais:
+            return []
+        pontuacoes = union_all(*sinais).subquery()
+        ranking = (
+            select(pontuacoes.c.movie_id)
+            .join(DimMovie, DimMovie.sk_movie_id == pontuacoes.c.movie_id)
+            .where(DimMovie.sk_movie_id.not_in(ids_avaliados))
+            .where(DimMovie.id_filme.not_in(excluir))
+            .group_by(pontuacoes.c.movie_id)
+            .order_by(func.sum(pontuacoes.c.score).desc(), DimMovie.titulo)
+            .limit(LIMITE_CANDIDATOS)
+        )
+        return list(await self._session.scalars(ranking))
 
     @staticmethod
     def _avaliadas_distintas(avaliacoes: Iterable[MovieReview]) -> list[MovieReview]:
@@ -249,20 +418,14 @@ class MapaGostosService:
         )[:limite_recomendacoes]
         ids_recomendados = {filme.id_filme for filme, _ in recomendacoes}
         arestas = [
-            aresta
-            for aresta in arestas_por_par.values()
-            if aresta.destino in ids_recomendados
+            aresta for aresta in arestas_por_par.values() if aresta.destino in ids_recomendados
         ]
         return recomendacoes, sorted(arestas, key=lambda aresta: (-aresta.peso, aresta.origem))
 
     def _afinidade(self, origem: DimMovie, candidato: DimMovie, nota: float) -> float:
-        return self._afinidade_vetores(
-            self._vetor(origem), self._vetor(candidato), nota
-        )
+        return self._afinidade_vetores(self._vetor(origem), self._vetor(candidato), nota)
 
-    def _afinidade_vetores(
-        self, origem: VetorFilme, candidato: VetorFilme, nota: float
-    ) -> float:
+    def _afinidade_vetores(self, origem: VetorFilme, candidato: VetorFilme, nota: float) -> float:
         generos = len(origem.generos & candidato.generos) / max(
             1, len(origem.generos | candidato.generos)
         )
@@ -292,11 +455,7 @@ class MapaGostosService:
     def _vetor(cls, filme: DimMovie) -> VetorFilme:
         desempenho = filme.performance
         notas = (
-            [
-                nota
-                for nota in (desempenho.nota_tmdb, desempenho.nota_imdb)
-                if nota is not None
-            ]
+            [nota for nota in (desempenho.nota_tmdb, desempenho.nota_imdb) if nota is not None]
             if desempenho
             else []
         )
@@ -345,14 +504,10 @@ class MapaGostosService:
         )
 
     @staticmethod
-    def _similaridade_metricas_vetores(
-        origem: VetorFilme, candidato: VetorFilme
-    ) -> float:
+    def _similaridade_metricas_vetores(origem: VetorFilme, candidato: VetorFilme) -> float:
         sinais: list[float] = []
         if origem.nota_externa is not None and candidato.nota_externa is not None:
-            sinais.append(
-                max(0.0, 1 - abs(origem.nota_externa - candidato.nota_externa) / 10)
-            )
+            sinais.append(max(0.0, 1 - abs(origem.nota_externa - candidato.nota_externa) / 10))
         if origem.popularidade is not None and candidato.popularidade is not None:
             maior = max(origem.popularidade, candidato.popularidade, 1)
             sinais.append(1 - abs(origem.popularidade - candidato.popularidade) / maior)
@@ -364,16 +519,8 @@ class MapaGostosService:
             & {genero.nome_genero for genero in candidato.genres}
         )
         diretores = sorted(
-            {
-                pessoa.nome_pessoa
-                for pessoa in origem.people
-                if pessoa.tipo_pessoa == "Diretor"
-            }
-            & {
-                pessoa.nome_pessoa
-                for pessoa in candidato.people
-                if pessoa.tipo_pessoa == "Diretor"
-            }
+            {pessoa.nome_pessoa for pessoa in origem.people if pessoa.tipo_pessoa == "Diretor"}
+            & {pessoa.nome_pessoa for pessoa in candidato.people if pessoa.tipo_pessoa == "Diretor"}
         )
         pessoas = sorted(
             {pessoa.nome_pessoa for pessoa in origem.people}
