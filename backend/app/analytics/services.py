@@ -90,6 +90,11 @@ class AnalyticsService:
         """Ignora avaliações importadas/semeadas sem uma conta associada."""
         return MovieReview.user_id.is_not(None)
 
+    @classmethod
+    def _avaliacao_no_periodo(cls, inicio: datetime) -> tuple[object, object]:
+        """Reúne as regras usadas pelos rankings baseados no período escolhido."""
+        return cls._avaliacao_da_comunidade(), MovieReview.created_at >= inicio
+
     async def _evolucao(
         self, inicio: datetime, periodo_dias: int
     ) -> list[PontoEvolucaoAnalytics]:
@@ -97,7 +102,7 @@ class AnalyticsService:
         avaliacoes = await self._datas(
             MovieReview.created_at,
             inicio,
-            self._avaliacao_da_comunidade(),
+            *self._avaliacao_no_periodo(inicio),
         )
         listas = await self._datas(UserList.created_at, inicio)
         publicacoes = await self._datas(CommunityPost.created_at, inicio)
@@ -132,7 +137,7 @@ class AnalyticsService:
                 bridge_movie_genre.c.sk_genre_id == DimGenre.sk_genre_id,
             )
             .join(MovieReview, MovieReview.sk_movie_id == bridge_movie_genre.c.sk_movie_id)
-            .where(self._avaliacao_da_comunidade(), MovieReview.created_at >= inicio)
+            .where(*self._avaliacao_no_periodo(inicio))
             .group_by(DimGenre.sk_genre_id, DimGenre.nome_genero)
             .order_by(
                 func.count(MovieReview.sk_movie_review_id).desc(),
@@ -153,7 +158,7 @@ class AnalyticsService:
                 func.count(MovieReview.sk_movie_review_id).label("quantidade"),
                 func.avg(MovieReview.nota).label("nota_media"),
             )
-            .where(self._avaliacao_da_comunidade(), MovieReview.created_at >= inicio)
+            .where(*self._avaliacao_no_periodo(inicio))
             .group_by(MovieReview.sk_movie_id)
             .subquery()
         )
