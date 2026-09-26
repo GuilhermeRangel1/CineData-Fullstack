@@ -13,6 +13,7 @@ import type {
   ComunidadeCriacao,
   ComunidadeLeitura,
   PessoaComunidade,
+  PerfilProprio,
   PerfilPublico,
   PublicacaoComunidade,
   ReacaoComunidade,
@@ -180,6 +181,10 @@ export function registrarVisualizacaoComunidade(id: string): Promise<ComunidadeL
 
 export function obterPerfilPublico(id: string, signal?: AbortSignal): Promise<PerfilPublico> {
   return requisitar<PerfilPublico>(`/perfis/${encodeURIComponent(id)}`, { signal })
+}
+
+export function obterPerfilProprio(signal?: AbortSignal): Promise<PerfilProprio> {
+  return requisitar<PerfilProprio>('/auth/perfil', { signal, cache: 'no-store' })
 }
 
 export function criarComunidade(dados: ComunidadeCriacao): Promise<ComunidadeLeitura> {

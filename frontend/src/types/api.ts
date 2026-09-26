@@ -244,6 +244,22 @@ export interface PerfilPublico {
   comunidades: { id: string; nome: string; descricao: string }[]
 }
 
+export interface PerfilProprio {
+  id: string
+  nome: string
+  avatar_url: string | null
+  quantidade_amigos: number
+  avaliacoes: (AvaliacaoLeitura & { filme: FilmeResumo })[]
+  listas: {
+    id: string
+    nome: string
+    visibilidade: VisibilidadeLista
+    quantidade_filmes: number
+    filmes: FilmeResumo[]
+  }[]
+  comunidades: { id: string; nome: string; descricao: string }[]
+}
+
 export type VisibilidadeLista = 'publica' | 'privada'
 
 export interface ListaLeitura {

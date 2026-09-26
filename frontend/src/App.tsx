@@ -7,7 +7,7 @@ import { Catalog } from './pages/Catalog'
 import { Dialog } from './components/Dialog'
 import { MovieForm } from './components/MovieForm'
 import { AuthForm } from './components/AuthForm'
-import { ProfileForm } from './components/ProfileForm'
+import { OwnProfile } from './components/OwnProfile'
 import { CommunityHub } from './components/CommunityHub'
 import { ListHub } from './components/ListHub'
 import { FriendshipHub } from './components/FriendshipHub'
@@ -233,18 +233,17 @@ function App() {
         </Dialog>
       )}
       {profileOpen && session && (
-        <Dialog title="Seu perfil" className="editor-dialog" busy={busy} onClose={() => setProfileOpen(false)}>
-          <ProfileForm
+        <OwnProfile
             user={session.usuario}
+            busy={busy}
             onBusyChange={setBusy}
+            onClose={() => setProfileOpen(false)}
+            onOpenMovie={setSelected}
             onSaved={(user) => {
               const updated = atualizarUsuarioSessao(user)
               if (updated) setSession(updated)
-              setNotice('Perfil atualizado.')
-              setProfileOpen(false)
             }}
           />
-        </Dialog>
       )}
       {selected && (
         <MovieDetail

@@ -8,8 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.users.dependencies import get_current_user
 from app.users.models import User
+from app.users.profile_services import PerfilPublicoService
 from app.users.schemas import (
     CredenciaisLogin,
+    PerfilProprio,
     TokenAcesso,
     UsuarioAtualizacao,
     UsuarioCadastro,
@@ -18,6 +20,16 @@ from app.users.schemas import (
 from app.users.services import AuthService
 
 auth_router = APIRouter(prefix="/auth", tags=["autenticação"])
+
+
+@auth_router.get("/perfil", response_model=PerfilProprio)
+async def obter_perfil_proprio(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    usuario: Annotated[User, Depends(get_current_user)],
+) -> PerfilProprio:
+    """Retorna a visão completa do perfil para a própria conta autenticada."""
+
+    return await PerfilPublicoService(session).obter_proprio(usuario.id)
 
 
 @auth_router.post("/cadastro", response_model=UsuarioLeitura, status_code=status.HTTP_201_CREATED)

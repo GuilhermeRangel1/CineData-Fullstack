@@ -127,6 +127,26 @@ class ListaPublica(BaseModel):
     filmes: list[FilmeResumo]
 
 
+class ListaPerfilProprio(ListaPublica):
+    """Lista exibida ao próprio dono, inclusive quando privada."""
+
+    visibilidade: Literal["publica", "privada"]
+
+
+class PerfilProprio(BaseModel):
+    """Visão autenticada de um perfil, sem dados de login."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    nome: str
+    avatar_url: str | None = None
+    quantidade_amigos: int = Field(ge=0)
+    avaliacoes: list[AvaliacaoPerfil]
+    listas: list[ListaPerfilProprio]
+    comunidades: list[ComunidadePerfil]
+
+
 class TokenAcesso(BaseModel):
     """Sessão Bearer devolvida ao cliente após o login."""
 

@@ -11,8 +11,8 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.movies.models import MovieReview
-from app.users.models import User
+from app.movies.models import DimMovie, MovieReview
+from app.users.models import User, UserList
 from app.users.schemas import UsuarioCadastro, UsuarioCadastroInicial
 from app.users.security import gerar_hash_senha
 from app.users.services import AuthService
@@ -256,6 +256,65 @@ async def test_user_can_update_avatar_and_expose_a_safe_public_profile(
     assert public_profile.json()["quantidade_amigos"] == 0
     assert public_profile.json()["avatar_url"] == "data:image/png;base64,aGVsbG8="
     assert "email" not in public_profile.json()
+
+
+async def test_own_profile_includes_private_lists_and_reviews(
+    user_session_factory: async_sessionmaker[AsyncSession], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("JWT_SECRET_KEY", "segredo-de-teste-com-tamanho-suficiente")
+    get_settings.cache_clear()
+    async with user_session_factory() as session:
+        usuario = User(
+            id="owner-profile",
+            email="dono@example.com",
+            nome="Dono",
+            password_hash=gerar_hash_senha("senha-local-segura1"),
+        )
+        filme = DimMovie(id_filme="filme-privado", titulo="Filme privado")
+        lista = UserList(id="lista-privada", user=usuario, nome="Para mim", visibilidade="privada")
+        lista.movies.append(filme)
+        session.add_all([usuario, filme, lista])
+        await session.flush()
+        session.add(
+            MovieReview(
+                sk_movie_id=filme.sk_movie_id,
+                user_id=usuario.id,
+                nome=usuario.nome,
+                nota=8.5,
+                comentario="Avaliação reservada.",
+                visibilidade="privada",
+            )
+        )
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with user_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/v1/auth/perfil",
+                headers={"Authorization": f"Bearer {criar_token_acesso(usuario).access_token}"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    assert response.json()["listas"] == [
+        {
+            "id": "lista-privada",
+            "nome": "Para mim",
+            "visibilidade": "privada",
+            "quantidade_filmes": 1,
+            "filmes": [response.json()["listas"][0]["filmes"][0]],
+        }
+    ]
+    assert response.json()["avaliacoes"][0]["visibilidade"] == "privada"
+    assert response.json()["avaliacoes"][0]["filme"]["id"] == "filme-privado"
 
 
 async def test_bootstrap_creates_the_initial_administrator_only_once(
