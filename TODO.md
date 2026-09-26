@@ -143,11 +143,17 @@ aceita somente administradores, com testes cobrindo autenticação e autorizaç�
       amigos.
 - [x] Adicionar trailer opcional ao detalhe do filme quando houver uma fonte
       válida, sem alterar os CSVs originais.
+- [x] Criar no frontend a área de listas do usuário autenticado.
+- [x] Permitir no frontend criar, editar e excluir listas personalizadas.
+- [x] Permitir no frontend adicionar e remover filmes das listas.
+- [x] Exibir no frontend a lista virtual de filmes avaliados.
 
-**Critério de saída:** usuário autenticado cria e gerencia listas, usa
-"assistir depois", atualiza seu perfil com avatar e consulta perfis públicos;
-detalhes exibem trailer do YouTube quando configurado; migrações, testes,
-lint e build passam sem alterar os CSVs originais.
+**Critério de saída:** a API permite que o usuário autenticado crie e gerencie
+listas, atualize seu perfil com avatar e consulte perfis públicos; o frontend
+oferece esses fluxos sem depender de requisições manuais e permite salvar um
+filme do catálogo na lista escolhida; detalhes exibem trailer do YouTube quando
+configurado; migrações, testes, lint e build passam sem alterar os CSVs
+originais.
 
 ### 9. Comunidades
 
@@ -177,28 +183,32 @@ possuem testes de API e interface.
 - [x] Criar solicitações de amizade com estados pendente, aceita e bloqueada.
 - [x] Permitir consultar amigos e quantidade de amigos no perfil.
 - [x] Respeitar a visibilidade definida para listas e avaliações.
+- [ ] Criar no frontend a área de amizades e contatos do usuário.
+- [ ] Permitir pesquisar usuários e enviar solicitações de amizade pelo frontend.
+- [ ] Permitir aceitar, bloquear e remover amizades pelo frontend.
+- [ ] Exibir solicitações pendentes e amigos atuais na conta do usuário.
 
-**Critério de saída:** usuário autenticado envia, aceita, bloqueia e remove
-amizades; perfil público informa a quantidade correta de amigos; e listas ou
+**Critério de saída:** a API permite que o usuário autenticado envie, aceite,
+bloqueie e remova amizades; o frontend oferece esses fluxos em uma área de
+amizades; o perfil público informa a quantidade correta de amigos; e listas ou
 avaliações privadas não aparecem nas consultas públicas, com testes cobrindo
-transições de solicitação, autorização e visibilidade.
+transições de solicitação, autorização, visibilidade e os fluxos de interface.
 
 ### 11. Recursos opcionais
 
-- [ ] Implementar filtros avançados além de título, gênero, ordenação e
-      paginação.
-- [ ] Implementar recomendações baseadas em avaliações e listas.
+- [ ] Implementar filtros avançados além de título, gênero, ordenação,
+      paginação e em português.
 - [ ] Criar um "Mapa de gostos": grafo interativo com filmes avaliados pelo
       usuário, recomendações próximas e conexões explicadas por afinidades
       como gênero, direção ou elenco.
 - [ ] Integrar fonte externa para dados ou trailers de filmes.
+- [ ] Validação novamente do RBAC do admin
 - [ ] Criar Storybook para componentes visuais.
 - [x] Manter cache de consultas de leitura no frontend.
 - [ ] Adicionar métricas externas e observabilidade.
 - [ ] Criar pipeline de CI/CD.
 - [x] Disponibilizar execução local via Docker Compose.
-- [ ] Avaliar quizzes, conquistas, níveis, notícias e eventos somente depois
-      de validar o núcleo social.
+- [ ] Colocar dashboards analíticos para admin
 
 **Critério de saída:** cada item opcional marcado como concluído possui fluxo
 utilizável, documentação e validação proporcional ao seu impacto, sem regredir

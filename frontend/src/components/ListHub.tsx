@@ -155,7 +155,7 @@ export function ListHub({ usuario, onLoginRequested, onOpenMovie }: {
         </section>
 
         {selected && <section className="list-detail" aria-labelledby="selected-list-title">
-          <div className="list-section-heading"><div><p className="eyebrow">EDITANDO LISTA</p><h2 id="selected-list-title">{selected.nome}</h2></div><button className="text-button" onClick={() => setSelected(null)}>Fechar lista</button></div>
+          <div className="list-section-heading"><div><p className="eyebrow">EDITANDO LISTA</p><h2 id="selected-list-title">{selected.nome}</h2></div><button className="icon-button list-detail-close" aria-label="Fechar lista" onClick={() => setSelected(null)}><Icon name="close" /></button></div>
           <div className="list-add-movie"><label htmlFor="list-movie-search">Adicionar um filme<input id="list-movie-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Busque por título" autoComplete="off" /></label>
             {query.trim().length >= 2 && <div className="list-search-results">{results.length === 0 ? <p>Nenhum filme encontrado.</p> : results.map((movie) => <button key={movie.id} disabled={busy || selected.filmes.some((item) => item.id === movie.id)} onClick={() => void manage(async () => { const updated = await adicionarFilmeALista(selected.id, movie.id); setSelected(updated); replaceList(updated); setQuery(''); setResults([]) })}><span>{movie.titulo}<small>{movie.ano_lancamento ?? 'Ano não informado'}</small></span><b>{selected.filmes.some((item) => item.id === movie.id) ? 'Já está na lista' : '+ Adicionar'}</b></button>)}</div>}
           </div>

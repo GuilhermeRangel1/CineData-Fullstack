@@ -1882,6 +1882,8 @@ fieldset:disabled {
 .list-empty h3 { margin: 0 0 9px; font-size: 20px; }
 .list-empty p { max-width: 520px; margin: 0 auto 20px; color: var(--muted); font-size: 12px; line-height: 1.7; }
 .list-detail { margin: 48px 0; padding: 28px; border: 1px solid #d5a86245; border-radius: 14px; background: linear-gradient(125deg, #1a1815, #151519); }
+.list-detail-close { border: 1px solid #ffffff20; border-radius: 50%; color: #d4cec5; background: #ffffff08; }
+.list-detail-close:hover { color: white; background: #ffffff14; }
 .list-add-movie { position: relative; max-width: 660px; margin-bottom: 26px; }
 .list-add-movie label { display: flex; flex-direction: column; gap: 8px; color: #ded9d2; font-size: 12px; font-weight: 700; }
 .list-add-movie input { width: 100%; border: 1px solid #4d4942; border-radius: 8px; padding: 12px 14px; color: white; background: #0e0e10; font: inherit; font-weight: 400; }
