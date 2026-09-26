@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from app.communities.models import Community
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -44,6 +45,43 @@ async def communities_session_factory() -> AsyncIterator[async_sessionmaker[Asyn
         yield session_factory
     finally:
         await engine.dispose()
+
+
+async def test_views_are_persisted_and_sort_discovery_without_counting_reads(
+    communities_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async with communities_session_factory() as session:
+        session.add_all([
+            Community(id="a", nome="Animação", descricao="Animações"),
+            Community(id="z", nome="Suspense", descricao="Mistérios"),
+        ])
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with communities_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            initial = (await client.get("/api/v1/comunidades")).json()
+            assert [item["id"] for item in initial] == ["a", "z"]
+            assert all(item["visualizacoes"] == 0 for item in initial)
+            for count in (1, 2):
+                seen = await client.post("/api/v1/comunidades/z/visualizacoes")
+                assert seen.status_code == 200
+                assert seen.json()["visualizacoes"] == count
+            await client.get("/api/v1/comunidades/z/publicacoes")
+            await client.get("/api/v1/comunidades/z")
+            listed = (await client.get("/api/v1/comunidades")).json()
+            assert [item["id"] for item in listed] == ["z", "a"]
+            assert listed[0]["visualizacoes"] == 2
+            missing = await client.post("/api/v1/comunidades/missing/visualizacoes")
+            assert missing.status_code == 404
+    finally:
+        app.dependency_overrides.clear()
 
 
 async def test_admin_manages_communities_and_people_can_participate(

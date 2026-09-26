@@ -61,6 +61,15 @@ async def atualizar_comunidade(
     return await ComunidadesService(session).atualizar(comunidade_id, dados)
 
 
+@communities_router.post("/{comunidade_id}/visualizacoes", response_model=ComunidadeLeitura)
+async def registrar_visualizacao(
+    comunidade_id: Annotated[str, Path(min_length=1, max_length=32)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ComunidadeLeitura:
+    """Conta aberturas da conversa; não representa visitantes únicos."""
+    return await ComunidadesService(session).registrar_visualizacao(comunidade_id)
+
+
 @communities_router.delete("/{comunidade_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remover_comunidade(
     comunidade_id: Annotated[str, Path(min_length=1, max_length=32)],

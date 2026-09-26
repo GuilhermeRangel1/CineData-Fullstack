@@ -39,6 +39,7 @@ class ComunidadeLeitura(BaseModel):
     nome: str
     descricao: str
     quantidade_membros: int = Field(ge=0)
+    visualizacoes: int = Field(default=0, ge=0)
     criada_em: datetime
 
 

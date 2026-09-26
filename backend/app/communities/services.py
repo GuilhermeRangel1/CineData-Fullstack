@@ -3,7 +3,7 @@
 import logging
 from collections import Counter
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -58,12 +58,29 @@ class ComunidadesService:
 
     async def listar(self) -> list[ComunidadeLeitura]:
         comunidades = await self._session.scalars(
-            select(Community).order_by(func.lower(Community.nome), Community.id)
+            select(Community).order_by(
+                Community.visualizacoes.desc(), func.lower(Community.nome), Community.id
+            )
         )
         return [await self._para_comunidade(comunidade) for comunidade in comunidades]
 
     async def obter(self, community_id: str) -> ComunidadeLeitura:
         return await self._para_comunidade(await self._obter_comunidade(community_id))
+
+    async def registrar_visualizacao(self, community_id: str) -> ComunidadeLeitura:
+        comunidade = await self._obter_comunidade(community_id)
+        try:
+            await self._session.execute(
+                update(Community)
+                .where(Community.id == community_id)
+                .values(visualizacoes=Community.visualizacoes + 1)
+            )
+            await self._session.commit()
+            await self._session.refresh(comunidade)
+        except SQLAlchemyError as error:
+            await self._session.rollback()
+            raise FilmePersistenceError from error
+        return await self._para_comunidade(comunidade)
 
     async def criar(self, dados: ComunidadeCriacao) -> ComunidadeLeitura:
         try:
@@ -285,6 +302,7 @@ class ComunidadesService:
             nome=comunidade.nome,
             descricao=comunidade.descricao,
             quantidade_membros=quantidade_membros or 0,
+            visualizacoes=comunidade.visualizacoes,
             criada_em=comunidade.created_at,
         )
 

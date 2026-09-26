@@ -46,6 +46,7 @@ class Community(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=generate_community_id)
     nome: Mapped[str] = mapped_column(String(120), unique=True, index=True)
     descricao: Mapped[str] = mapped_column(String(1000))
+    visualizacoes: Mapped[int] = mapped_column(default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
