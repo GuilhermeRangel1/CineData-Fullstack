@@ -67,6 +67,18 @@ async def obter_minha_avaliacao(
     return await AvaliacoesService(session).obter_do_usuario(filme_id, usuario)
 
 
+@movies_router.delete("/{filme_id}/minha-avaliacao", status_code=status.HTTP_204_NO_CONTENT)
+async def remover_minha_avaliacao(
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    usuario: Annotated[User, Depends(get_current_user)],
+) -> Response:
+    """Apaga a avaliação da conta atual e atualiza o resumo do filme."""
+
+    await AvaliacoesService(session).remover_do_usuario(filme_id, usuario)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @movies_router.get("/{filme_id}/trailer", response_model=TrailerFilme)
 async def obter_trailer(
     filme_id: Annotated[str, Path(min_length=1, max_length=50)],

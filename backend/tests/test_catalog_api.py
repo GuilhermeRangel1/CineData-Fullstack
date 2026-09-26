@@ -562,6 +562,9 @@ async def test_reviews_endpoints_create_history_and_keep_average_consistent(
             mine_response = await client.get("/api/v1/filmes/movie-1/minha-avaliacao")
             detail_response = await client.get("/api/v1/filmes/movie-1")
             catalog_response = await client.get("/api/v1/filmes")
+            removal_response = await client.delete("/api/v1/filmes/movie-1/minha-avaliacao")
+            mine_after_removal = await client.get("/api/v1/filmes/movie-1/minha-avaliacao")
+            detail_after_removal = await client.get("/api/v1/filmes/movie-1")
     finally:
         app.dependency_overrides.clear()
 
@@ -584,6 +587,10 @@ async def test_reviews_endpoints_create_history_and_keep_average_consistent(
     )
     assert movie_in_catalog["quantidade_avaliacoes"] == 2
     assert movie_in_catalog["nota_media"] == 7.25
+    assert removal_response.status_code == 204
+    assert mine_after_removal.json() is None
+    assert detail_after_removal.json()["quantidade_avaliacoes"] == 1
+    assert detail_after_removal.json()["nota_media"] == 8.5
 
 
 async def test_review_endpoints_validate_payload_and_return_not_found(

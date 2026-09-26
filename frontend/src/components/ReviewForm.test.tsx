@@ -64,4 +64,26 @@ describe('Nova avaliação', () => {
       }),
     )
   })
+
+  it('pede confirmação antes de apagar a própria avaliação', async () => {
+    const fetcher = vi.fn(() => new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetcher)
+    const deleted = vi.fn()
+    render(<ReviewForm
+      movieId="1"
+      initialReview={{ id: 'review-1', nome: 'Ana', nota: 8, comentario: 'Gostei.', visibilidade: 'publica', criada_em: '2026-01-01T12:00:00Z' }}
+      onSaved={vi.fn()}
+      onDeleted={deleted}
+      onBusyChange={vi.fn()}
+    />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Apagar avaliação' }))
+    expect(fetcher).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }))
+    await waitFor(() => expect(fetcher).toHaveBeenCalledWith(
+      expect.stringContaining('/filmes/1/minha-avaliacao'),
+      expect.objectContaining({ method: 'DELETE' }),
+    ))
+    expect(deleted).toHaveBeenCalledOnce()
+  })
 })

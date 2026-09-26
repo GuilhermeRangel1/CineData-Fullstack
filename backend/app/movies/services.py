@@ -367,6 +367,40 @@ class AvaliacoesService:
 
         return self._para_leitura(avaliacao)
 
+    async def remover_do_usuario(self, filme_id: str, usuario: User) -> None:
+        """Remove somente a avaliação da conta atual e recompõe a média do filme."""
+
+        filme = await self._obter_filme(filme_id)
+        avaliacao = await self._session.scalar(
+            select(MovieReview)
+            .where(
+                MovieReview.sk_movie_id == filme.sk_movie_id,
+                MovieReview.user_id == usuario.id,
+            )
+            .order_by(MovieReview.created_at.desc(), MovieReview.sk_movie_review_id.desc())
+            .limit(1)
+        )
+        if avaliacao is None:
+            return
+
+        try:
+            resumo = filme.reviews_summary
+            if resumo is not None and resumo.qtd_avaliacoes_usuarios <= 1:
+                await self._session.delete(resumo)
+            elif resumo is not None:
+                quantidade_anterior = resumo.qtd_avaliacoes_usuarios
+                media_anterior = resumo.nota_media_usuarios or 0
+                resumo.qtd_avaliacoes_usuarios = quantidade_anterior - 1
+                resumo.nota_media_usuarios = (
+                    (media_anterior * quantidade_anterior) - avaliacao.nota
+                ) / resumo.qtd_avaliacoes_usuarios
+            await self._session.delete(avaliacao)
+            await self._session.commit()
+        except SQLAlchemyError as error:
+            await self._session.rollback()
+            logger.error("Remoção de avaliação interrompida por falha de persistência.")
+            raise FilmePersistenceError from error
+
     async def _obter_filme(self, filme_id: str) -> DimMovie:
         filme = await self._session.scalar(
             select(DimMovie)

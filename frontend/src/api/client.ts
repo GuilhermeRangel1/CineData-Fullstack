@@ -204,6 +204,13 @@ export function obterMinhaAvaliacao(
   })
 }
 
+export async function removerMinhaAvaliacao(id: string): Promise<void> {
+  await requisitar<void>(`/filmes/${encodeURIComponent(id)}/minha-avaliacao`, {
+    method: 'DELETE',
+  })
+  invalidarCacheDeFilmes()
+}
+
 export function obterTrailerFilme(id: string, signal?: AbortSignal): Promise<{ url_trailer: string | null }> {
   return requisitarComCache(`/filmes/${encodeURIComponent(id)}/trailer`, signal)
 }

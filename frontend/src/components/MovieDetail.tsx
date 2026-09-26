@@ -383,6 +383,13 @@ export function MovieDetail({
                       retry()
                       onChanged?.()
                     }}
+                    onDeleted={() => {
+                      focusAfterChange.current = true
+                      setNotice('Avaliação removida. A média do filme foi atualizada.')
+                      setMyReview(null)
+                      retry()
+                      onChanged?.()
+                    }}
                   />
                 ) : (
                   <div className="review-login-prompt">

@@ -1811,6 +1811,8 @@ dialog::backdrop {
 .review-form .form-grid {
   margin-top: 20px;
 }
+.review-delete { margin-right: auto; color: #ff9aa0; }
+.review-delete:hover { color: #ffc5c8; }
 .success-message {
   color: #bde3ca;
   background: #203629;

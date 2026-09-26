@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { criarAvaliacao } from '../api/client'
+import { criarAvaliacao, removerMinhaAvaliacao } from '../api/client'
 import { useMutation } from '../hooks/useMutation'
 import type { AvaliacaoLeitura } from '../types/api'
 
@@ -7,17 +7,20 @@ export function ReviewForm({
   movieId,
   initialReview = null,
   onSaved,
+  onDeleted = () => undefined,
   onBusyChange,
 }: {
   movieId: string
   initialReview?: AvaliacaoLeitura | null
   onSaved: () => void
+  onDeleted?: () => void
   onBusyChange: (busy: boolean) => void
 }) {
   const [score, setScore] = useState(() => initialReview ? String(initialReview.nota).replace('.', ',') : '')
   const [comment, setComment] = useState(() => initialReview?.comentario ?? '')
   const [visibility, setVisibility] = useState<'publica' | 'privada'>(() => initialReview?.visibilidade ?? 'publica')
   const [validation, setValidation] = useState('')
+  const [confirmingDeletion, setConfirmingDeletion] = useState(false)
   const { pending, error, run } = useMutation(onBusyChange)
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -49,6 +52,17 @@ export function ReviewForm({
         }
         onSaved()
       },
+    )
+  }
+  function remove() {
+    if (!initialReview) return
+    if (!confirmingDeletion) {
+      setConfirmingDeletion(true)
+      return
+    }
+    void run(
+      () => removerMinhaAvaliacao(movieId),
+      () => onDeleted(),
     )
   }
   return (
@@ -95,6 +109,16 @@ export function ReviewForm({
         </p>
       )}
       <div className="form-actions">
+        {initialReview && (
+          <button
+            className="text-button review-delete"
+            type="button"
+            disabled={pending}
+            onClick={remove}
+          >
+            {confirmingDeletion ? 'Confirmar exclusão' : 'Apagar avaliação'}
+          </button>
+        )}
         <button className="button button-light" disabled={pending}>
           {pending ? 'Salvando…' : initialReview ? 'Salvar alteração' : 'Publicar avaliação'}
         </button>
