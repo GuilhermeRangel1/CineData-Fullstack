@@ -8,10 +8,12 @@ import { Dialog } from './components/Dialog'
 import { MovieForm } from './components/MovieForm'
 import { AuthForm } from './components/AuthForm'
 import { ProfileForm } from './components/ProfileForm'
+import { CommunityHub } from './components/CommunityHub'
 import { atualizarUsuarioSessao, carregarSessao, encerrarSessao, type Sessao } from './auth/session'
 import './App.css'
 
 function App() {
+  const [page, setPage] = useState<'home' | 'communities'>('home')
   const [selected, setSelected] = useState<string | null>(null)
   const [genre, setGenre] = useState('')
   const [catalogVersion, setCatalogVersion] = useState(0)
@@ -23,6 +25,9 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'cadastro' | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   const refresh = () => setRevision((value) => value + 1)
+  function showHome() {
+    setPage('home')
+  }
   function explore(value: string) {
     setGenre(value)
     setCatalogVersion((version) => version + 1)
@@ -34,11 +39,11 @@ function App() {
   }
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#catalogo">
-        Pular para o catálogo
+      <a className="skip-link" href={page === 'home' ? '#catalogo' : '#comunidades'}>
+        Pular para o conteúdo
       </a>
-      <header className="topbar">
-        <a className="brand" href="#inicio" aria-label="CineData Analytics, início">
+      <header className={`topbar ${page === 'communities' ? 'topbar--solid' : ''}`}>
+        <a className="brand" href="#inicio" aria-label="CineData Analytics, início" onClick={showHome}>
           <span className="brand-symbol">
             <Icon name="film" />
           </span>
@@ -47,11 +52,12 @@ function App() {
           </span>
         </a>
         <nav className="main-nav" aria-label="Navegação principal">
-          <a href="#inicio">Início</a>
-          <a href="#colecoes">Coleções</a>
-          <a href="#catalogo">Catálogo</a>
+          <a href="#inicio" onClick={showHome}>Início</a>
+          <a href="#colecoes" onClick={showHome}>Coleções</a>
+          <a href="#catalogo" onClick={showHome}>Catálogo</a>
+          <button type="button" aria-current={page === 'communities' ? 'page' : undefined} onClick={() => setPage('communities')}>Comunidades</button>
         </nav>
-        <a href="#catalogo" className="header-search">
+        <a href="#catalogo" className="header-search" onClick={showHome}>
           <Icon name="search" />
           <span>Encontrar um filme</span>
         </a>
@@ -61,7 +67,7 @@ function App() {
               {session.usuario.avatar_url ? <img src={session.usuario.avatar_url} alt="" /> : <span>{session.usuario.nome.slice(0, 1).toUpperCase()}</span>}
               <span>Olá, {session.usuario.nome}</span>
             </button>
-            {session.usuario.role === 'admin' && (
+            {session.usuario.role === 'admin' && page === 'home' && (
               <button
                 className="button button-outline add-movie"
                 data-dialog-focus-return
@@ -95,9 +101,10 @@ function App() {
           </div>
         )}
       </header>
-      <main>
-        <Hero onExplore={() => explore('Animation')} paused={creating || selected !== null} />
-        <div className="content-wrap">
+      {page === 'home' ? (
+        <main>
+          <Hero onExplore={() => explore('Animation')} paused={creating || selected !== null} />
+          <div className="content-wrap">
           <div className="collection-intro" id="colecoes">
             <p className="eyebrow">HISTÓRIAS PARA TODOS OS OLHARES</p>
             <span>Explore o catálogo, um universo de cada vez.</span>
@@ -125,27 +132,41 @@ function App() {
             onGenre={setGenre}
             onOpen={setSelected}
           />
-        </div>
-      </main>
+          </div>
+        </main>
+      ) : (
+        <main id="comunidades">
+          <CommunityHub
+            usuario={session?.usuario ?? null}
+            onBusyChange={setBusy}
+            onLoginRequested={() => setAuthMode('login')}
+            onOpenMovie={setSelected}
+          />
+        </main>
+      )}
       <footer className="footer">
-        <a className="footer-brand" href="#inicio">
+        <a className="footer-brand" href="#inicio" onClick={showHome}>
           CINEDATA <span>ANALYTICS</span>
         </a>
         <p>Histórias que ficam. Olhares que se encontram.</p>
-        <details>
-          <summary>Créditos do destaque</summary>
-          <p>
-            O Castelo Animado © 2004 Diana Wynne Jones / Hayao Miyazaki / Studio Ghibli, NDDMT.{' '}
-            <a href="https://www.ghibli.jp/works/howl/" target="_blank" rel="noreferrer">
-              Imagem: Studio Ghibli
-            </a>
-            .{' '}
-            <a href="https://www.youtube.com/watch?v=2x5SejvTMeA" target="_blank" rel="noreferrer">
-              Trailer: GKIDS
-            </a>
-            . Projeto acadêmico, sem afiliação aos estúdios.
-          </p>
-        </details>
+        {page === 'home' ? (
+          <details>
+            <summary>Créditos do destaque</summary>
+            <p>
+              O Castelo Animado © 2004 Diana Wynne Jones / Hayao Miyazaki / Studio Ghibli, NDDMT.{' '}
+              <a href="https://www.ghibli.jp/works/howl/" target="_blank" rel="noreferrer">
+                Imagem: Studio Ghibli
+              </a>
+              .{' '}
+              <a href="https://www.youtube.com/watch?v=2x5SejvTMeA" target="_blank" rel="noreferrer">
+                Trailer: GKIDS
+              </a>
+              . Projeto acadêmico, sem afiliação aos estúdios.
+            </p>
+          </details>
+        ) : (
+          <span className="community-footer-note">Cinema é experiência coletiva.</span>
+        )}
       </footer>
       {notice && (
         <div className="app-notice" role="status">

@@ -98,3 +98,28 @@ it('completa cadastro, edição, avaliação e exclusão atualizando todas as li
   expect(await screen.findByText('Nenhuma história por aqui. Ainda.')).toBeInTheDocument()
   expect(fetcher.mock.calls.filter(([, init]) => init?.method === 'DELETE')).toHaveLength(1)
 })
+
+it('abre comunidades como página principal em vez de diálogo', async () => {
+  window.localStorage.removeItem('cinedata.session')
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) => {
+      const path = new URL(url).pathname
+      if (path.endsWith('/comunidades')) return json([])
+      if (path.endsWith('/filmes')) {
+        return json({
+          itens: [],
+          meta: { pagina: 1, tamanho_pagina: 12, total_itens: 0, total_paginas: 0 },
+        })
+      }
+      throw new Error(`Requisição não esperada: ${path}`)
+    }),
+  )
+
+  render(<App />)
+  await userEvent.click(screen.getByRole('button', { name: 'Comunidades' }))
+
+  expect(await screen.findByRole('heading', { name: 'Comunidades' })).toBeInTheDocument()
+  expect(screen.queryByRole('dialog', { name: 'Comunidades' })).not.toBeInTheDocument()
+  expect(screen.queryByText('Destaque editorial')).not.toBeInTheDocument()
+})

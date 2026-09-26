@@ -143,3 +143,57 @@ export interface ConsultaCatalogo {
   direcao?: DirecaoOrdenacao
   priorizar_capa?: boolean
 }
+
+export interface PessoaComunidade {
+  id: string
+  nome: string
+  avatar_url: string | null
+}
+
+export interface ComunidadeLeitura {
+  id: string
+  nome: string
+  descricao: string
+  quantidade_membros: number
+  visualizacoes: number
+  criada_em: string
+}
+
+export interface ComunidadeCriacao {
+  nome: string
+  descricao: string
+}
+
+export interface ComentarioComunidade {
+  id: string
+  conteudo: string
+  autor: PessoaComunidade
+  criado_em: string
+}
+
+export type TipoReacao = 'curtir' | 'amei' | 'interessante'
+
+export interface ReacaoComunidade {
+  tipo: TipoReacao
+  quantidade: number
+}
+
+export interface PublicacaoComunidade {
+  id: string
+  comunidade_id: string
+  conteudo: string
+  autor: PessoaComunidade
+  filme: FilmeResumo | null
+  comentarios: ComentarioComunidade[]
+  reacoes: ReacaoComunidade[]
+  criada_em: string
+}
+
+export interface PerfilPublico {
+  id: string
+  nome: string
+  avatar_url: string | null
+  quantidade_amigos: number
+  avaliacoes: (AvaliacaoLeitura & { filme: FilmeResumo })[]
+  listas_publicas: { id: string; nome: string; quantidade_filmes: number; filmes: FilmeResumo[] }[]
+}

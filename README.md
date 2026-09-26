@@ -161,7 +161,12 @@ detalhes carregam relações com `selectinload`, prevenindo consultas N+1.
 
 ## Limitações conhecidas
 
-- Comunidades, listas, amizades e perfis públicos ainda não foram implementados.
+- As conversas de comunidades são atualizadas por polling a cada cinco segundos
+  enquanto a janela está aberta e a aba está visível; não há entrega instantânea
+  por WebSocket. O histórico ainda é carregado integralmente.
+- "Mais vistas" ordena comunidades por aberturas da conversa, contando também
+  reaberturas. A contagem começa com a migration `0011_add_community_views` e não
+  representa visitantes únicos nem possui proteção contra manipulação do ranking.
 - O SQLite é adequado para a execução local e demonstração da atividade; uma
   implantação concorrente de maior escala exigiria um banco servidor.
 - A busca atual é textual por título. Busca tolerante a erros de digitação ou

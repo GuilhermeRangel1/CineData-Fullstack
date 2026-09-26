@@ -151,19 +151,26 @@ lint e build passam sem alterar os CSVs originais.
 
 ### 9. Comunidades
 
-- [ ] Restringir gestão de comunidades ao administrador.
-- [ ] Permitir que o administrador crie, edite e exclua comunidades.
-- [ ] Permitir que usuários entrem e saiam de comunidades.
-- [ ] Criar publicações e comentários relacionados a filmes do catálogo.
-- [ ] Permitir mencionar um filme usando `movie_id` e exibir seus dados no post.
-- [ ] Adicionar reações simples às publicações.
-- [ ] Usar requisições HTTP/polling inicialmente; avaliar WebSockets apenas se
+- [x] Restringir gestão de comunidades ao administrador.
+- [x] Permitir que o administrador crie, edite e exclua comunidades.
+- [x] Permitir que usuários entrem e saiam de comunidades.
+- [x] Criar publicações e comentários relacionados a filmes do catálogo.
+- [x] Permitir mencionar um filme usando `movie_id` e exibir seus dados no post.
+- [x] Adicionar reações simples às publicações.
+- [x] Usar requisições HTTP/polling inicialmente; avaliar WebSockets apenas se
       a experiência exigir atualização em tempo real.
+- [x] Exibir quatro comunidades mais vistas e revelar mais quatro com "Ver mais",
+      registrando aberturas da conversa para ordenar a descoberta.
+- [x] Abrir chat em janela flutuante a partir do card, com mensagens cronológicas,
+      avatar, nome clicável para o perfil público, menções de filmes e reações.
+- [x] Atualizar mensagens a cada cinco segundos sem tirar o usuário da leitura
+      de mensagens antigas; preservar o texto quando o envio falhar.
 
 **Critério de saída:** administrador gerencia comunidades; usuários entram,
 saem e interagem com publicações, comentários, menções de filmes e reações;
-permissões, visibilidade dos dados relacionados e fluxos principais possuem
-testes de API e interface.
+descoberta destaca as mais vistas e o chat permite consultar o perfil público
+dos autores; permissões, visibilidade dos dados relacionados e fluxos principais
+possuem testes de API e interface.
 
 ### 10. Amizades
 

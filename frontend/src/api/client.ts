@@ -9,6 +9,14 @@ import type {
   FilmeResumo,
   Pagina,
   UsuarioLeitura,
+  ComentarioComunidade,
+  ComunidadeCriacao,
+  ComunidadeLeitura,
+  PessoaComunidade,
+  PerfilPublico,
+  PublicacaoComunidade,
+  ReacaoComunidade,
+  TipoReacao,
 } from '../types/api'
 import { obterTokenSessao } from '../auth/session'
 
@@ -139,4 +147,105 @@ export async function criarAvaliacao(
   )
   invalidarCacheDeFilmes()
   return avaliacao
+}
+
+export function listarComunidades(signal?: AbortSignal): Promise<ComunidadeLeitura[]> {
+  return requisitar<ComunidadeLeitura[]>('/comunidades', { signal, cache: 'no-store' })
+}
+
+export function registrarVisualizacaoComunidade(id: string): Promise<ComunidadeLeitura> {
+  return requisitar<ComunidadeLeitura>(`/comunidades/${encodeURIComponent(id)}/visualizacoes`, { method: 'POST' })
+}
+
+export function obterPerfilPublico(id: string, signal?: AbortSignal): Promise<PerfilPublico> {
+  return requisitar<PerfilPublico>(`/perfis/${encodeURIComponent(id)}`, { signal })
+}
+
+export function criarComunidade(dados: ComunidadeCriacao): Promise<ComunidadeLeitura> {
+  return requisitar<ComunidadeLeitura>('/comunidades', {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  })
+}
+
+export function atualizarComunidade(
+  id: string,
+  dados: Partial<ComunidadeCriacao>,
+): Promise<ComunidadeLeitura> {
+  return requisitar<ComunidadeLeitura>(`/comunidades/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dados),
+  })
+}
+
+export function removerComunidade(id: string): Promise<void> {
+  return requisitar<void>(`/comunidades/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export function listarMembrosComunidade(
+  id: string,
+  signal?: AbortSignal,
+): Promise<PessoaComunidade[]> {
+  return requisitar<PessoaComunidade[]>(`/comunidades/${encodeURIComponent(id)}/membros`, {
+    signal,
+    cache: 'no-store',
+  })
+}
+
+export function entrarNaComunidade(id: string): Promise<void> {
+  return requisitar<void>(`/comunidades/${encodeURIComponent(id)}/participacao`, {
+    method: 'POST',
+  })
+}
+
+export function sairDaComunidade(id: string): Promise<void> {
+  return requisitar<void>(`/comunidades/${encodeURIComponent(id)}/participacao`, {
+    method: 'DELETE',
+  })
+}
+
+export function listarPublicacoesComunidade(
+  id: string,
+  signal?: AbortSignal,
+): Promise<PublicacaoComunidade[]> {
+  return requisitar<PublicacaoComunidade[]>(
+    `/comunidades/${encodeURIComponent(id)}/publicacoes`,
+    { signal, cache: 'no-store' },
+  )
+}
+
+export function criarPublicacaoComunidade(
+  id: string,
+  dados: { conteudo: string; movie_id?: string },
+): Promise<PublicacaoComunidade> {
+  return requisitar<PublicacaoComunidade>(
+    `/comunidades/${encodeURIComponent(id)}/publicacoes`,
+    { method: 'POST', body: JSON.stringify(dados) },
+  )
+}
+
+export function comentarPublicacao(
+  id: string,
+  conteudo: string,
+): Promise<ComentarioComunidade> {
+  return requisitar<ComentarioComunidade>(
+    `/comunidades/publicacoes/${encodeURIComponent(id)}/comentarios`,
+    { method: 'POST', body: JSON.stringify({ conteudo }) },
+  )
+}
+
+export function reagirPublicacao(
+  id: string,
+  tipo: TipoReacao,
+): Promise<ReacaoComunidade[]> {
+  return requisitar<ReacaoComunidade[]>(
+    `/comunidades/publicacoes/${encodeURIComponent(id)}/reacoes`,
+    { method: 'POST', body: JSON.stringify({ tipo }) },
+  )
+}
+
+export function removerReacaoPublicacao(id: string): Promise<void> {
+  return requisitar<void>(`/comunidades/publicacoes/${encodeURIComponent(id)}/reacoes`, {
+    method: 'DELETE',
+  })
 }
