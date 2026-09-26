@@ -160,4 +160,14 @@ describe('Detalhes de um filme real', () => {
     fireEvent.error(image)
     expect(container.querySelector('.detail-cover img')).not.toBeInTheDocument()
   })
+
+  it('exibe o trailer do YouTube abaixo dos detalhes quando ele existe', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify({ ...movie, url_trailer: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })))),
+    )
+    render(<MovieDetail id="1" onClose={vi.fn()} />)
+    expect(await screen.findByTitle('Trailer de A Chegada')).toHaveAttribute('src', expect.stringContaining('youtube-nocookie.com'))
+    expect(screen.getByRole('heading', { name: 'Trailer oficial' })).toBeInTheDocument()
+  })
 })

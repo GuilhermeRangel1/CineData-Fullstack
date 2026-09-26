@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { adicionarFilmeALista, listarListas, obterFilme, removerFilme } from '../api/client'
+import { adicionarFilmeALista, listarListas, obterFilme, obterTrailerFilme, removerFilme } from '../api/client'
 import { useResource } from '../hooks/useResource'
 import { useMutation } from '../hooks/useMutation'
 import { Dialog } from './Dialog'
@@ -35,6 +35,7 @@ export function MovieDetail({
   const [personalLists, setPersonalLists] = useState<ListaLeitura[] | null>(() => usuario ? null : [])
   const [selectedListId, setSelectedListId] = useState('')
   const [savedListName, setSavedListName] = useState('')
+  const [externalTrailerUrl, setExternalTrailerUrl] = useState<string | null>(null)
   const focusAfterChange = useRef(false)
   const feedback = useRef<HTMLParagraphElement>(null)
   const editButton = useRef<HTMLButtonElement>(null)
@@ -58,13 +59,25 @@ export function MovieDetail({
       })
     return () => controller.abort()
   }, [usuario])
+  useEffect(() => {
+    if (!movie || movie.url_trailer) return
+    const controller = new AbortController()
+    void obterTrailerFilme(movie.id, controller.signal)
+      .then((data) => {
+        if (!controller.signal.aborted) setExternalTrailerUrl(data.url_trailer)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setExternalTrailerUrl(null)
+      })
+    return () => controller.abort()
+  }, [movie])
   const people = (role: string) =>
     movie?.pessoas
       .filter((person) => person.papel === role)
       .map((person) => person.nome)
       .join(', ') || 'Não informado'
   const coverUrl = movie?.url_backdrop ?? movie?.url_poster
-  const trailerUrl = movie?.url_trailer ? youtubeEmbedUrl(movie.url_trailer) : null
+  const trailerUrl = youtubeEmbedUrl(movie?.url_trailer ?? externalTrailerUrl ?? '')
   const selectedList = personalLists?.find((list) => list.id === selectedListId)
   function saveToSelectedList() {
     if (!selectedList) return
@@ -260,7 +273,7 @@ export function MovieDetail({
               <p className="synopsis">{movie.sinopse || 'Ainda não há sinopse para este filme.'}</p>
               {trailerUrl && (
                 <section className="movie-trailer" aria-label="Trailer">
-                  <h3>Trailer</h3>
+                  <h3>Trailer oficial</h3>
                   <iframe
                     title={`Trailer de ${movie.titulo}`}
                     src={trailerUrl}

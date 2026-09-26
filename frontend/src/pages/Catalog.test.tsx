@@ -106,6 +106,24 @@ describe('Catálogo conectado', () => {
     )
   })
 
+  it('envia filtros avançados sem perder os filtros principais', async () => {
+    const fetcher = vi.fn((_url: string) => response(result([movie])))
+    vi.stubGlobal('fetch', fetcher)
+    render(<View />)
+    await screen.findByRole('heading', { name: movie.titulo })
+    await userEvent.click(screen.getByRole('button', { name: 'Filtros avançados' }))
+    await userEvent.type(screen.getByLabelText('Pessoa'), 'Denis Villeneuve')
+    await userEvent.type(screen.getByLabelText('Ano, de'), '2010')
+    await userEvent.type(screen.getByLabelText('Duração mínima'), '90')
+    await waitFor(() => {
+      const params = new URL(fetcher.mock.lastCall![0]).searchParams
+      expect(params.get('pessoa')).toBe('Denis Villeneuve')
+      expect(params.get('ano_inicial')).toBe('2010')
+      expect(params.get('duracao_minima')).toBe('90')
+      expect(params.get('priorizar_capa')).toBe('true')
+    })
+  })
+
   it('permite tentar novamente depois de uma falha de rede', async () => {
     const fetcher = vi
       .fn()

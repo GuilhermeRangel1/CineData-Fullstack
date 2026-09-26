@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { atualizarFilme, criarFilme } from '../api/client'
+import { atualizarFilme, buscarFilmesTmdb, criarFilme, obterFilmeTmdb } from '../api/client'
 import { useMutation } from '../hooks/useMutation'
 import {
   createPayload,
@@ -8,7 +8,7 @@ import {
   validateMovie,
   type MovieFields,
 } from '../lib/movieForm'
-import type { FilmeDetalhe } from '../types/api'
+import type { FilmeDetalhe, TmdbImportacao, TmdbResultado } from '../types/api'
 
 export function MovieForm({
   movie,
@@ -24,6 +24,11 @@ export function MovieForm({
   const [fields, setFields] = useState(() => movieFields(movie))
   const [errors, setErrors] = useState<Partial<Record<keyof MovieFields, string>>>({})
   const [notice, setNotice] = useState('')
+  const [tmdbOpen, setTmdbOpen] = useState(false)
+  const [tmdbQuery, setTmdbQuery] = useState('')
+  const [tmdbResults, setTmdbResults] = useState<TmdbResultado[]>([])
+  const [tmdbError, setTmdbError] = useState('')
+  const [tmdbLoading, setTmdbLoading] = useState(false)
   const form = useRef<HTMLFormElement>(null)
   const { pending, error, run } = useMutation(onBusyChange)
   function submit(event: FormEvent) {
@@ -63,6 +68,36 @@ export function MovieForm({
         {errors[key]}
       </span>
     )
+  async function searchTmdb() {
+    if (tmdbQuery.trim().length < 2) {
+      setTmdbError('Digite ao menos 2 letras para pesquisar no TMDB.')
+      return
+    }
+    setTmdbLoading(true)
+    setTmdbError('')
+    try {
+      setTmdbResults(await buscarFilmesTmdb(tmdbQuery.trim()))
+    } catch (error) {
+      setTmdbResults([])
+      setTmdbError(error instanceof Error ? error.message : 'Não foi possível consultar o TMDB.')
+    } finally {
+      setTmdbLoading(false)
+    }
+  }
+  async function importFromTmdb(id: number) {
+    setTmdbLoading(true)
+    setTmdbError('')
+    try {
+      const data = await obterFilmeTmdb(id)
+      setFields((current) => preencherCamposVazios(current, data))
+      setNotice('Dados do TMDB preenchidos somente nos campos que estavam vazios.')
+      setTmdbOpen(false)
+    } catch (error) {
+      setTmdbError(error instanceof Error ? error.message : 'Não foi possível obter os dados do TMDB.')
+    } finally {
+      setTmdbLoading(false)
+    }
+  }
   return (
     <div className="editor-body">
       <p className="eyebrow">SEU CATÁLOGO, SUAS HISTÓRIAS</p>
@@ -73,6 +108,49 @@ export function MovieForm({
           : 'Abra espaço para a próxima grande história.'}{' '}
         Campos com * são obrigatórios.
       </p>
+      <section className="tmdb-import" aria-label="Preencher dados pelo TMDB">
+        <button
+          type="button"
+          className="button button-outline"
+          aria-expanded={tmdbOpen}
+          onClick={() => setTmdbOpen((value) => !value)}
+        >
+          Buscar dados no TMDB
+        </button>
+        {tmdbOpen && (
+          <div className="tmdb-import__search">
+            <label htmlFor="tmdb-search">Título no TMDB</label>
+            <div>
+              <input
+                id="tmdb-search"
+                value={tmdbQuery}
+                maxLength={100}
+                onChange={(event) => setTmdbQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    void searchTmdb()
+                  }
+                }}
+                placeholder="Ex.: O Castelo Animado"
+              />
+              <button type="button" className="button button-light" disabled={tmdbLoading} onClick={() => void searchTmdb()}>
+                {tmdbLoading ? 'Buscando…' : 'Buscar'}
+              </button>
+            </div>
+            <p>Os dados escolhidos completam apenas os campos ainda vazios.</p>
+            {tmdbError && <p className="form-error" role="alert">{tmdbError}</p>}
+            <div className="tmdb-import__results">
+              {tmdbResults.map((result) => (
+                <button key={result.id} type="button" disabled={tmdbLoading} onClick={() => void importFromTmdb(result.id)}>
+                  {result.url_poster ? <img src={result.url_poster} alt="" /> : <span className="tmdb-import__poster" />}
+                  <span><strong>{result.titulo}</strong>{result.ano_lancamento && <small>{result.ano_lancamento}</small>}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
       <form
         ref={form}
         onSubmit={submit}
@@ -173,4 +251,21 @@ export function MovieForm({
       </form>
     </div>
   )
+}
+
+function preencherCamposVazios(fields: MovieFields, dados: TmdbImportacao): MovieFields {
+  const valores: Partial<MovieFields> = {
+    titulo: dados.titulo ?? '',
+    diretor: dados.diretor ?? '',
+    generos: dados.generos.join(', '),
+    sinopse: dados.sinopse ?? '',
+    ano_lancamento: dados.ano_lancamento?.toString() ?? '',
+    data_lancamento: dados.data_lancamento ?? '',
+    url_poster: dados.url_poster ?? '',
+    url_backdrop: dados.url_backdrop ?? '',
+    url_trailer: dados.url_trailer ?? '',
+  }
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, value]) => [key, value.trim() ? value : valores[key as keyof MovieFields] ?? '']),
+  ) as MovieFields
 }

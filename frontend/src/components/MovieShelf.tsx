@@ -28,6 +28,7 @@ export function MovieShelf({
           ordenar_por: 'ano_lancamento',
           direcao: 'desc',
           priorizar_capa: 'true',
+          priorizar_trailer: 'true',
         }),
         signal,
       ),

@@ -22,6 +22,8 @@ import type {
   VisibilidadeLista,
   ContatoAmizade,
   SolicitacaoAmizade,
+  TmdbImportacao,
+  TmdbResultado,
 } from '../types/api'
 import { obterTokenSessao } from '../auth/session'
 
@@ -105,6 +107,16 @@ export function atualizarPerfil(dados: {
   })
 }
 
+export function buscarFilmesTmdb(busca: string): Promise<TmdbResultado[]> {
+  return requisitar<TmdbResultado[]>(`/admin/fontes/tmdb/busca?busca=${encodeURIComponent(busca)}`, {
+    cache: 'no-store',
+  })
+}
+
+export function obterFilmeTmdb(id: number): Promise<TmdbImportacao> {
+  return requisitar<TmdbImportacao>(`/admin/fontes/tmdb/${id}`, { cache: 'no-store' })
+}
+
 export function listarFilmes(
   parametros: URLSearchParams,
   signal?: AbortSignal,
@@ -152,6 +164,10 @@ export async function criarAvaliacao(
   )
   invalidarCacheDeFilmes()
   return avaliacao
+}
+
+export function obterTrailerFilme(id: string, signal?: AbortSignal): Promise<{ url_trailer: string | null }> {
+  return requisitarComCache(`/filmes/${encodeURIComponent(id)}/trailer`, signal)
 }
 
 export function listarComunidades(signal?: AbortSignal): Promise<ComunidadeLeitura[]> {

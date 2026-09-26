@@ -144,4 +144,28 @@ describe('Formulário de filme', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(cancel).toHaveBeenCalledOnce()
   })
+
+  it('preenche apenas campos vazios com o resultado escolhido no TMDB', async () => {
+    const fetcher = vi.fn((url: string) => {
+      if (url.includes('/busca'))
+        return json([{ id: 4935, titulo: 'O Castelo Animado', ano_lancamento: 2004, url_poster: null }])
+      return json({
+        titulo: 'O Castelo Animado', diretor: 'Hayao Miyazaki', generos: ['Animação', 'Fantasia'],
+        sinopse: 'Uma jovem encontra um castelo.', ano_lancamento: 2004, data_lancamento: '2004-11-20',
+        url_poster: 'https://image.test/poster.jpg', url_backdrop: null,
+        url_trailer: 'https://www.youtube.com/watch?v=trailer',
+      })
+    })
+    vi.stubGlobal('fetch', fetcher)
+    render(<MovieForm onSaved={vi.fn()} onCancel={vi.fn()} onBusyChange={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('Título *'), { target: { value: 'Meu título manual' } })
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar dados no TMDB' }))
+    await userEvent.type(screen.getByLabelText('Título no TMDB'), 'Castelo')
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    await userEvent.click(await screen.findByRole('button', { name: /O Castelo Animado/ }))
+    expect(await screen.findByRole('status')).toHaveTextContent('campos que estavam vazios')
+    expect(screen.getByLabelText('Título *')).toHaveValue('Meu título manual')
+    expect(screen.getByLabelText('Diretor *')).toHaveValue('Hayao Miyazaki')
+    expect(screen.getByLabelText('Gêneros *')).toHaveValue('Animação, Fantasia')
+  })
 })

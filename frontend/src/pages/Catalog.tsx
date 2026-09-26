@@ -28,6 +28,16 @@ export function Catalog({
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
   const [order, setOrder] = useState('recent')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [advanced, setAdvanced] = useState({
+    pessoa: '',
+    produtora: '',
+    ano_inicial: '',
+    ano_final: '',
+    duracao_minima: '',
+    duracao_maxima: '',
+    nota_minima: '',
+  })
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setQuery(search.trim())
@@ -46,9 +56,13 @@ export function Catalog({
       })
       if (query) params.set('busca', query)
       if (genre) params.set('genero', genre)
+      for (const [key, value] of Object.entries(advanced)) {
+        const normalizado = key === 'nota_minima' ? value.trim().replace(',', '.') : value.trim()
+        if (normalizado) params.set(key, normalizado)
+      }
       return listarFilmes(params, signal)
     },
-    [page, query, genre, order],
+    [page, query, genre, order, advanced],
   )
   const { data, loading, error, retry } = useResource(loader, revision)
   if (data && page > Math.max(1, data.meta.total_paginas))
@@ -104,7 +118,101 @@ export function Catalog({
             <option value="title">Título: A–Z</option>
           </select>
         </label>
+        <button
+          className="advanced-filter-trigger"
+          aria-expanded={advancedOpen}
+          aria-controls="advanced-catalog-filters"
+          onClick={() => setAdvancedOpen((value) => !value)}
+        >
+          <Icon name="filter" /> Filtros avançados
+        </button>
       </div>
+      {advancedOpen && (
+        <div className="advanced-filters" id="advanced-catalog-filters">
+          <label>
+            Pessoa
+            <input
+              value={advanced.pessoa}
+              onChange={(event) => setAdvanced((value) => ({ ...value, pessoa: event.target.value }))}
+              placeholder="Direção ou elenco"
+              maxLength={255}
+            />
+          </label>
+          <label>
+            Produtora
+            <input
+              value={advanced.produtora}
+              onChange={(event) => setAdvanced((value) => ({ ...value, produtora: event.target.value }))}
+              placeholder="Estúdio ou distribuidora"
+              maxLength={255}
+            />
+          </label>
+          <label>
+            Ano, de
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={advanced.ano_inicial}
+              onChange={(event) => setAdvanced((value) => ({ ...value, ano_inicial: event.target.value.replace(/[^\d]/g, '') }))}
+            />
+          </label>
+          <label>
+            Ano, até
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={advanced.ano_final}
+              onChange={(event) => setAdvanced((value) => ({ ...value, ano_final: event.target.value.replace(/[^\d]/g, '') }))}
+            />
+          </label>
+          <label>
+            Duração mínima
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={advanced.duracao_minima}
+              onChange={(event) => setAdvanced((value) => ({ ...value, duracao_minima: event.target.value.replace(/[^\d]/g, '') }))}
+              placeholder="minutos"
+            />
+          </label>
+          <label>
+            Duração máxima
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={advanced.duracao_maxima}
+              onChange={(event) => setAdvanced((value) => ({ ...value, duracao_maxima: event.target.value.replace(/[^\d]/g, '') }))}
+              placeholder="minutos"
+            />
+          </label>
+          <label>
+            Nota mínima
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[,.]?[0-9]*"
+              value={advanced.nota_minima}
+              onChange={(event) => setAdvanced((value) => ({ ...value, nota_minima: event.target.value.replace(/[^\d,.]/g, '') }))}
+              placeholder="0 a 10"
+            />
+          </label>
+          <div className="advanced-filter-actions">
+            <button
+              className="button button-ghost"
+              onClick={() => {
+                setAdvanced({ pessoa: '', produtora: '', ano_inicial: '', ano_final: '', duracao_minima: '', duracao_maxima: '', nota_minima: '' })
+                setPage(1)
+              }}
+            >
+              Limpar extras
+            </button>
+          </div>
+        </div>
+      )}
       <div aria-busy={loading}>
         <p className="result-count" role="status">
           {loading
@@ -133,11 +241,11 @@ export function Catalog({
             <Icon name="search" />
             <h3>Nenhuma história por aqui. Ainda.</h3>
             <p>
-              {query || genre
+              {query || genre || Object.values(advanced).some(Boolean)
                 ? 'Experimente outro título ou remova os filtros.'
                 : 'Os filmes cadastrados aparecerão neste catálogo.'}
             </p>
-            {(query || genre) && (
+            {(query || genre || Object.values(advanced).some(Boolean)) && (
               <button
                 className="button button-light"
                 onClick={() => {
@@ -145,6 +253,7 @@ export function Catalog({
                   setQuery('')
                   setPage(1)
                   onGenre('')
+                  setAdvanced({ pessoa: '', produtora: '', ano_inicial: '', ano_final: '', duracao_minima: '', duracao_maxima: '', nota_minima: '' })
                 }}
               >
                 Limpar filtros

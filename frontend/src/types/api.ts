@@ -137,12 +137,40 @@ export interface FilmeDetalhe extends FilmeResumo {
 export interface ConsultaCatalogo {
   busca?: string
   genero?: string
+  pessoa?: string
+  produtora?: string
+  ano_inicial?: number
+  ano_final?: number
+  duracao_minima?: number
+  duracao_maxima?: number
+  nota_minima?: number
   pagina?: number
   tamanho_pagina?: number
   ordenar_por?: OrdenacaoFilme
   direcao?: DirecaoOrdenacao
   priorizar_capa?: boolean
+  priorizar_trailer?: boolean
 }
+
+export interface TmdbResultado {
+  id: number
+  titulo: string
+  ano_lancamento: number | null
+  url_poster: string | null
+}
+
+export interface TmdbImportacao {
+  titulo: string | null
+  diretor: string | null
+  generos: string[]
+  sinopse: string | null
+  ano_lancamento: number | null
+  data_lancamento: string | null
+  url_poster: string | null
+  url_backdrop: string | null
+  url_trailer: string | null
+}
+
 
 export interface PessoaComunidade {
   id: string
