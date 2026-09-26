@@ -39,7 +39,7 @@ class UsuarioJaExisteError(ErroDominio):
 
     status_code = 409
     codigo = "USUARIO_JA_EXISTE"
-    mensagem = "Já existe uma conta com este e-mail."
+    mensagem = "Já existe uma conta com este e-mail. Tente entrar ou use outro endereço."
 
 
 class CredenciaisInvalidasError(ErroDominio):
@@ -47,7 +47,7 @@ class CredenciaisInvalidasError(ErroDominio):
 
     status_code = 401
     codigo = "CREDENCIAIS_INVALIDAS"
-    mensagem = "E-mail ou senha inválidos."
+    mensagem = "E-mail ou senha inválidos. Confira os dados e tente novamente."
 
 
 class ConfiguracaoAutenticacaoError(ErroDominio):

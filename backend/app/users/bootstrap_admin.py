@@ -4,11 +4,11 @@ import asyncio
 
 from app.core.config import get_settings
 from app.db.session import AsyncSessionLocal, engine
-from app.users.schemas import UsuarioCadastro
+from app.users.schemas import UsuarioCadastroInicial
 from app.users.services import AuthService
 
 
-def _dados_administrador() -> UsuarioCadastro:
+def _dados_administrador() -> UsuarioCadastroInicial:
     settings = get_settings()
     values = {
         "email": settings.initial_admin_email,
@@ -20,7 +20,7 @@ def _dados_administrador() -> UsuarioCadastro:
             "Defina INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_NAME e INITIAL_ADMIN_PASSWORD "
             "para criar o administrador inicial."
         )
-    return UsuarioCadastro(**values)
+    return UsuarioCadastroInicial(**values)
 
 
 async def main() -> None:

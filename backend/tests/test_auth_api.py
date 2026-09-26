@@ -13,7 +13,7 @@ from app.db.session import get_db
 from app.main import app
 from app.movies.models import MovieReview
 from app.users.models import User
-from app.users.schemas import UsuarioCadastro
+from app.users.schemas import UsuarioCadastro, UsuarioCadastroInicial
 from app.users.security import gerar_hash_senha
 from app.users.services import AuthService
 from app.users.tokens import criar_token_acesso
@@ -52,7 +52,7 @@ async def test_public_registration_creates_only_a_standard_user(
                 json={
                     "email": "ANA@EXAMPLE.COM",
                     "nome": "Ana Exemplo",
-                    "senha": "senha-local-segura",
+                    "senha": "senha-local-segura1",
                 },
             )
     finally:
@@ -72,7 +72,7 @@ async def test_public_registration_creates_only_a_standard_user(
         usuario = await session.scalar(select(User).where(User.email == "ana@example.com"))
     assert usuario is not None
     assert usuario.role == "user"
-    assert usuario.password_hash != "senha-local-segura"
+    assert usuario.password_hash != "senha-local-segura1"
 
 
 async def test_registration_rejects_an_administrator_role_from_the_public_request(
@@ -91,7 +91,7 @@ async def test_registration_rejects_an_administrator_role_from_the_public_reques
                 json={
                     "email": "admin@example.com",
                     "nome": "Tentativa de Admin",
-                    "senha": "senha-local-segura",
+                    "senha": "senha-local-segura1",
                     "role": "admin",
                 },
             )
@@ -99,6 +99,35 @@ async def test_registration_rejects_an_administrator_role_from_the_public_reques
         app.dependency_overrides.clear()
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    ("senha", "mensagem"),
+    [
+        ("abc1234", "A senha precisa ter pelo menos 8 caracteres."),
+        ("somenteletras", "Use uma senha com pelo menos uma letra e um número."),
+    ],
+)
+async def test_registration_explains_how_to_choose_a_valid_password(
+    user_session_factory: async_sessionmaker[AsyncSession], senha: str, mensagem: str
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with user_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/v1/auth/cadastro",
+                json={"email": "ana@example.com", "nome": "Ana", "senha": senha},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert response.json() == {"codigo": "REQUISICAO_INVALIDA", "mensagem": mensagem}
 
 
 async def test_login_returns_a_signed_bearer_token(
@@ -120,12 +149,12 @@ async def test_login_returns_a_signed_bearer_token(
                 json={
                     "email": "ana@example.com",
                     "nome": "Ana Exemplo",
-                    "senha": "senha-local-segura",
+                    "senha": "senha-local-segura1",
                 },
             )
             response = await client.post(
                 "/api/v1/auth/login",
-                json={"email": "ana@example.com", "senha": "senha-local-segura"},
+                json={"email": "ana@example.com", "senha": "senha-local-segura1"},
             )
     finally:
         app.dependency_overrides.clear()
@@ -157,7 +186,7 @@ async def test_login_does_not_reveal_which_credential_is_invalid(
             UsuarioCadastro(
                 email="ana@example.com",
                 nome="Ana Exemplo",
-                senha="senha-local-segura",
+                senha="senha-local-segura1",
             )
         )
 
@@ -180,7 +209,7 @@ async def test_login_does_not_reveal_which_credential_is_invalid(
     assert response.status_code == 401
     assert response.json() == {
         "codigo": "CREDENCIAIS_INVALIDAS",
-        "mensagem": "E-mail ou senha inválidos.",
+        "mensagem": "E-mail ou senha inválidos. Confira os dados e tente novamente.",
     }
 
 
@@ -194,7 +223,7 @@ async def test_user_can_update_avatar_and_expose_a_safe_public_profile(
             id="user-profile",
             email="perfil@example.com",
             nome="Perfil",
-            password_hash=gerar_hash_senha("senha-local-segura"),
+            password_hash=gerar_hash_senha("senha-local-segura1"),
         )
         session.add(usuario)
         await session.commit()
@@ -232,7 +261,7 @@ async def test_user_can_update_avatar_and_expose_a_safe_public_profile(
 async def test_bootstrap_creates_the_initial_administrator_only_once(
     user_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
-    dados = UsuarioCadastro(
+    dados = UsuarioCadastroInicial(
         email="admin@example.com",
         nome="Administrador Inicial",
         senha="senha-admin-segura",
@@ -259,13 +288,13 @@ async def test_catalog_is_public_but_writes_require_the_expected_account_role(
             id="user-1",
             email="ana@example.com",
             nome="Ana",
-            password_hash=gerar_hash_senha("senha-local-segura"),
+            password_hash=gerar_hash_senha("senha-local-segura1"),
         )
         admin = User(
             id="admin-1",
             email="admin@example.com",
             nome="Admin",
-            password_hash=gerar_hash_senha("senha-admin-segura"),
+            password_hash=gerar_hash_senha("senha-admin-segura1"),
             role="admin",
         )
         session.add_all([usuario, admin])

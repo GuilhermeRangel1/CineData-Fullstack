@@ -11,6 +11,7 @@ from app.users.schemas import (
     TokenAcesso,
     UsuarioAtualizacao,
     UsuarioCadastro,
+    UsuarioCadastroInicial,
     UsuarioLeitura,
 )
 from app.users.security import gerar_hash_senha, verificar_senha
@@ -52,7 +53,7 @@ class AuthService:
 
     async def criar_administrador_inicial(
         self,
-        dados: UsuarioCadastro,
+        dados: UsuarioCadastro | UsuarioCadastroInicial,
     ) -> tuple[UsuarioLeitura, bool]:
         """Cria um admin apenas para o bootstrap controlado da infraestrutura."""
 
@@ -67,7 +68,9 @@ class AuthService:
         usuario = await self._criar_usuario(dados, role="admin")
         return UsuarioLeitura.model_validate(usuario), True
 
-    async def _criar_usuario(self, dados: UsuarioCadastro, *, role: str) -> User:
+    async def _criar_usuario(
+        self, dados: UsuarioCadastro | UsuarioCadastroInicial, *, role: str
+    ) -> User:
         usuario = User(
             email=dados.email,
             nome=dados.nome,

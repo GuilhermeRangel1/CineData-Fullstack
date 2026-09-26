@@ -87,7 +87,6 @@ function App() {
               onClick={() => {
                 encerrarSessao()
                 setSession(null)
-                setNotice('Sessão encerrada.')
               }}
             >
               Sair

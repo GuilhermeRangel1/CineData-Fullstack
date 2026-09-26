@@ -50,12 +50,30 @@ def create_app() -> FastAPI:
     async def validation_error_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        """Evita vazar detalhes internos de validação no contrato público."""
+        """Expõe instruções seguras para os campos de autenticação."""
 
-        del request, exc
+        mensagem = "Dados da requisição são inválidos."
+        if request.url.path in {
+            f"{settings.api_v1_prefix}/auth/cadastro",
+            f"{settings.api_v1_prefix}/auth/login",
+        }:
+            campos = {erro["loc"][-1] for erro in exc.errors() if erro.get("loc")}
+            if "nome" in campos:
+                mensagem = "Informe seu nome para continuar."
+            elif "email" in campos:
+                mensagem = "Informe um e-mail válido, como nome@exemplo.com."
+            elif "senha" in campos:
+                senha_curta = any(
+                    erro.get("type") == "string_too_short" for erro in exc.errors()
+                )
+                mensagem = (
+                    "A senha precisa ter pelo menos 8 caracteres."
+                    if senha_curta
+                    else "Use uma senha com pelo menos uma letra e um número."
+                )
         erro = ErroApi(
             codigo="REQUISICAO_INVALIDA",
-            mensagem="Dados da requisição são inválidos.",
+            mensagem=mensagem,
         )
         return JSONResponse(status_code=422, content=erro.model_dump())
 

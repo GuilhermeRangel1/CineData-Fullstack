@@ -34,6 +34,23 @@ class CredenciaisLogin(ContratoAuth):
 class UsuarioCadastro(CredenciaisLogin):
     nome: str = Field(min_length=1, max_length=120)
 
+    @field_validator("senha")
+    @classmethod
+    def validar_forca_da_senha(cls, senha: str) -> str:
+        """Exige uma senha básica, clara no formulário e segura no contrato HTTP."""
+
+        if not any(caractere.isalpha() for caractere in senha) or not any(
+            caractere.isdigit() for caractere in senha
+        ):
+            raise ValueError("Use uma senha com pelo menos uma letra e um número.")
+        return senha
+
+
+class UsuarioCadastroInicial(CredenciaisLogin):
+    """Dados da conta administrativa criada exclusivamente pelo ambiente local."""
+
+    nome: str = Field(min_length=1, max_length=120)
+
 
 class UsuarioLeitura(BaseModel):
     """Dados públicos de uma conta, sem senha ou hash."""
