@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     initial_admin_email: str | None = None
     initial_admin_name: str | None = None
     initial_admin_password: str | None = None
+    tmdb_api_token: str | None = None
 
 
 @lru_cache

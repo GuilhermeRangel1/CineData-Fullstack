@@ -4,13 +4,20 @@ import logging
 from math import ceil
 from uuid import uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.schemas import MetadadosPagina, Pagina
-from app.core.errors import FilmeConflitoError, FilmeNaoEncontradoError, FilmePersistenceError
+from app.core.config import get_settings
+from app.core.errors import (
+    FilmeConflitoError,
+    FilmeNaoEncontradoError,
+    FilmePersistenceError,
+    FonteExternaIndisponivelError,
+)
+from app.integrations.tmdb import TmdbGateway
 from app.movies.models import (
     DimCompany,
     DimGenre,
@@ -32,6 +39,7 @@ from app.movies.schemas import (
     GeneroResumo,
     PessoaResumo,
     ProdutoraResumo,
+    TrailerFilme,
 )
 from app.users.models import User
 
@@ -62,7 +70,27 @@ class CatalogoFilmesService:
 
         if consulta.busca:
             termo = self._escapar_like(consulta.busca.casefold())
-            statement = statement.where(func.lower(DimMovie.titulo).like(f"%{termo}%", escape="\\"))
+            busca_local = func.lower(DimMovie.titulo).like(f"%{termo}%", escape="\\")
+            condicoes_titulo = [busca_local]
+
+            # A base local pode guardar o título original/em inglês. Quando o
+            # termo não existe nela, o TMDB fornece as traduções equivalentes
+            # para recuperarmos o mesmo registro, sem criar uma cópia.
+            existe_titulo_local = await self._session.scalar(
+                select(DimMovie.sk_movie_id).where(busca_local).limit(1)
+            )
+            if existe_titulo_local is None:
+                try:
+                    titulos_equivalentes = await TmdbGateway(
+                        get_settings().tmdb_api_token
+                    ).buscar_titulos_equivalentes(consulta.busca)
+                except FonteExternaIndisponivelError:
+                    titulos_equivalentes = set()
+                if titulos_equivalentes:
+                    condicoes_titulo.append(
+                        func.lower(DimMovie.titulo).in_(titulos_equivalentes)
+                    )
+            statement = statement.where(or_(*condicoes_titulo))
 
         if consulta.genero:
             genero_id = await self._session.scalar(
@@ -80,8 +108,48 @@ class CatalogoFilmesService:
                         total_paginas=0,
                     ),
                 )
-            statement = statement.join(DimMovie.genres).where(
-                DimGenre.sk_genre_id == genero_id
+            statement = statement.join(DimMovie.genres).where(DimGenre.sk_genre_id == genero_id)
+
+        if consulta.pessoa:
+            termo = self._escapar_like(consulta.pessoa.casefold())
+            statement = statement.where(
+                DimMovie.people.any(
+                    func.lower(DimPerson.nome_pessoa).like(f"%{termo}%", escape="\\")
+                )
+            )
+
+        if consulta.produtora:
+            termo = self._escapar_like(consulta.produtora.casefold())
+            statement = statement.where(
+                DimMovie.companies.any(
+                    func.lower(DimCompany.nome_produtora).like(f"%{termo}%", escape="\\")
+                )
+            )
+
+        if consulta.ano_inicial:
+            statement = statement.where(
+                DimMovie.ano_lancamento.is_not(None),
+                DimMovie.ano_lancamento >= consulta.ano_inicial,
+            )
+        if consulta.ano_final:
+            statement = statement.where(
+                DimMovie.ano_lancamento.is_not(None), DimMovie.ano_lancamento <= consulta.ano_final
+            )
+        if consulta.duracao_minima:
+            statement = statement.where(
+                DimMovie.duracao_minutos.is_not(None),
+                DimMovie.duracao_minutos >= consulta.duracao_minima,
+            )
+        if consulta.duracao_maxima:
+            statement = statement.where(
+                DimMovie.duracao_minutos.is_not(None),
+                DimMovie.duracao_minutos <= consulta.duracao_maxima,
+            )
+        if consulta.nota_minima is not None:
+            statement = statement.where(
+                DimMovie.reviews_summary.has(
+                    and_(DimReview.nota_media_usuarios >= consulta.nota_minima)
+                )
             )
 
         # As relações do catálogo são únicas por chave no schema; não há linhas
@@ -102,6 +170,8 @@ class CatalogoFilmesService:
             ordenacao.insert(
                 0, (DimMovie.url_poster.is_(None) & DimMovie.url_backdrop.is_(None)).asc()
             )
+        if consulta.priorizar_trailer:
+            ordenacao.insert(0, DimMovie.url_trailer.is_(None).asc())
         offset = (consulta.pagina - 1) * consulta.tamanho_pagina
         result = await self._session.scalars(
             statement.order_by(*ordenacao).offset(offset).limit(consulta.tamanho_pagina)
@@ -127,6 +197,48 @@ class CatalogoFilmesService:
         if filme is None:
             raise FilmeNaoEncontradoError
         return GestaoFilmesService._para_detalhe(filme)
+
+    async def obter_trailer(self, filme_id: str) -> TrailerFilme:
+        """Obtém e guarda o trailer oficial quando o catálogo ainda não o possui."""
+
+        filme = await self._session.scalar(select(DimMovie).where(DimMovie.id_filme == filme_id))
+        if filme is None:
+            raise FilmeNaoEncontradoError
+        if filme.url_trailer:
+            return TrailerFilme(url_trailer=filme.url_trailer)
+
+        try:
+            resultados = await TmdbGateway(get_settings().tmdb_api_token).buscar(
+                filme.titulo, filme.ano_lancamento
+            )
+            if not resultados:
+                return TrailerFilme()
+            correspondencia = next(
+                (
+                    item
+                    for item in resultados
+                    if item.titulo.casefold() == filme.titulo.casefold()
+                    and (
+                        filme.ano_lancamento is None or item.ano_lancamento == filme.ano_lancamento
+                    )
+                ),
+                resultados[0],
+            )
+            trailer = (
+                await TmdbGateway(get_settings().tmdb_api_token).obter(correspondencia.id)
+            ).url_trailer
+        except FonteExternaIndisponivelError:
+            return TrailerFilme()
+        if not trailer:
+            return TrailerFilme()
+
+        filme.url_trailer = trailer
+        try:
+            await self._session.commit()
+        except SQLAlchemyError:
+            await self._session.rollback()
+            logger.exception("Não foi possível salvar o trailer do filme %s", filme_id)
+        return TrailerFilme(url_trailer=trailer)
 
     @staticmethod
     def _escapar_like(valor: str) -> str:

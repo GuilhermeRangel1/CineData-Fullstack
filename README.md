@@ -102,6 +102,18 @@ INITIAL_ADMIN_NAME=Administrador
 INITIAL_ADMIN_PASSWORD=defina-uma-senha-forte
 ```
 
+Para habilitar o preenchimento assistido de filmes pelo TMDB no cadastro administrativo,
+gere um **API Read Access Token** na conta TMDB e mantenha-o somente no backend:
+
+```env
+TMDB_API_TOKEN=seu-token-de-leitura-do-tmdb
+```
+
+Com a variável ausente, a aplicação continua funcional e apenas informa que a fonte externa
+não está configurada. O token não é enviado ao navegador. O TMDB oferece busca e detalhes
+de filmes, incluindo imagens e vídeos; consulte a [documentação oficial do TMDB](https://developer.themoviedb.org/docs/getting-started)
+para criar a credencial e conhecer seus termos de uso.
+
 Após aplicar as migrações, execute uma única vez:
 
 ```powershell

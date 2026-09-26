@@ -151,3 +151,11 @@ class ParticipacaoComunidadeConflitoError(ErroDominio):
     status_code = 409
     codigo = "PARTICIPACAO_EM_CONFLITO"
     mensagem = "A pessoa já participa desta comunidade."
+
+
+class FonteExternaIndisponivelError(ErroDominio):
+    """A fonte de metadados não está configurada ou não respondeu com segurança."""
+
+    status_code = 503
+    codigo = "FONTE_EXTERNA_INDISPONIVEL"
+    mensagem = "A fonte externa de filmes não está disponível no momento."

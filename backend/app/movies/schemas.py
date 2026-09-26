@@ -187,11 +187,53 @@ class FilmeDetalhe(FilmeResumo):
     avaliacoes: list[AvaliacaoLeitura]
 
 
+class TrailerFilme(ContratoFilmes):
+    url_trailer: str | None = None
+
+
 class ConsultaCatalogo(ContratoFilmes):
     busca: str | None = Field(default=None, min_length=1, max_length=100)
     genero: str | None = Field(default=None, min_length=1, max_length=50)
+    pessoa: str | None = Field(default=None, min_length=1, max_length=255)
+    produtora: str | None = Field(default=None, min_length=1, max_length=255)
+    ano_inicial: int | None = Field(default=None, ge=1888, le=2100)
+    ano_final: int | None = Field(default=None, ge=1888, le=2100)
+    duracao_minima: int | None = Field(default=None, ge=1, le=1000)
+    duracao_maxima: int | None = Field(default=None, ge=1, le=1000)
+    nota_minima: float | None = Field(default=None, ge=0, le=10)
     pagina: int = Field(default=1, ge=1)
     tamanho_pagina: int = Field(default=12, ge=1, le=100)
     ordenar_por: OrdenacaoFilme = "titulo"
     direcao: DirecaoOrdenacao = "asc"
     priorizar_capa: bool = False
+    priorizar_trailer: bool = False
+
+    @field_validator(
+        "pessoa",
+        "produtora",
+        "ano_inicial",
+        "ano_final",
+        "duracao_minima",
+        "duracao_maxima",
+        "nota_minima",
+        mode="before",
+    )
+    @classmethod
+    def tratar_filtros_vazios(cls, valor: object) -> object:
+        """Evita que campos em branco do formulário virem filtros inválidos."""
+
+        if isinstance(valor, str) and valor.strip().casefold() in {"", "null", "undefined"}:
+            return None
+        return valor
+
+    @model_validator(mode="after")
+    def validar_intervalo_de_anos(self) -> "ConsultaCatalogo":
+        if self.ano_inicial and self.ano_final and self.ano_inicial > self.ano_final:
+            raise ValueError("O ano inicial não pode ser maior que o ano final.")
+        if (
+            self.duracao_minima
+            and self.duracao_maxima
+            and self.duracao_minima > self.duracao_maxima
+        ):
+            raise ValueError("A duração mínima não pode ser maior que a duração máxima.")
+        return self

@@ -15,6 +15,7 @@ from app.movies.schemas import (
     FilmeCriacao,
     FilmeDetalhe,
     FilmeResumo,
+    TrailerFilme,
 )
 from app.movies.services import AvaliacoesService, CatalogoFilmesService, GestaoFilmesService
 from app.users.dependencies import get_current_admin, get_current_user
@@ -53,6 +54,16 @@ async def listar_avaliacoes(
     """Lista o histórico de avaliações de um filme, da mais recente à mais antiga."""
 
     return await AvaliacoesService(session).listar(filme_id)
+
+
+@movies_router.get("/{filme_id}/trailer", response_model=TrailerFilme)
+async def obter_trailer(
+    filme_id: Annotated[str, Path(min_length=1, max_length=50)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> TrailerFilme:
+    """Tenta recuperar o trailer oficial do YouTube para um filme do catálogo."""
+
+    return await CatalogoFilmesService(session).obter_trailer(filme_id)
 
 
 @movies_router.post(

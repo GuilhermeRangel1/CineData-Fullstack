@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
 from app.db.session import get_db
+from app.integrations.tmdb import TmdbGateway
 from app.main import app
 from app.movies.models import (
     DimCompany,
@@ -70,6 +71,9 @@ async def catalog_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSes
             id_filme="movie-1",
             titulo="A Chegada",
             ano_lancamento=2016,
+            duracao_minutos=116,
+            status_filme="Lançado",
+            url_trailer="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             genres=[ficcao, drama],
             people=[diretora, atriz],
             companies=[produtora],
@@ -227,6 +231,51 @@ async def test_catalog_endpoint_combines_case_insensitive_search_and_pagination(
     }
 
 
+async def test_catalog_endpoint_finds_local_english_title_from_portuguese_query(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async with catalog_session_factory() as session:
+        session.add(
+            DimMovie(id_filme="movie-spirited-away", titulo="Spirited Away", ano_lancamento=2001)
+        )
+        await session.commit()
+
+    async def buscar_titulos_equivalentes(
+        self: TmdbGateway, busca: str, ano: int | None = None
+    ) -> set[str]:
+        del self, busca, ano
+        return {"a viagem de chihiro", "spirited away"}
+
+    monkeypatch.setattr(TmdbGateway, "buscar_titulos_equivalentes", buscar_titulos_equivalentes)
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/filmes", params={"busca": "A Viagem de Chihiro"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["itens"] == [
+        {
+            "id": "movie-spirited-away",
+            "titulo": "Spirited Away",
+            "ano_lancamento": 2001,
+            "url_poster": None,
+            "url_backdrop": None,
+            "generos": [],
+            "nota_media": None,
+            "quantidade_avaliacoes": 0,
+        }
+    ]
+
+
 async def test_catalog_endpoint_returns_an_empty_page_for_an_unknown_genre(
     catalog_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
@@ -282,6 +331,121 @@ async def test_catalog_endpoint_prioritizes_records_with_a_cover(
 
     assert response.status_code == 200
     assert response.json()["itens"][0]["id"] == "movie-cover"
+
+
+async def test_catalog_endpoint_prioritizes_records_with_a_trailer(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async with catalog_session_factory() as session:
+        session.add(
+            DimMovie(id_filme="movie-no-trailer", titulo="A Sem trailer", ano_lancamento=2025)
+        )
+        await session.commit()
+
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/v1/filmes", params={"priorizar_trailer": "true", "tamanho_pagina": 1}
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["itens"][0]["id"] == "movie-1"
+
+
+async def test_trailer_endpoint_returns_the_saved_youtube_link(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/filmes/movie-1/trailer")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {"url_trailer": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+
+
+async def test_catalog_endpoint_combines_advanced_filters(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/v1/filmes",
+                params={
+                    "pessoa": "villeneuve",
+                    "produtora": "paramount",
+                    "ano_inicial": 2010,
+                    "ano_final": 2020,
+                    "duracao_minima": 110,
+                    "duracao_maxima": 120,
+                    "nota_minima": 8,
+                },
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert [filme["id"] for filme in response.json()["itens"]] == ["movie-1"]
+
+
+async def test_catalog_endpoint_excludes_unknown_duration_when_a_range_is_requested(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/v1/filmes", params={"duracao_minima": 117})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["itens"] == []
+
+
+async def test_catalog_endpoint_rejects_an_invalid_year_range(
+    catalog_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async def override_db() -> AsyncIterator[AsyncSession]:
+        async with catalog_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/v1/filmes", params={"ano_inicial": 2025, "ano_final": 2020}
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
 
 
 async def test_movie_detail_endpoint_returns_full_loaded_data(

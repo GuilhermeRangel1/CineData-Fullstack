@@ -43,6 +43,24 @@ def test_catalog_query_contract_defines_stable_default_order() -> None:
     assert consulta.direcao == "asc"
 
 
+def test_catalog_query_contract_rejects_an_inverted_year_range() -> None:
+    with pytest.raises(ValidationError):
+        ConsultaCatalogo(ano_inicial=2025, ano_final=2020)
+
+
+def test_catalog_query_contract_ignores_empty_and_nullish_optional_filters() -> None:
+    consulta = ConsultaCatalogo(pessoa="  ", duracao_minima="null", nota_minima="undefined")
+
+    assert consulta.pessoa is None
+    assert consulta.duracao_minima is None
+    assert consulta.nota_minima is None
+
+
+def test_catalog_query_contract_rejects_an_inverted_duration_range() -> None:
+    with pytest.raises(ValidationError):
+        ConsultaCatalogo(duracao_minima=180, duracao_maxima=90)
+
+
 def test_movie_creation_contract_rejects_year_that_differs_from_release_date() -> None:
     with pytest.raises(ValidationError):
         FilmeCriacao(

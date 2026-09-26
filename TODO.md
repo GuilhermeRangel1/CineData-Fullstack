@@ -196,13 +196,12 @@ transições de solicitação, autorização, visibilidade e os fluxos de interf
 
 ### 11. Recursos opcionais
 
-- [ ] Implementar filtros avançados além de título, gênero, ordenação,
+- [x] Implementar filtros avançados além de título, gênero, ordenação,
       paginação e em português.
 - [ ] Criar um "Mapa de gostos": grafo interativo com filmes avaliados pelo
       usuário, recomendações próximas e conexões explicadas por afinidades
       como gênero, direção ou elenco.
-- [ ] Integrar fonte externa para dados ou trailers de filmes.
-- [ ] Validação novamente do RBAC do admin
+- [x] Integrar fonte externa para dados ou trailers de filmes.
 - [ ] Criar Storybook para componentes visuais.
 - [x] Manter cache de consultas de leitura no frontend.
 - [ ] Adicionar métricas externas e observabilidade.
