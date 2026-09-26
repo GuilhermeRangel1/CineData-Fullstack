@@ -135,7 +135,6 @@ export function ListHub({ usuario, onLoginRequested, onOpenMovie }: {
       <div>
         <p className="eyebrow"><span className="red-line" />SUA EXPERIÊNCIA, DO SEU JEITO</p>
         <h1>Minhas listas</h1>
-        <p>Organize o que quer ver, o que já marcou você e suas próximas sessões.</p>
       </div>
       <button className="button button-light" onClick={() => openEditor('create')}>+ Criar lista</button>
     </header>
