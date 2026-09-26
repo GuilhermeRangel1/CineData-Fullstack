@@ -2053,10 +2053,10 @@ fieldset:disabled {
 .community-enter:hover:not(:disabled) { background: #ca414d; }
 .community-card-admin { display: flex; justify-content: end; padding: 0 12px 10px; }
 .community-more { display: flex; margin: 34px auto 0; border-radius: 8px; gap: 18px; }
-.community-chat-dialog { width: min(1080px, calc(100vw - 40px)); max-height: calc(100dvh - 32px); border: 1px solid #754048; border-radius: 16px; padding: 0; background: #121216; box-shadow: 0 30px 130px #000a; animation: community-arrive .22s ease-out; }
+.community-chat-dialog { width: min(1240px, calc(100vw - 40px)); max-height: calc(100dvh - 20px); border: 1px solid #754048; border-radius: 16px; padding: 0; background: #121216; box-shadow: 0 30px 130px #000a; animation: community-arrive .22s ease-out; }
 .community-chat-dialog > .dialog-content { padding: 0; }
 .community-chat-dialog > .dialog-content > .dialog-close { top: 22px; right: 22px; background: #ffffff0c; border-radius: 8px; z-index: 3; }
-.community-chat { display: flex; flex-direction: column; height: min(850px, calc(100dvh - 36px)); min-height: 0; }
+.community-chat { display: flex; flex-direction: column; height: min(910px, calc(100dvh - 24px)); min-height: 0; }
 .chat-heading { display: flex; gap: 16px; align-items: center; padding: 25px 76px 24px 28px; background: linear-gradient(110deg, #2e151c, #5c202b); flex-shrink: 0; }
 .chat-community-icon { display: grid; place-items: center; width: 62px; height: 66px; flex: 0 0 62px; overflow: hidden; border: 1px solid #f77e8750; border-radius: 10px; color: #ffd5da; background: #a5364340; }
 .chat-community-icon svg { width: 28px; height: 28px; stroke-width: 1.35; }
