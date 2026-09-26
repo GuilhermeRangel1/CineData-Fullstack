@@ -20,4 +20,4 @@ COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-  CMD wget --spider --quiet http://localhost/health || exit 1
+  CMD wget --spider --quiet http://127.0.0.1/health || exit 1

@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    env_file:
+      - ./backend/.env
     environment:
       ENVIRONMENT: docker
       DATABASE_URL: sqlite+aiosqlite:////app/data/rocketlab.db
@@ -42,7 +44,7 @@ services:
     ports:
       - "8080:80"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost/health"]
+      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1/health"]
       interval: 10s
       timeout: 5s
       retries: 5
