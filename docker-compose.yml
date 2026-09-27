@@ -4,7 +4,8 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env
+        required: false
     environment:
       ENVIRONMENT: docker
       DATABASE_URL: sqlite+aiosqlite:////app/data/rocketlab.db

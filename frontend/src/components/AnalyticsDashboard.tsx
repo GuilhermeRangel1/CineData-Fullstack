@@ -34,8 +34,7 @@ export function AnalyticsDashboard({ onOpenMovie }: { onOpenMovie: (id: string) 
       <header className="analytics-header">
         <div>
           <p className="eyebrow"><span className="red-line" />PAINEL ADMINISTRATIVO</p>
-          <h1>O que move o CineData.</h1>
-          <p>Acompanhe catálogo, participação e os espaços que estão reunindo a comunidade.</p>
+          <h1>Analytics</h1>
         </div>
         <div className="analytics-period" aria-label="Período analisado">
           <span>Período</span>

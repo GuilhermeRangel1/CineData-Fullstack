@@ -6,9 +6,8 @@ combina um catálogo cinematográfico com recursos sociais e ferramentas de
 análise para quem administra a plataforma.
 
 O projeto é uma aplicação de demonstração executada localmente. Os dados são
-armazenados em SQLite, os serviços podem ser iniciados juntos com Docker Compose
-e a integração externa com o TMDB é opcional. O código não depende de uma conta
-TMDB para as funções principais.
+armazenados em SQLite e os serviços podem ser iniciados juntos com Docker
+Compose. Os recursos principais funcionam sem serviços externos.
 
 ## O que a aplicação oferece
 
@@ -31,80 +30,9 @@ catálogo local: o filme não faz parte dos CSVs fornecidos.
 
 ## Experiência no frontend
 
-O frontend é uma aplicação de página única (SPA) feita em React, TypeScript e
-CSS. A navegação reúne as áreas funcionais do produto sem expor ações
-administrativas para contas comuns.
-
-### Catálogo, pesquisa e detalhes
-
-- O catálogo consulta a API e apresenta os filmes em cards visuais com pôsteres.
-  Quando a imagem principal não está disponível, usa o backdrop ou uma
-  apresentação alternativa com o título.
-- A busca local procura pelo título; filtros combináveis incluem gênero,
-  pessoa, produtora, ano, duração mínima/máxima e nota externa mínima. Há também
-  ordenação, paginação e opções para priorizar filmes com imagem ou trailer.
-- Quando a busca não encontra um título local, a API pode consultar títulos
-  equivalentes em português e inglês no TMDB e localizar o registro já
-  existente no catálogo, sem criar uma cópia. Esse complemento depende do token
-  TMDB; sem ele, a busca continua funcionando pelos títulos locais.
-- A interface traduz os nomes dos gêneros para português sem alterar os dados
-  originais do catálogo.
-- A janela de detalhes reúne sinopse, equipe, produtoras, desempenho e histórico
-  de avaliações. Se houver trailer cadastrado, oferece sua reprodução.
-- Catálogo e detalhes usam cache em memória por até um minuto. Uma escrita
-  invalida o cache para que as telas recarreguem os dados atualizados.
-- Estados de carregamento, erro, lista vazia e nova tentativa são tratados na
-  interface. Respostas antigas de pesquisas substituídas não devem sobrescrever
-  a pesquisa mais recente.
-
-### Avaliações e listas pessoais
-
-- Uma conta pode manter uma avaliação por filme. A nota é digitada livremente
-  em qualquer valor entre `0` e `10`, inclusive valores fracionários; não há
-  seletor que force incrementos de meio ponto.
-- A pessoa pode alterar a nota e o comentário ou apagar sua própria avaliação.
-  A API diferencia criação e edição pelas respostas `201` e `200`.
-- Listas personalizadas são opcionais: adicionar um filme não obriga a usar
-  uma lista de “assistir depois”. No detalhe do filme, a pessoa escolhe a lista
-  desejada.
-- A área de listas exibe capas, permite editar nome e visibilidade, adicionar
-  ou remover títulos e consultar uma coleção automática dos filmes avaliados.
-- Listas privadas são visíveis à própria conta; perfis públicos mostram somente
-  o conteúdo marcado como público.
-
-### Perfis, amizades e comunidades
-
-- O perfil próprio permite atualizar nome e foto e consultar a mesma visão
-  social disponível para outros perfis, incluindo também listas e avaliações
-  privadas da própria conta.
-- Perfis públicos podem exibir avaliações recentes, listas públicas,
-  comunidades e conexões, conforme a visibilidade e os dados existentes.
-- A área de amizades permite pesquisar pessoas, enviar e responder solicitações,
-  consultar pedidos recebidos/enviados e remover conexões. As prévias são
-  limitadas para manter a página compacta, com acesso à lista completa.
-- Comunidades têm imagem opcional, descrição, membros e conversa. Publicações
-  podem mencionar filmes; pessoas participantes podem comentar e reagir.
-- Administradores podem remover uma publicação ou comentário específico. O
-  conteúdo é substituído por um aviso de moderação; remover uma publicação
-  também remove a menção ao filme, as reações e o conteúdo dos comentários
-  associados, preservando a posição da conversa.
-- Enquanto uma conversa está aberta e visível, o frontend consulta atualizações
-  periodicamente. A implementação atual usa polling, não WebSocket.
-
-### Mapa de gostos e analytics
-
-- O mapa de gostos é pessoal e requer login. Os filmes avaliados formam os
-  pontos de origem; recomendações relacionadas aparecem conectadas e podem ser
-  renovadas sem repetir as sugestões descartadas.
-- A recomendação é um cálculo de similaridade de conteúdo, não um modelo de
-  machine learning treinado. Considera gêneros, pessoas da equipe, termos da
-  sinopse, época e métricas disponíveis no catálogo; as conexões carregam
-  sinais de afinidade para explicar por que os itens se relacionam.
-- Analytics é exclusivo para administradores. Os indicadores e gráficos vêm de
-  consultas ao banco, com período configurável de 1 a 90 dias, incluindo
-  atividade recente, gêneros avaliados, filmes mais avaliados e comunidades em
-  alta. Não há um histórico artificial de atividade social: se a aplicação
-  acabou de ser inicializada, parte desses gráficos terá poucos dados.
+O frontend é uma SPA feita em React e TypeScript. Os fluxos detalhados,
+comportamentos de mídia e estados da interface estão em
+[docs/frontend.md](docs/frontend.md).
 
 ## Perfis de acesso
 
@@ -121,6 +49,15 @@ administrativas para contas comuns.
 O cadastro público sempre cria uma conta `user`. A promoção a `admin` é feita
 por configuração e bootstrap; não existe opção de se tornar administrador pelo
 formulário de cadastro.
+
+### Histórias de usuário
+
+- Como visitante, quero descobrir filmes e conhecer conversas públicas antes
+  de criar uma conta.
+- Como pessoa autenticada, quero registrar minhas opiniões e organizar filmes
+  enquanto participo da comunidade.
+- Como administrador, quero manter o catálogo e as comunidades e acompanhar a
+  atividade da plataforma.
 
 ## Arquitetura
 
@@ -186,27 +123,10 @@ docker-compose.yml   Execução local dos dois serviços
 
 ## Backend e API
 
-O backend separa transporte HTTP, regras de domínio e acesso a dados. Os
-routers recebem e validam requisições; serviços encapsulam operações como
-avaliações, listas, amizades, comunidades, recomendações e agregações. Erros
-controlados retornam um envelope seguro `codigo`/`mensagem`, sem expor SQL,
-caminhos locais ou detalhes internos.
-
-| Grupo de rotas | Principais recursos | Acesso típico |
-| --- | --- | --- |
-| `/api/v1/auth` | Cadastro, login, perfil próprio e sessão de demonstração no Compose | Público/autenticado; demonstração apenas no Compose |
-| `/api/v1/filmes` | Catálogo, filtros, detalhes, trailers e avaliações | Consulta pública; escrita administrativa ou do dono da avaliação |
-| `/api/v1/perfis` | Consulta de perfis públicos | Público |
-| `/api/v1/minha-conta` | Listas, assistir-depois, amizades e solicitações | Autenticado |
-| `/api/v1/comunidades` | Descoberta, participação, publicações, comentários e reações | Público/autenticado; gestão administrativa |
-| `/api/v1/mapa-de-gostos` | Grafo pessoal de filmes e recomendações | Autenticado |
-| `/api/v1/admin/analytics` | Indicadores agregados da plataforma | `admin` |
-| `/api/v1/admin/fontes/tmdb` | Busca e importação assistida de dados de filmes | `admin` |
-
-Consulte [docs/api-v1.md](docs/api-v1.md) para parâmetros, exemplos, respostas,
-regras de acesso e códigos de erro. Durante a execução, a documentação
-interativa fica em `http://localhost:8000/docs`; a rota de sessão de demonstração
-é intencionalmente omitida da OpenAPI.
+A API FastAPI separa rotas HTTP, regras de domínio e persistência. A lista
+completa de endpoints, parâmetros, respostas e permissões está em
+[docs/api-v1.md](docs/api-v1.md). A documentação interativa fica em
+`http://localhost:8000/docs`; a sessão demo do Compose é omitida da OpenAPI.
 
 ### Regras de integridade e segurança
 
@@ -326,30 +246,10 @@ este repositório não afirma executar o pipeline Bronze/Silver/Gold do projeto 
 Engenharia de Dados. O seed importa os CSVs preparados diretamente para o
 schema relacional SQLite do CineData.
 
-### Fonte de dados externa e trailers
-
-Quando `TMDB_API_TOKEN` está configurado, administradores podem pesquisar o
-TMDB durante o cadastro de um filme e importar metadados, imagens e vídeos
-disponíveis. Sem token, catálogo local, avaliações e recursos sociais continuam
-funcionando; a busca de catálogo também perde somente a resolução de títulos
-equivalentes em português/inglês. A chave não deve ser colocada no frontend nem
-enviada ao Git.
-
-Os trailers são apresentados por recursos de vídeo disponíveis para o filme e
-por incorporação oficial do YouTube. O vídeo de destaque da home usa a fonte
-oficial em `youtube-nocookie.com`; não há download nem cópia do arquivo de vídeo
-no repositório. Reprodução automática pode ser bloqueada pelo navegador, e o
-conteúdo depende da disponibilidade da fonte externa.
-
 ## Banco, migrações e seed
 
-O schema atual tem migrações sequenciais de `0001` a `0015`. Entre outras
-evoluções, elas adicionam contas, listas, trailers, amizades, privacidade de
-avaliações, comunidades, unicidade de avaliações por conta/filme, índice FTS5
-para apoiar a busca textual usada pelo mapa de gostos e campos de moderação para
-mensagens das comunidades.
-
-O comando `python -m app.db.seed`:
+As migrações sequenciais e suas alterações estão detalhadas em “Histórico de
+evolução do schema”, acima. O comando `python -m app.db.seed`:
 
 1. verifica se as migrações foram aplicadas e se os arquivos e cabeçalhos são os
    esperados;
@@ -395,14 +295,16 @@ para todo hardware ou conjunto de dados.
    `INITIAL_ADMIN_NAME` e `INITIAL_ADMIN_PASSWORD` no `docker-compose.yml`.
    Configure um `JWT_SECRET_KEY` próprio no `.env` da raiz antes de expor o
    serviço a qualquer rede.
-3. Copie `backend/.env.example` para `backend/.env` se ainda não existir. Se
-   quiser importar filmes do TMDB ou preencher automaticamente trailers da
-   home, configure `TMDB_API_TOKEN` nesse arquivo.
-4. Execute na raiz:
+3. Execute na raiz:
 
 ```powershell
 docker compose up --build
 ```
+
+Não é necessário criar ou editar arquivos para iniciar a demonstração. Se
+quiser habilitar a integração opcional com o TMDB, copie
+`backend/.env.example` para `backend/.env` e configure `TMDB_API_TOKEN` antes de
+iniciar o Compose.
 
 Na primeira execução, o backend constrói o schema, aplica as migrações e carrega
 os CSVs antes de ficar saudável; com esse catálogo, a preparação inicial pode

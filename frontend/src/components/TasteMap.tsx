@@ -107,9 +107,8 @@ export function TasteMap({ onOpenMovie, revision = 0 }: { onOpenMovie: (id: stri
       <header className="taste-map-header">
         <div>
           <p className="eyebrow"><span className="red-line" />DESCOBERTA PESSOAL</p>
-          <h1>Seu mapa de gostos.</h1>
+          <h1>Mapa de gostos</h1>
         </div>
-        <div className="taste-map-header-note"><span>↗</span><p>As conexões indicam por que uma sugestão apareceu para você.</p></div>
       </header>
 
       <div className="taste-map-content">

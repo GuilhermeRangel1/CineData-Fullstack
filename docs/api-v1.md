@@ -25,26 +25,61 @@ significa apenas a primeira versão da API; não acrescenta nenhuma funcionalida
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/auth/cadastro` | Cria conta de usuário | Público |
 | `POST` | `/api/v1/auth/login` | Inicia sessão e devolve JWT | Público |
-| `GET`, `PATCH` | `/api/v1/auth/perfil` | Consulta ou edita o próprio perfil | Autenticado |
+| `GET` | `/api/v1/auth/perfil` | Consulta perfil completo da própria conta | Autenticado |
+| `PATCH` | `/api/v1/auth/perfil` | Atualiza nome e/ou avatar | Autenticado |
 | `GET` | `/api/v1/perfis/{usuario_id}` | Consulta perfil público | Público |
 | `GET` | `/api/v1/filmes` | Catálogo, busca, filtros e paginação | Público |
-| `GET` | `/api/v1/filmes/{filme_id}` | Detalhes de filme | Público |
-| `POST`, `PATCH`, `DELETE` | `/api/v1/filmes[/{filme_id}]` | Gestão do catálogo | `admin` |
-| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Histórico público de avaliações | Público |
-| `GET`, `POST`, `DELETE` | `/api/v1/filmes/{filme_id}/minha-avaliacao` ou `/avaliacoes` | Consulta, cria/edita ou apaga a própria avaliação | Autenticado |
+| `POST` | `/api/v1/filmes` | Cadastra filme | `admin` |
+| `GET` | `/api/v1/filmes/{filme_id}` | Consulta detalhes de filme | Público |
+| `PATCH` | `/api/v1/filmes/{filme_id}` | Atualiza filme | `admin` |
+| `DELETE` | `/api/v1/filmes/{filme_id}` | Remove filme | `admin` |
+| `GET` | `/api/v1/filmes/{filme_id}/avaliacoes` | Lista avaliações públicas do filme | Público |
+| `GET` | `/api/v1/filmes/{filme_id}/minha-avaliacao` | Consulta avaliação da conta atual | Autenticado |
+| `POST` | `/api/v1/filmes/{filme_id}/avaliacoes` | Cria ou atualiza avaliação da conta atual | Autenticado |
+| `DELETE` | `/api/v1/filmes/{filme_id}/minha-avaliacao` | Remove avaliação da conta atual | Autenticado |
 | `GET` | `/api/v1/filmes/{filme_id}/trailer` | Consulta trailer disponível | Público |
-| `GET` | `/api/v1/minha-conta/listas...` | Lista personalizada e filmes avaliados | Autenticado |
-| `GET`, `PUT`, `DELETE` | `/api/v1/minha-conta/assistir-depois...` | Lista especial “assistir depois” | Autenticado |
-| `GET`, `POST`, `PATCH`, `DELETE` | `/api/v1/minha-conta/amigos...` | Pesquisa, pedidos e amizades | Autenticado |
-| `GET`, `POST`, `PATCH`, `DELETE` | `/api/v1/comunidades...` | Comunidades, participação e publicações | Público/autenticado/`admin` conforme operação |
-| `GET` | `/api/v1/admin/analytics/resumo` | Indicadores agregados da plataforma | `admin` |
-| `GET` | `/api/v1/admin/fontes/tmdb...` | Busca e consulta de dados TMDB | `admin` |
-| `GET` | `/api/v1/mapa-de-gostos` | Subgrafo pessoal de recomendações | Autenticado |
+| `GET` | `/api/v1/minha-conta/listas` | Lista coleções da conta atual | Autenticado |
+| `POST` | `/api/v1/minha-conta/listas` | Cria lista | Autenticado |
+| `GET` | `/api/v1/minha-conta/listas/{lista_id}` | Consulta lista e seus filmes | Autenticado (dona) |
+| `PATCH` | `/api/v1/minha-conta/listas/{lista_id}` | Atualiza lista | Autenticado (dona) |
+| `DELETE` | `/api/v1/minha-conta/listas/{lista_id}` | Remove lista | Autenticado (dona) |
+| `POST` | `/api/v1/minha-conta/listas/{lista_id}/filmes/{filme_id}` | Adiciona filme à lista | Autenticado (dona) |
+| `DELETE` | `/api/v1/minha-conta/listas/{lista_id}/filmes/{filme_id}` | Remove filme da lista | Autenticado (dona) |
+| `GET` | `/api/v1/minha-conta/assistir-depois` | Lista filmes salvos para assistir depois | Autenticado |
+| `PUT` | `/api/v1/minha-conta/assistir-depois/{filme_id}` | Salva filme para assistir depois | Autenticado |
+| `DELETE` | `/api/v1/minha-conta/assistir-depois/{filme_id}` | Remove filme de assistir depois | Autenticado |
+| `GET` | `/api/v1/minha-conta/filmes-avaliados` | Lista filmes avaliados pela conta | Autenticado |
+| `GET` | `/api/v1/minha-conta/amigos` | Lista amizades aceitas | Autenticado |
+| `GET` | `/api/v1/minha-conta/amigos/solicitacoes` | Lista pedidos enviados e recebidos | Autenticado |
+| `GET` | `/api/v1/minha-conta/amigos/pesquisa` | Pesquisa pessoas para conexão | Autenticado |
+| `POST` | `/api/v1/minha-conta/amigos/solicitacoes/{usuario_id}` | Envia pedido de amizade | Autenticado |
+| `PATCH` | `/api/v1/minha-conta/amigos/solicitacoes/{solicitacao_id}` | Responde a pedido de amizade | Autenticado (destinatária) |
+| `DELETE` | `/api/v1/minha-conta/amigos/{usuario_id}` | Remove amizade | Autenticado |
+| `GET` | `/api/v1/comunidades` | Lista comunidades | Público |
+| `POST` | `/api/v1/comunidades` | Cria comunidade | `admin` |
+| `GET` | `/api/v1/comunidades/{comunidade_id}` | Consulta comunidade | Público |
+| `PATCH` | `/api/v1/comunidades/{comunidade_id}` | Atualiza comunidade | `admin` |
+| `DELETE` | `/api/v1/comunidades/{comunidade_id}` | Remove comunidade | `admin` |
+| `POST` | `/api/v1/comunidades/{comunidade_id}/visualizacoes` | Registra abertura da comunidade | Público |
+| `GET` | `/api/v1/comunidades/{comunidade_id}/membros` | Lista participantes | Público |
+| `POST` | `/api/v1/comunidades/{comunidade_id}/participacao` | Participa da comunidade | Autenticado |
+| `DELETE` | `/api/v1/comunidades/{comunidade_id}/participacao` | Sai da comunidade | Autenticado |
+| `GET` | `/api/v1/comunidades/{comunidade_id}/publicacoes` | Lista publicações e conversa | Público |
+| `POST` | `/api/v1/comunidades/{comunidade_id}/publicacoes` | Publica na comunidade | Autenticado (membro) |
+| `POST` | `/api/v1/comunidades/publicacoes/{publicacao_id}/comentarios` | Comenta em publicação | Autenticado (membro) |
+| `DELETE` | `/api/v1/comunidades/publicacoes/{publicacao_id}` | Modera publicação | `admin` |
+| `DELETE` | `/api/v1/comunidades/comentarios/{comentario_id}` | Modera comentário | `admin` |
+| `POST` | `/api/v1/comunidades/publicacoes/{publicacao_id}/reacoes` | Cria ou atualiza reação | Autenticado (membro) |
+| `DELETE` | `/api/v1/comunidades/publicacoes/{publicacao_id}/reacoes` | Remove reação da conta atual | Autenticado |
+| `GET` | `/api/v1/mapa-de-gostos` | Consulta recomendações e grafo pessoal | Autenticado |
+| `GET` | `/api/v1/admin/analytics/resumo` | Consulta indicadores agregados | `admin` |
+| `GET` | `/api/v1/admin/fontes/tmdb/busca` | Pesquisa títulos no TMDB | `admin` |
+| `GET` | `/api/v1/admin/fontes/tmdb/{tmdb_id}` | Consulta detalhes para importação do TMDB | `admin` |
+| `POST` | `/api/v1/auth/sessao-teste` | Inicia sessão da conta demo do Compose | Somente Compose; oculta da OpenAPI |
 
-As rotas exatas de cada grupo estão nos routers do backend e também na
-documentação OpenAPI em `/docs` durante a execução local. A sessão de teste do
-Compose (`POST /api/v1/auth/sessao-teste`) só existe no ambiente Docker e fica
-oculta da OpenAPI.
+As rotas são mantidas em `backend/app/api/v1/`; a documentação interativa fica
+em `/docs` durante a execução local. A sessão de teste do Compose é a única rota
+intencionalmente oculta da OpenAPI.
 
 ### Contas e sessão
 
