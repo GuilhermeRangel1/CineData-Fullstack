@@ -9,6 +9,8 @@ O projeto é uma aplicação de demonstração executada localmente. Os dados s�
 armazenados em SQLite e os serviços podem ser iniciados juntos com Docker
 Compose. Os recursos principais funcionam sem serviços externos.
 
+![Página inicial do CineData com destaque para Spider-Man: Across the Spider-Verse](docs/images/home.png)
+
 ## Funcionalidades
 
 O CineData acompanha uma jornada cinéfila: descobrir filmes, registrar opiniões,
@@ -93,12 +95,6 @@ no TMDB e importar metadados, imagens e trailer; essa integração é opcional e
 chave permanece no backend. Analytics agrega dados existentes, com período
 configurável de 1 a 90 dias. O catálogo inicial não inventa avaliações ou
 atividade social, então os gráficos sociais começam com poucos dados.
-
-### Destaque da home
-
-O tema visual é escuro, com identidade em vermelho e destaque editorial na home.
-Spider-Man: Across the Spider-Verse aparece como seleção editorial acompanhada
-por seu trailer oficial; o filme também está presente no catálogo local.
 
 Os estados de carregamento e erro, a responsividade e os comportamentos de mídia
 estão detalhados em [docs/frontend.md](docs/frontend.md).
@@ -361,10 +357,24 @@ para todo hardware ou conjunto de dados.
 docker compose up --build
 ```
 
-Não é necessário criar ou editar arquivos para iniciar a demonstração. Se
-quiser habilitar a integração opcional com o TMDB, copie
-`backend/.env.example` para `backend/.env` e configure `TMDB_API_TOKEN` antes de
-iniciar o Compose.
+Não é necessário criar ou editar arquivos para iniciar a demonstração. O
+catálogo local funciona sem credenciais externas. A busca e a importação de
+dados pelo TMDB, disponíveis no formulário administrativo de filmes, exigem um
+token próprio: sem ele, a API responde que a fonte externa está indisponível.
+Para habilitar essa função, obtenha um token nas
+[configurações de API do TMDB](https://www.themoviedb.org/settings/api), copie o
+modelo e preencha o token antes de iniciar o Compose:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+notepad backend\.env
+```
+
+Defina `TMDB_API_TOKEN` no arquivo. O Docker Compose carrega esse arquivo
+quando inicia o backend; depois de configurá-lo, inicie ou recrie os serviços
+com `docker compose up --build`. O arquivo `.env` fica apenas no seu computador
+e não é enviado ao GitHub. Cada pessoa que clonar o projeto e quiser usar a
+integração precisa configurar seu próprio token.
 
 Na primeira execução, o backend constrói o schema, aplica as migrações e carrega
 os CSVs antes de ficar saudável; com esse catálogo, a preparação inicial pode
@@ -388,9 +398,10 @@ irreversível para aquele volume, então faça-o somente se realmente quiser
 recomeçar a carga do zero.
 
 No ambiente Compose, `POST /api/v1/auth/sessao-teste` devolve uma sessão da
-conta `admin` preparada para a demonstração. O frontend usa essa rota somente
-no build Docker de demo e inicia autenticado. A rota não existe no modo de
-desenvolvimento local.
+conta `admin` preparada para a demonstração. No build Docker de demo, o
+frontend inicia autenticado como admin quando o navegador ainda não tem uma
+sessão salva; uma sessão existente de usuário comum é preservada ao atualizar a
+página. A rota não existe no modo de desenvolvimento local.
 
 ### Execução local sem Docker
 
@@ -410,8 +421,11 @@ py -3.11 -m venv .venv
 
 Edite `backend/.env` para definir pelo menos uma `JWT_SECRET_KEY` segura. Para
 criar o primeiro administrador, informe também `INITIAL_ADMIN_EMAIL`,
-`INITIAL_ADMIN_NAME` e `INITIAL_ADMIN_PASSWORD`. `TMDB_API_TOKEN` é opcional.
-Depois, ainda em `backend/`:
+`INITIAL_ADMIN_NAME` e `INITIAL_ADMIN_PASSWORD`. Para usar a busca e a
+importação de filmes pelo TMDB, obtenha um token nas
+[configurações de API do TMDB](https://www.themoviedb.org/settings/api) e defina
+`TMDB_API_TOKEN` no mesmo arquivo. Sem esse token, o catálogo local continua
+disponível, mas a integração TMDB não funciona. Depois, ainda em `backend/`:
 
 ```powershell
 .\.venv\Scripts\alembic upgrade head
@@ -456,7 +470,7 @@ O frontend ficará em `http://localhost:5173`. A variável
 | `INITIAL_ADMIN_EMAIL` | Backend e configuração raiz do Compose | E-mail da primeira conta administrativa. |
 | `INITIAL_ADMIN_NAME` | Backend e configuração raiz do Compose | Nome da conta administrativa inicial. |
 | `INITIAL_ADMIN_PASSWORD` | Backend e configuração raiz do Compose | Senha inicial; mantenha-a fora do repositório. |
-| `TMDB_API_TOKEN` | `backend/.env` | Token de leitura usado somente nas chamadas do backend ao TMDB. |
+| `TMDB_API_TOKEN` | `backend/.env` | Token necessário para a busca e importação de filmes pelo TMDB. |
 | `VITE_API_BASE_URL` | `frontend/.env` | Endereço-base da API usado pelo Vite no desenvolvimento. |
 
 Os arquivos `.env` contêm segredos e não devem ser commitados. Os arquivos
