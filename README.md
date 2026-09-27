@@ -9,29 +9,99 @@ O projeto é uma aplicação de demonstração executada localmente. Os dados s�
 armazenados em SQLite e os serviços podem ser iniciados juntos com Docker
 Compose. Os recursos principais funcionam sem serviços externos.
 
-## O que a aplicação oferece
+## Funcionalidades
 
-| Área | O que permite fazer |
-| --- | --- |
-| Início e catálogo | Descobrir filmes em cards com pôsteres, pesquisar, filtrar, ordenar e navegar por páginas. |
-| Detalhes de filme | Consultar sinopse, elenco/equipe, produtoras, métricas, avaliações e trailers disponíveis. |
-| Avaliações | Criar, editar ou apagar a própria nota e resenha; notas podem ser qualquer valor numérico entre 0 e 10. |
-| Listas | Criar curadorias pessoais, escolher a lista diretamente no detalhe de um filme e acompanhar os filmes já avaliados. |
-| Perfis e amizades | Editar o próprio nome e avatar, consultar perfis públicos e enviar ou responder a pedidos de amizade. |
-| Comunidades | Participar de conversas sobre cinema, mencionar filmes, comentar publicações e reagir; admins podem moderar publicações e comentários individuais. |
-| Mapa de gostos | Explorar recomendações conectadas aos filmes avaliados, com sinais de afinidade explicáveis. |
-| Analytics | Acompanhar indicadores agregados e tendências calculados a partir da atividade registrada no banco. |
-| Ferramentas administrativas | Manter o catálogo e as comunidades, importar dados de filmes do TMDB e consultar analytics. |
+O CineData acompanha uma jornada cinéfila: descobrir filmes, registrar opiniões,
+organizar uma coleção pessoal e conversar com outras pessoas. As histórias
+abaixo descrevem o objetivo de cada área e o comportamento implementado.
+
+### Descoberta e catálogo
+
+**História:** como visitante, quero encontrar filmes e conhecer seus detalhes
+para decidir o que assistir.
+
+O catálogo local pode ser pesquisado por título e filtrado por gênero, pessoa,
+produtora, ano, duração e nota externa. Também oferece ordenação e paginação. A
+página inicial destaca coleções de filmes; os detalhes reúnem sinopse, equipe,
+produtoras, métricas, avaliações e trailer quando disponível. Se a busca local
+não localizar o título, a integração opcional com TMDB pode ajudar a resolver
+variações do título em português e inglês sem duplicar o registro local.
+
+### Contas e avaliações
+
+**História:** como pessoa autenticada, quero registrar e controlar minha opinião
+sobre cada filme.
+
+O cadastro público cria uma conta `user`; o login abre uma sessão Bearer. Cada
+conta pode manter uma avaliação por filme, com nota decimal de `0` a `10`,
+comentário e visibilidade pública ou privada. A pessoa pode editar ou apagar a
+própria avaliação. Avaliações importadas do conjunto de dados ficam separadas
+das avaliações feitas pelas contas.
+
+### Coleções pessoais e perfis
+
+**História:** como pessoa autenticada, quero organizar os filmes que acompanho e
+decidir o que compartilho no meu perfil.
+
+É possível criar listas com nome e visibilidade pública ou privada, adicionar e
+remover filmes e manter uma lista especial de “assistir depois”. Os filmes
+avaliados também aparecem numa coleção automática. A própria conta pode editar
+nome e avatar e consultar dados privados; outras pessoas veem apenas as partes
+públicas do perfil, como avaliações públicas, listas públicas e comunidades.
+
+### Amizades e comunidades
+
+**História:** como pessoa autenticada, quero encontrar outras pessoas e trocar
+ideias sobre cinema em espaços compartilhados.
+
+Amizades começam com pesquisa de pessoas e pedidos que o destinatário pode
+aceitar ou recusar; conexões aceitas podem ser removidas. Nas comunidades, a
+pessoa entra para publicar, comentar, mencionar filmes e reagir. Administradores
+criam e mantêm as comunidades. Ao moderar uma publicação ou comentário, o texto
+é removido e substituído por um aviso, preservando o contexto da conversa.
+Enquanto uma conversa está aberta, novas mensagens são carregadas por polling.
+
+### Mapa de gostos
+
+**História:** como pessoa autenticada, quero descobrir filmes próximos aos que
+avaliei e entender por que foram sugeridos.
+
+Os filmes avaliados pela conta são as origens do grafo. Para cada origem, o
+backend busca candidatos do catálogo que compartilhem gêneros, pessoas ou termos
+da sinopse; o SQLite FTS5 ajuda na busca textual. Em seguida calcula uma
+afinidade combinando gêneros (34%), direção (18%), elenco (10%), termos da
+sinopse (18%), proximidade de ano (8%) e métricas externas (12%). A nota dada
+pela pessoa ajusta a força da afinidade: notas altas dão mais peso, notas baixas
+reduzem o peso, mas não funcionam como uma rejeição absoluta. Cada aresta liga
+um filme avaliado a uma sugestão e inclui sinais legíveis, como gênero, direção
+ou tema em comum.
+
+O mapa usa similaridade de conteúdo do catálogo local; não é um modelo treinado,
+não aprende com outras contas e não sugere filmes que não estejam na base. A
+posição visual dos nós serve para organizar o grafo, não representa uma
+coordenada ou distância estatística. Sem avaliações próprias, o mapa mostra como
+começar a alimentá-lo.
+
+### Ferramentas administrativas e analytics
+
+**História:** como administrador, quero manter o catálogo e os espaços da
+comunidade e acompanhar a atividade real da plataforma.
+
+O administrador pode cadastrar, editar e remover filmes e comunidades, moderar
+conteúdo e abrir o painel de analytics. O formulário de filmes pode pesquisar
+no TMDB e importar metadados, imagens e trailer; essa integração é opcional e a
+chave permanece no backend. Analytics agrega dados existentes, com período
+configurável de 1 a 90 dias. O catálogo inicial não inventa avaliações ou
+atividade social, então os gráficos sociais começam com poucos dados.
+
+### Destaque da home
 
 O tema visual é escuro, com identidade em vermelho e destaque editorial na home.
 Spider-Man: Across the Spider-Verse aparece como seleção editorial acompanhada
 por seu trailer oficial; o filme também está presente no catálogo local.
 
-## Experiência no frontend
-
-O frontend é uma SPA feita em React e TypeScript. Os fluxos detalhados,
-comportamentos de mídia e estados da interface estão em
-[docs/frontend.md](docs/frontend.md).
+Os estados de carregamento e erro, a responsividade e os comportamentos de mídia
+estão detalhados em [docs/frontend.md](docs/frontend.md).
 
 ## Perfis de acesso
 
@@ -48,15 +118,6 @@ comportamentos de mídia e estados da interface estão em
 O cadastro público sempre cria uma conta `user`. A promoção a `admin` é feita
 por configuração e bootstrap; não existe opção de se tornar administrador pelo
 formulário de cadastro.
-
-### Histórias de usuário
-
-- Como visitante, quero descobrir filmes e conhecer conversas públicas antes
-  de criar uma conta.
-- Como pessoa autenticada, quero registrar minhas opiniões e organizar filmes
-  enquanto participo da comunidade.
-- Como administrador, quero manter o catálogo e as comunidades e acompanhar a
-  atividade da plataforma.
 
 ## Arquitetura
 
