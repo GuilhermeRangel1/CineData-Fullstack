@@ -127,8 +127,8 @@ describe('Destaque cinematográfico', () => {
     render(<Hero onExplore={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Assistir trailer' }))
 
-    expect(screen.getByRole('dialog')).toHaveAccessibleName('Trailer de O Castelo Animado')
-    expect(screen.getByTitle('Assistir ao trailer oficial de O Castelo Animado')).toHaveAttribute(
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Trailer de Spider-Man: Across the Spider-Verse')
+    expect(screen.getByTitle('Assistir ao trailer oficial de Spider-Man: Across the Spider-Verse')).toHaveAttribute(
       'src',
       expect.stringContaining('autoplay=1'),
     )

@@ -190,13 +190,9 @@ function App() {
           <details>
             <summary>Créditos do destaque</summary>
             <p>
-              O Castelo Animado © 2004 Diana Wynne Jones / Hayao Miyazaki / Studio Ghibli, NDDMT.{' '}
-              <a href="https://www.ghibli.jp/works/howl/" target="_blank" rel="noreferrer">
-                Imagem: Studio Ghibli
-              </a>
-              .{' '}
-              <a href="https://www.youtube.com/watch?v=2x5SejvTMeA" target="_blank" rel="noreferrer">
-                Trailer: GKIDS
+              Spider-Man: Across the Spider-Verse © 2023 Sony Pictures Animation.{' '}
+              <a href="https://www.youtube.com/watch?v=shW9i6k8cB0" target="_blank" rel="noreferrer">
+                Trailer: Sony Pictures
               </a>
               . Projeto acadêmico, sem afiliação aos estúdios.
             </p>

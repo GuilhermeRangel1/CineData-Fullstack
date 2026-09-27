@@ -74,14 +74,13 @@ Dados são persistidos pela API, não em armazenamento local do navegador.
 
 ## Destaque editorial
 
-O Castelo Animado não foi encontrado no seed local. Ele aparece como seleção
-editorial, sem nota inventada ou ligação a um registro inexistente. O botão
-Explorar animações abre o filtro correspondente no catálogo real.
+Spider-Man: Across the Spider-Verse aparece como seleção editorial e também faz
+parte do catálogo local. O botão Explorar animações abre o filtro correspondente
+no catálogo.
 
-- Trailer: [GKIDS, trailer oficial](https://www.youtube.com/watch?v=2x5SejvTMeA).
-- Imagem: [galeria oficial do Studio Ghibli](https://www.ghibli.jp/works/howl/),
-  quadro `howl003.jpg`.
-- Créditos: © 2004 Diana Wynne Jones / Hayao Miyazaki / Studio Ghibli, NDDMT.
+- Trailer: [Sony Pictures, trailer oficial](https://www.youtube.com/watch?v=shW9i6k8cB0).
+- Imagem: miniatura do vídeo oficial, servida pelo YouTube.
+- Créditos: © 2023 Sony Pictures Animation.
 - Fontes: Manrope e Barlow Condensed, servidas pelo Google Fonts, com
   alternativas locais em CSS.
 

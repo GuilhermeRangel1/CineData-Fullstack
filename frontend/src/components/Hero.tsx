@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  GHIBLI_STILL,
-  GHIBLI_TRAILER_ID,
-  GHIBLI_TRAILER_URL,
+  HOME_STILL,
+  HOME_TRAILER_ID,
+  HOME_TRAILER_URL,
   loadYouTube,
   type YouTubePlayer,
 } from '../lib/youtube'
@@ -87,8 +87,8 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
       fallbackShown = true
       clearFallbackTimer()
       const iframe = document.createElement('iframe')
-      iframe.title = 'Trailer oficial de O Castelo Animado'
-      iframe.src = `https://www.youtube-nocookie.com/embed/${GHIBLI_TRAILER_ID}?autoplay=1&mute=1&controls=0&loop=1&playlist=${GHIBLI_TRAILER_ID}&rel=0`
+      iframe.title = 'Trailer oficial de Spider-Man: Across the Spider-Verse'
+      iframe.src = `https://www.youtube-nocookie.com/embed/${HOME_TRAILER_ID}?autoplay=1&mute=1&controls=0&loop=1&playlist=${HOME_TRAILER_ID}&rel=0`
       iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture'
       iframe.allowFullscreen = true
       iframe.referrerPolicy = 'strict-origin-when-cross-origin'
@@ -119,7 +119,7 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
         hostElement.replaceChildren(mount)
         instance = new api.Player(mount, {
           host: 'https://www.youtube-nocookie.com',
-          videoId: GHIBLI_TRAILER_ID,
+          videoId: HOME_TRAILER_ID,
           playerVars: {
             autoplay: 1,
             mute: 1,
@@ -128,7 +128,7 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             modestbranding: 1,
             playsinline: 1,
             loop: 1,
-            playlist: GHIBLI_TRAILER_ID,
+            playlist: HOME_TRAILER_ID,
             rel: 0,
             origin: window.location.origin,
           },
@@ -136,7 +136,7 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             onReady: ({ target }) => {
               if (!active) return
               player.current = target
-              target.getIframe().title = 'Trailer oficial de O Castelo Animado'
+              target.getIframe().title = 'Trailer oficial de Spider-Man: Across the Spider-Verse'
               target.getIframe().tabIndex = -1
               target.mute()
               setMuted(true)
@@ -213,8 +213,8 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
 
   return (
     <>
-      <section className="hero" id="inicio" aria-labelledby="hero-title" ref={section}>
-        <img className="hero-still" src={GHIBLI_STILL} alt="" fetchPriority="high" />
+      <section className="hero hero--editorial" id="inicio" aria-labelledby="hero-title" ref={section}>
+        <img className="hero-still" src={HOME_STILL} alt="" fetchPriority="high" />
         <div
           className={`hero-video ${ready && playing && !unavailable ? 'is-ready' : ''}`}
           ref={host}
@@ -223,25 +223,26 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
         <div className="hero-shade" />
         <div className="hero-content">
           <p className="eyebrow">
-            <span className="red-line" /> EM CENA · STUDIO GHIBLI
+            <span className="red-line" /> ANIMAÇÃO · SONY PICTURES ANIMATION
           </p>
-          <h1 id="hero-title">
-            O Castelo
+          <h1 id="hero-title" className="hero-title-long">
+            Spider-Man:
             <br />
-            <span>Animado</span>
+            <span>Across the</span>
+            <br />
+            Spider-Verse
           </h1>
           <div className="hero-meta">
-            <span>2004</span>
-            <span>1h 59min</span>
-            <span>Hayao Miyazaki</span>
+            <span>2023</span>
+            <span>2h 20min</span>
+            <span>Dir. Joaquim Dos Santos</span>
           </div>
           <p className="hero-description">
-            Uma maldição. Um castelo que caminha.
-            <br className="desktop-break" /> E um encontro capaz de transformar tudo.
+            Miles Morales atravessa o multiverso e encontra outras versões do Homem-Aranha.
           </p>
           <div className="hero-genres">
             <span>Animação</span>
-            <span>Fantasia</span>
+            <span>Ação</span>
             <span>Aventura</span>
           </div>
           <div className="hero-actions">
@@ -252,7 +253,7 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
               Explorar animações <Icon name="arrow" />
             </button>
           </div>
-          <p className="hero-credit">Seleção editorial · Trailer oficial por GKIDS</p>
+          <p className="hero-credit">Seleção editorial · Trailer oficial da Sony Pictures</p>
         </div>
         <div className="hero-bottom">
           <a href="#colecoes" className="hero-scroll">
@@ -283,24 +284,24 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
       </section>
       {trailerOpen && (
         <Dialog
-          title="Trailer de O Castelo Animado"
+          title="Trailer de Spider-Man: Across the Spider-Verse"
           className="trailer-dialog"
           onClose={() => setTrailerOpen(false)}
         >
           <h2>
-            O Castelo Animado <span>Trailer oficial</span>
+            Spider-Man: Across the Spider-Verse <span>Trailer oficial</span>
           </h2>
           <iframe
-            title="Assistir ao trailer oficial de O Castelo Animado"
-            src={`https://www.youtube-nocookie.com/embed/${GHIBLI_TRAILER_ID}?autoplay=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`}
+            title="Assistir ao trailer oficial de Spider-Man: Across the Spider-Verse"
+            src={`https://www.youtube-nocookie.com/embed/${HOME_TRAILER_ID}?autoplay=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`}
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
           />
           <p>
             Se o player não estiver disponível,{' '}
-            <a href={GHIBLI_TRAILER_URL} target="_blank" rel="noreferrer">
-              assista no canal oficial da GKIDS ↗
+            <a href={HOME_TRAILER_URL} target="_blank" rel="noreferrer">
+              assista no YouTube ↗
             </a>
             .
           </p>

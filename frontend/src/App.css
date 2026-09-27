@@ -190,6 +190,9 @@
   background: #162526;
   isolation: isolate;
 }
+.hero--editorial {
+  height: auto;
+}
 .hero-still,
 .hero-video,
 .hero-shade {
@@ -257,6 +260,9 @@
 }
 .hero h1 span {
   letter-spacing: 0.045em;
+}
+.hero h1.hero-title-long {
+  font-size: clamp(72px, 6.5vw, 98px);
 }
 .hero-meta {
   display: flex;
@@ -1025,6 +1031,9 @@ dialog::backdrop {
   .hero h1 {
     font-size: 74px;
   }
+  .hero h1.hero-title-long {
+    font-size: 54px;
+  }
   .hero-still {
     object-position: 64% center;
   }
@@ -1164,6 +1173,9 @@ dialog::backdrop {
   }
   .hero h1 {
     font-size: 64px;
+  }
+  .hero h1.hero-title-long {
+    font-size: 50px;
   }
   .hero-actions {
     flex-direction: column;

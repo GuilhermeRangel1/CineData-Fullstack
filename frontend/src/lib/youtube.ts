@@ -61,9 +61,9 @@ export function loadYouTube(): Promise<YouTubeApi> {
   return pending
 }
 
-export const GHIBLI_TRAILER_ID = '2x5SejvTMeA'
-export const GHIBLI_TRAILER_URL = `https://www.youtube.com/watch?v=${GHIBLI_TRAILER_ID}`
-export const GHIBLI_STILL = 'https://www.ghibli.jp/gallery/howl003.jpg'
+export const HOME_TRAILER_ID = 'shW9i6k8cB0'
+export const HOME_TRAILER_URL = `https://www.youtube.com/watch?v=${HOME_TRAILER_ID}`
+export const HOME_STILL = `https://img.youtube.com/vi/${HOME_TRAILER_ID}/maxresdefault.jpg`
 
 export function youtubeEmbedUrl(url: string): string | null {
   try {

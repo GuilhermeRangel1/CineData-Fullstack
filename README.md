@@ -24,9 +24,8 @@ Compose. Os recursos principais funcionam sem serviços externos.
 | Ferramentas administrativas | Manter o catálogo e as comunidades, importar dados de filmes do TMDB e consultar analytics. |
 
 O tema visual é escuro, com identidade em vermelho e destaque editorial na home.
-O Castelo Animado aparece como seleção editorial acompanhada por um trailer
-oficial incorporado do YouTube. Esse destaque não finge ser um registro do
-catálogo local: o filme não faz parte dos CSVs fornecidos.
+Spider-Man: Across the Spider-Verse aparece como seleção editorial acompanhada
+por seu trailer oficial; o filme também está presente no catálogo local.
 
 ## Experiência no frontend
 
