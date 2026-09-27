@@ -238,26 +238,31 @@ class CatalogoFilmesService:
         if filme.url_trailer:
             return TrailerFilme(url_trailer=filme.url_trailer)
 
+        gateway = TmdbGateway(get_settings().tmdb_api_token)
         try:
-            resultados = await TmdbGateway(get_settings().tmdb_api_token).buscar(
-                filme.titulo, filme.ano_lancamento
-            )
-            if not resultados:
-                return TrailerFilme()
-            correspondencia = next(
-                (
-                    item
-                    for item in resultados
-                    if item.titulo.casefold() == filme.titulo.casefold()
-                    and (
-                        filme.ano_lancamento is None or item.ano_lancamento == filme.ano_lancamento
-                    )
-                ),
-                resultados[0],
-            )
-            trailer = (
-                await TmdbGateway(get_settings().tmdb_api_token).obter(correspondencia.id)
-            ).url_trailer
+            if filme.id_filme.isdecimal():
+                # IDs da seed são IDs TMDB: consultar diretamente evita anexar o
+                # trailer de uma obra homônima encontrada pela pesquisa textual.
+                trailer = (await gateway.obter(int(filme.id_filme))).url_trailer
+            else:
+                # Filmes locais não têm ID TMDB; só aceitamos uma correspondência
+                # exata de título e ano, sem cair silenciosamente no primeiro resultado.
+                resultados = await gateway.buscar(filme.titulo, filme.ano_lancamento)
+                correspondencia = next(
+                    (
+                        item
+                        for item in resultados
+                        if item.titulo.casefold() == filme.titulo.casefold()
+                        and (
+                            filme.ano_lancamento is None
+                            or item.ano_lancamento == filme.ano_lancamento
+                        )
+                    ),
+                    None,
+                )
+                if correspondencia is None:
+                    return TrailerFilme()
+                trailer = (await gateway.obter(correspondencia.id)).url_trailer
         except FonteExternaIndisponivelError:
             return TrailerFilme()
         if not trailer:

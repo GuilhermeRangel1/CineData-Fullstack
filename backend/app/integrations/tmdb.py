@@ -10,7 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.core.errors import FonteExternaIndisponivelError
 
 TMDB_API_URL = "https://api.themoviedb.org/3"
-TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/original"
+TMDB_POSTER_URL = "https://image.tmdb.org/t/p/w500"
+TMDB_BACKDROP_URL = "https://image.tmdb.org/t/p/w1280"
 
 
 class TmdbResultado(BaseModel):
@@ -103,7 +104,15 @@ class TmdbGateway:
 
     @staticmethod
     def _imagem(caminho: object) -> str | None:
-        return f"{TMDB_IMAGE_URL}{caminho}" if isinstance(caminho, str) and caminho else None
+        return TmdbGateway._poster(caminho)
+
+    @staticmethod
+    def _poster(caminho: object) -> str | None:
+        return f"{TMDB_POSTER_URL}{caminho}" if isinstance(caminho, str) and caminho else None
+
+    @staticmethod
+    def _backdrop(caminho: object) -> str | None:
+        return f"{TMDB_BACKDROP_URL}{caminho}" if isinstance(caminho, str) and caminho else None
 
     def _para_resultado(self, item: object) -> TmdbResultado | None:
         if not isinstance(item, dict) or not isinstance(item.get("id"), int):
@@ -166,8 +175,8 @@ class TmdbGateway:
             else None,
             ano_lancamento=data.year if data else None,
             data_lancamento=data,
-            url_poster=self._imagem(item.get("poster_path")),
-            url_backdrop=self._imagem(item.get("backdrop_path")),
+            url_poster=self._poster(item.get("poster_path")),
+            url_backdrop=self._backdrop(item.get("backdrop_path")),
             url_trailer=f"https://www.youtube.com/watch?v={trailer}" if trailer else None,
         )
 

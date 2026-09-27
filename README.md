@@ -291,6 +291,7 @@ integridade de avaliações, desempenho do mapa e moderação de conteúdo.
 | `0014_add_taste_map_synopsis_index` | Cria `movie_synopsis_fts`, preenche-a com sinopses atuais e adiciona triggers de sincronização para otimizar a seleção de candidatos do mapa. |
 | `0015_add_community_moderation` | Adiciona `removida_por_moderacao` a `community_posts` e `community_comments`, permitindo ocultar conteúdo sem remover o contexto da conversa. |
 | `0016_clean_movie_runtime` | Converte durações nulas ou inválidas em desconhecidas e impede que novos valores menores que 1 minuto sejam gravados. |
+| `0017_validate_movie_performance` | Trata notas sem votos como desconhecidas, corrige métricas inconsistentes existentes e protege métricas financeiras e externas com validações no banco. |
 
 As migrations ficam em [`backend/migrations/versions/`](backend/migrations/versions/).
 O modelo declarativo correspondente está em `backend/app/movies/models.py`,
@@ -324,9 +325,22 @@ já existem filmes no banco.
 A seed contém cerca de 95 mil filmes e não consulta a internet durante a
 inicialização. O importador converte duração zero ou negativa em valor
 desconhecido; a migração `0016` aplica o mesmo tratamento aos bancos existentes.
+Notas TMDB/IMDb associadas a zero votos também são tratadas como desconhecidas; a
+migração `0017` corrige os bancos existentes e impede notas fora da escala,
+contagens negativas e popularidade ou valores financeiros negativos.
 O catálogo começa pelos títulos mais relevantes, usando a nota do TMDB ponderada
 pelo número de votos e pela popularidade já importada. Assim, títulos conhecidos
 ganham destaque sem aumentar o volume da seed nem o tempo da primeira carga.
+
+Na revisão de 27/09/2026, a seed tinha 95.645 IDs de filme únicos e sinopse,
+data e ano preenchidos em todos os registros. Cerca de 8.241 filmes não têm pôster
+e 38.308 não têm backdrop; essas ausências estão concentradas na cauda menos
+popular do catálogo. A seed permanece independente de consultas externas e os
+arquivos de imagem são carregados em tamanhos adequados à interface (`w500` para
+pôsteres e `w1280` para backdrops).
+
+O catálogo e a integração administrativa usam dados do TMDB. O rodapé da aplicação
+exibe a atribuição exigida pelo serviço; consulte os [termos da API do TMDB](https://www.themoviedb.org/api-terms-of-use).
 
 A carga atualiza ou mantém registros pelas chaves existentes, então pode ser
 reexecutada. O banco do Compose fica no volume Docker `cinedata-db` e sobrevive

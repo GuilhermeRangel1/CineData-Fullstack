@@ -337,19 +337,61 @@ def _person(row: dict[str, str | None], row_number: int, file_name: str) -> dict
 
 
 def _performance(row: dict[str, str | None], row_number: int, file_name: str) -> dict[str, Any]:
+    orcamento_usd = _optional_decimal(row, file_name, row_number, "orcamento_usd")
+    receita_usd = _optional_decimal(row, file_name, row_number, "receita_usd")
+    orcamento_brl = _optional_decimal(row, file_name, row_number, "orcamento_brl")
+    receita_brl = _optional_decimal(row, file_name, row_number, "receita_brl")
+    popularidade = _optional_float(row, file_name, row_number, "popularidade")
+    nota_tmdb = _optional_float(row, file_name, row_number, "nota_tmdb")
+    qtd_tmdb = _optional_int(row, file_name, row_number, "qtd_tmdb")
+    nota_imdb = _optional_float(row, file_name, row_number, "nota_imdb")
+    qtd_imdb = _optional_int(row, file_name, row_number, "qtd_imdb")
+
+    for column, value in (
+        ("orcamento_usd", orcamento_usd),
+        ("receita_usd", receita_usd),
+        ("orcamento_brl", orcamento_brl),
+        ("receita_brl", receita_brl),
+    ):
+        if value is not None and value < 0:
+            raise InitialDataError(
+                f"{_location(file_name, row_number, column)} não pode ser negativo."
+            )
+    if popularidade is not None and popularidade < 0:
+        raise InitialDataError(
+            f"{_location(file_name, row_number, 'popularidade')} não pode ser negativa."
+        )
+    for column, score in (("nota_tmdb", nota_tmdb), ("nota_imdb", nota_imdb)):
+        if score is not None and not 0 <= score <= 10:
+            raise InitialDataError(
+                f"{_location(file_name, row_number, column)} deve estar entre 0 e 10."
+            )
+    for column, votes in (("qtd_tmdb", qtd_tmdb), ("qtd_imdb", qtd_imdb)):
+        if votes is not None and votes < 0:
+            raise InitialDataError(
+                f"{_location(file_name, row_number, column)} não pode ser negativo."
+            )
+
+    # Sem votos, a nota não representa uma avaliação confiável; NULL evita
+    # exibir uma nota como se houvesse avaliações registradas.
+    if qtd_tmdb == 0:
+        nota_tmdb = None
+    if qtd_imdb == 0:
+        nota_imdb = None
+
     return {
         "sk_movie_id": _required_text(row, file_name, row_number, "sk_movie_id", 64),
-        "orcamento_usd": _optional_decimal(row, file_name, row_number, "orcamento_usd"),
-        "receita_usd": _optional_decimal(row, file_name, row_number, "receita_usd"),
+        "orcamento_usd": orcamento_usd,
+        "receita_usd": receita_usd,
         "lucro_usd": _required_decimal(row, file_name, row_number, "lucro_usd"),
-        "orcamento_brl": _optional_decimal(row, file_name, row_number, "orcamento_brl"),
-        "receita_brl": _optional_decimal(row, file_name, row_number, "receita_brl"),
+        "orcamento_brl": orcamento_brl,
+        "receita_brl": receita_brl,
         "lucro_brl": _required_decimal(row, file_name, row_number, "lucro_brl"),
-        "popularidade": _optional_float(row, file_name, row_number, "popularidade"),
-        "nota_tmdb": _optional_float(row, file_name, row_number, "nota_tmdb"),
-        "qtd_tmdb": _optional_int(row, file_name, row_number, "qtd_tmdb"),
-        "nota_imdb": _optional_float(row, file_name, row_number, "nota_imdb"),
-        "qtd_imdb": _optional_int(row, file_name, row_number, "qtd_imdb"),
+        "popularidade": popularidade,
+        "nota_tmdb": nota_tmdb,
+        "qtd_tmdb": qtd_tmdb,
+        "nota_imdb": nota_imdb,
+        "qtd_imdb": qtd_imdb,
     }
 
 

@@ -202,6 +202,16 @@ function App() {
         ) : (
           <span className="community-footer-note">Cinema é experiência coletiva.</span>
         )}
+        <div className="tmdb-attribution">
+          <a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">
+            <img
+              src="https://www.themoviedb.org/assets/2/v4/logos/stacked-green.svg"
+              alt="The Movie Database (TMDB)"
+              loading="lazy"
+            />
+          </a>
+          <span>This product uses the TMDB API but is not endorsed or certified by TMDB.</span>
+        </div>
       </footer>
       {notice && (
         <div className="app-notice" role="status">

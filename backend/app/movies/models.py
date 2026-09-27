@@ -201,6 +201,39 @@ class FactMoviePerformance(Base):
     """Métricas financeiras e de engajamento; uma ocorrência por filme."""
 
     __tablename__ = "fact_movies_performance"
+    __table_args__ = (
+        CheckConstraint(
+            "orcamento_usd IS NULL OR orcamento_usd >= 0", name="orcamento_usd_nao_negativo"
+        ),
+        CheckConstraint(
+            "receita_usd IS NULL OR receita_usd >= 0", name="receita_usd_nao_negativa"
+        ),
+        CheckConstraint(
+            "orcamento_brl IS NULL OR orcamento_brl >= 0", name="orcamento_brl_nao_negativo"
+        ),
+        CheckConstraint(
+            "receita_brl IS NULL OR receita_brl >= 0", name="receita_brl_nao_negativa"
+        ),
+        CheckConstraint(
+            "popularidade IS NULL OR popularidade >= 0", name="popularidade_nao_negativa"
+        ),
+        CheckConstraint(
+            "nota_tmdb IS NULL OR nota_tmdb BETWEEN 0 AND 10", name="nota_tmdb_range"
+        ),
+        CheckConstraint(
+            "nota_imdb IS NULL OR nota_imdb BETWEEN 0 AND 10", name="nota_imdb_range"
+        ),
+        CheckConstraint("qtd_tmdb IS NULL OR qtd_tmdb >= 0", name="qtd_tmdb_nao_negativa"),
+        CheckConstraint("qtd_imdb IS NULL OR qtd_imdb >= 0", name="qtd_imdb_nao_negativa"),
+        CheckConstraint(
+            "qtd_tmdb IS NULL OR qtd_tmdb != 0 OR nota_tmdb IS NULL",
+            name="nota_tmdb_exige_votos",
+        ),
+        CheckConstraint(
+            "qtd_imdb IS NULL OR qtd_imdb != 0 OR nota_imdb IS NULL",
+            name="nota_imdb_exige_votos",
+        ),
+    )
 
     sk_movie_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("dim_movies.sk_movie_id", ondelete="CASCADE"), primary_key=True

@@ -65,13 +65,13 @@ class AvaliacaoLeitura(AvaliacaoCriacao):
 
 
 class DesempenhoFilme(ContratoFilmes):
-    orcamento_usd: float | None = None
-    receita_usd: float | None = None
+    orcamento_usd: float | None = Field(default=None, ge=0)
+    receita_usd: float | None = Field(default=None, ge=0)
     lucro_usd: float | None = None
-    orcamento_brl: float | None = None
-    receita_brl: float | None = None
+    orcamento_brl: float | None = Field(default=None, ge=0)
+    receita_brl: float | None = Field(default=None, ge=0)
     lucro_brl: float | None = None
-    popularidade: float | None = None
+    popularidade: float | None = Field(default=None, ge=0)
     nota_tmdb: float | None = Field(default=None, ge=0, le=10)
     quantidade_tmdb: int | None = Field(default=None, ge=0)
     nota_imdb: float | None = Field(default=None, ge=0, le=10)

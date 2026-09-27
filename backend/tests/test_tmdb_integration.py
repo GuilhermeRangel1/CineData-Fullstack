@@ -49,7 +49,7 @@ async def test_tmdb_gateway_maps_search_and_import_data() -> None:
     assert resultados[0].titulo == "O Castelo Animado"
     assert resultados[0].titulo_original == "Hauru no Ugoku Shiro"
     assert resultados[0].ano_lancamento == 2004
-    assert resultados[0].url_poster == "https://image.tmdb.org/t/p/original/poster.jpg"
+    assert resultados[0].url_poster == "https://image.tmdb.org/t/p/w500/poster.jpg"
     assert importacao.diretor == "Hayao Miyazaki"
     assert importacao.generos == ["Animação", "Fantasia"]
     assert importacao.url_trailer == "https://www.youtube.com/watch?v=trailer-oficial"
