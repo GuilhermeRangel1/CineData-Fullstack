@@ -18,14 +18,14 @@ from math import isfinite
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Connection, Engine, create_engine, inspect, select, text
+from sqlalchemy import Connection, Engine, create_engine, event, inspect, select, text
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.sql.schema import Table
 
 from app.db.base import Base
 from app.movies import models  # noqa: F401  Registra as tabelas no metadata.
 
-DEFAULT_BATCH_SIZE = 1_000
+DEFAULT_BATCH_SIZE = 10_000
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATA_DIRECTORY = REPOSITORY_ROOT / "data" / "raw"
 
@@ -198,6 +198,29 @@ def _existing_keys(connection: Connection, table: Table, column: str) -> set[str
     return set(connection.scalars(select(table.c[column])))
 
 
+def _configure_seed_engine(engine: Engine) -> None:
+    """Use SQLite settings suited to one large, atomic initial import."""
+
+    if engine.dialect.name != "sqlite":
+        return
+
+    @event.listens_for(engine, "connect")
+    def _set_seed_pragmas(dbapi_connection: Any, connection_record: object) -> None:
+        del connection_record
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON")
+        cursor.execute("PRAGMA synchronous = NORMAL")
+        cursor.execute("PRAGMA cache_size = -65536")
+        cursor.execute("PRAGMA temp_store = MEMORY")
+        cursor.close()
+
+    # WAL keeps the database consistent if the import is interrupted and avoids
+    # repeatedly syncing the rollback journal during this single transaction.
+    with engine.connect() as connection:
+        connection.exec_driver_sql("PRAGMA journal_mode = WAL")
+        connection.commit()
+
+
 def _load_rows(
     connection: Connection,
     *,
@@ -209,6 +232,7 @@ def _load_rows(
     update_columns: Sequence[str] = (),
     foreign_keys: Sequence[tuple[str, set[str]]] = (),
     unique_values: Callable[[dict[str, Any]], Iterable[str | tuple[str, ...]]] | None = None,
+    track_conflicts: bool = True,
     batch_size: int,
 ) -> int:
     statement = sqlite_insert(table)
@@ -221,17 +245,20 @@ def _load_rows(
         statement = statement.on_conflict_do_nothing(index_elements=list(conflict_columns))
 
     count = 0
+    next_progress = 100_000
+    last_reported = 0
     batch: list[dict[str, Any]] = []
     seen_conflicts: set[tuple[Any, ...]] = set()
     seen_unique: set[str | tuple[str, ...]] = set()
     for row_number, row in _read_csv(path, headers):
         item = transformer(row, row_number, path.name)
         conflict_value = tuple(item[column] for column in conflict_columns)
-        if conflict_value in seen_conflicts:
-            raise InitialDataError(
-                f"{path.name}, linha {row_number}, repete a chave primária {conflict_value}."
-            )
-        seen_conflicts.add(conflict_value)
+        if track_conflicts:
+            if conflict_value in seen_conflicts:
+                raise InitialDataError(
+                    f"{path.name}, linha {row_number}, repete a chave primária {conflict_value}."
+                )
+            seen_conflicts.add(conflict_value)
         if unique_values is not None:
             for value in unique_values(item):
                 if value in seen_unique:
@@ -251,9 +278,15 @@ def _load_rows(
             connection.execute(statement, batch)
             count += len(batch)
             batch.clear()
+            if count >= next_progress:
+                print(f"{path.name}: {count:,} registros importados...", flush=True)
+                last_reported = count
+                next_progress = (count // 100_000 + 1) * 100_000
     if batch:
         connection.execute(statement, batch)
         count += len(batch)
+    if count != last_reported:
+        print(f"{path.name}: {count:,} registros importados.", flush=True)
     return count
 
 
@@ -394,6 +427,7 @@ def seed_database(
 
     engine = create_engine(_synchronous_url(database_url))
     try:
+        _configure_seed_engine(engine)
         _assert_migrations_applied(engine)
         tables = Base.metadata.tables
         if skip_if_populated:
@@ -404,8 +438,6 @@ def seed_database(
 
         summary = LoadSummary()
         with engine.begin() as connection:
-            connection.execute(text("PRAGMA foreign_keys = ON"))
-
             company_table = tables["dim_companies"]
             summary.add(
                 "dim_companies.csv",
@@ -589,6 +621,10 @@ def seed_database(
                         transformer=_bridge(right_column),
                         conflict_columns=("sk_movie_id", right_column),
                         foreign_keys=(("sk_movie_id", movie_keys), (right_column, right_keys)),
+                        # Bridge conflicts are intentionally ignored by SQLite;
+                        # retaining every pair in Python duplicates the much
+                        # more memory-efficient composite primary-key index.
+                        track_conflicts=False,
                         batch_size=batch_size,
                     ),
                 )

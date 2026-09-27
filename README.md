@@ -354,9 +354,15 @@ O comando `python -m app.db.seed`:
 1. verifica se as migrações foram aplicadas e se os arquivos e cabeçalhos são os
    esperados;
 2. valida tipos, valores de domínio e referências entre CSVs;
-3. grava os dados em lotes dentro de uma única transação;
-4. apresenta as quantidades processadas por arquivo; em caso de erro, desfaz a
+3. grava os dados em lotes de até 10 mil linhas dentro de uma única transação;
+4. apresenta progresso nos arquivos grandes e, ao final, as quantidades
+   processadas por arquivo; em caso de erro, desfaz a
    transação inteira.
+
+No SQLite, a carga usa WAL, sincronização `NORMAL` e cache de 64 MiB para
+reduzir o custo da importação inicial sem dividir a transação. Depois que o
+catálogo é carregado, as próximas inicializações do Compose pulam o seed quando
+já existem filmes no banco.
 
 A carga atualiza ou mantém registros pelas chaves existentes, então pode ser
 reexecutada. O banco do Compose fica no volume Docker `cinedata-db` e sobrevive
