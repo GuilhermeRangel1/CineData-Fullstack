@@ -32,6 +32,8 @@ function App() {
   const refresh = () => setRevision((value) => value + 1)
   useEffect(() => {
     if (import.meta.env.VITE_DEMO_MODE !== 'true') return
+    const sessaoAtual = carregarSessao()
+    if (sessaoAtual && sessaoAtual.usuario.role !== 'admin') return
     let ativo = true
     void entrarComoAdministradorDeTeste()
       .then((response) => {
