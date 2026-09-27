@@ -398,6 +398,12 @@ Na primeira execução, o backend constrói o schema, aplica as migrações e ca
 os CSVs antes de ficar saudável; com esse catálogo, a preparação inicial pode
 levar alguns minutos. Depois, o frontend inicia automaticamente.
 
+Se o `.env` da raiz definir `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_NAME` e
+`INITIAL_ADMIN_PASSWORD`, o backend também cria a conta inicial com papel
+`admin` durante a inicialização. As três variáveis são obrigatórias; sem elas,
+nenhuma conta administrativa é criada automaticamente. O bootstrap pode rodar
+novamente sem duplicar a conta existente. Não há credenciais padrão.
+
 | Serviço | Endereço |
 | --- | --- |
 | Aplicação web | `http://localhost:8080` |

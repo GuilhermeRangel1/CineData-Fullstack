@@ -39,6 +39,7 @@ class LoadSummary:
     """Quantidade de linhas processadas por arquivo de origem."""
 
     processed: dict[str, int] = field(default_factory=dict)
+    skipped: bool = False
 
     def add(self, file_name: str, count: int) -> None:
         self.processed[file_name] = count
@@ -382,6 +383,7 @@ def seed_database(
     data_directory: Path = DEFAULT_DATA_DIRECTORY,
     *,
     batch_size: int = DEFAULT_BATCH_SIZE,
+    skip_if_populated: bool = False,
 ) -> LoadSummary:
     """Carrega todos os CSVs em uma transação e devolve seu resumo."""
 
@@ -394,6 +396,12 @@ def seed_database(
     try:
         _assert_migrations_applied(engine)
         tables = Base.metadata.tables
+        if skip_if_populated:
+            with engine.connect() as connection:
+                has_movies = connection.scalar(text("SELECT EXISTS (SELECT 1 FROM dim_movies)"))
+            if has_movies:
+                return LoadSummary(skipped=True)
+
         summary = LoadSummary()
         with engine.begin() as connection:
             connection.execute(text("PRAGMA foreign_keys = ON"))
@@ -608,6 +616,11 @@ def _parse_arguments(arguments: Sequence[str] | None = None) -> argparse.Namespa
         default=DEFAULT_BATCH_SIZE,
         help=f"Quantidade de registros por lote (padrão: {DEFAULT_BATCH_SIZE}).",
     )
+    parser.add_argument(
+        "--skip-if-populated",
+        action="store_true",
+        help="Pula a carga quando dim_movies já contém dados.",
+    )
     return parser.parse_args(arguments)
 
 
@@ -616,10 +629,19 @@ def main(arguments: Sequence[str] | None = None) -> int:
 
     args = _parse_arguments(arguments)
     try:
-        summary = seed_database(args.database_url, args.data_dir, batch_size=args.batch_size)
+        summary = seed_database(
+            args.database_url,
+            args.data_dir,
+            batch_size=args.batch_size,
+            skip_if_populated=args.skip_if_populated,
+        )
     except (InitialDataError, ValueError) as error:
         print(f"Carga não realizada: {error}", file=sys.stderr)
         return 1
+
+    if summary.skipped:
+        print("Carga ignorada: o catálogo já contém filmes.")
+        return 0
 
     print("Carga concluída com sucesso:")
     for file_name, count in summary.processed.items():

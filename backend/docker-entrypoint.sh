@@ -2,7 +2,7 @@
 set -eu
 
 alembic upgrade head
-python -m app.db.seed --database-url "${DATABASE_URL}"
+python -m app.db.seed --database-url "${DATABASE_URL}" --skip-if-populated
 
 if [ -n "${TMDB_API_TOKEN:-}" ]; then
   python -m app.db.enrich_home_trailers
