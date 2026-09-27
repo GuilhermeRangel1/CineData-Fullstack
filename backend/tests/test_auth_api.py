@@ -169,7 +169,7 @@ async def test_login_returns_a_signed_bearer_token(
         payload["access_token"],
         "segredo-de-teste-com-tamanho-suficiente",
         algorithms=["HS256"],
-        issuer="cinedata-analytics",
+        issuer="cinedata",
     )
     assert claims["email"] == "ana@example.com"
     assert claims["role"] == "user"

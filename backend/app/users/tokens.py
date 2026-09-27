@@ -10,7 +10,7 @@ from app.users.models import User
 from app.users.schemas import TokenAcesso, UsuarioLeitura
 
 JWT_ALGORITHM = "HS256"
-JWT_ISSUER = "cinedata-analytics"
+JWT_ISSUER = "cinedata"
 
 
 def criar_token_acesso(usuario: User) -> TokenAcesso:

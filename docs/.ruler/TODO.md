@@ -90,7 +90,7 @@ histórico, média e comportamento após exclusão de filme.
 **Critério de saída:** todos os requisitos obrigatórios podem ser realizados
 pela interface usando a API real, inclusive em estados sem dados e com erro.
 
-**Checkpoint visual:** identidade CineData Analytics, destaque editorial de
+**Checkpoint visual:** identidade CineData, destaque editorial de
 O Castelo Animado com trailer oficial incorporado e imagem alternativa,
 fileiras por gênero, catálogo paginado e detalhes. Os fluxos de cadastro,
 edição, exclusão e avaliação estão implementados, com validação, confirmação,
