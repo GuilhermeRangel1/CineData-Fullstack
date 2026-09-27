@@ -31,10 +31,16 @@ function App() {
   const [profileOpen, setProfileOpen] = useState(false)
   const refresh = () => setRevision((value) => value + 1)
   useEffect(() => {
-    if (carregarSessao()) return
+    if (import.meta.env.VITE_DEMO_MODE !== 'true') return
+    let ativo = true
     void entrarComoAdministradorDeTeste()
-      .then((response) => setSession(salvarSessao(response)))
+      .then((response) => {
+        if (ativo) setSession(salvarSessao(response))
+      })
       .catch(() => undefined)
+    return () => {
+      ativo = false
+    }
   }, [])
   function showHome() {
     setPage('home')

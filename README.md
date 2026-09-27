@@ -387,10 +387,14 @@ para todo hardware ou conjunto de dados.
 ### Opção recomendada: Docker Compose
 
 1. Instale e inicie o Docker Desktop, usando o modo de containers Linux.
-2. Na raiz do projeto, configure um `.env` local para o Compose com os valores
-   usados para `JWT_SECRET_KEY`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_NAME` e
-   `INITIAL_ADMIN_PASSWORD`. A senha deve ser forte. Esse arquivo é ignorado
-   pelo Git.
+2. A configuração Compose já prepara a conta de demonstração `admin@admin.com`,
+   com senha `admin123` e nome de perfil `admin`. As portas ficam acessíveis
+   somente no próprio computador (`localhost`). Esses valores são exclusivos
+   para demonstração local; não os use em uma instalação exposta à rede ou à
+   internet. Para trocar as credenciais da demo, altere `INITIAL_ADMIN_EMAIL`,
+   `INITIAL_ADMIN_NAME` e `INITIAL_ADMIN_PASSWORD` no `docker-compose.yml`.
+   Configure um `JWT_SECRET_KEY` próprio no `.env` da raiz antes de expor o
+   serviço a qualquer rede.
 3. Copie `backend/.env.example` para `backend/.env` se ainda não existir. Se
    quiser importar filmes do TMDB ou preencher automaticamente trailers da
    home, configure `TMDB_API_TOKEN` nesse arquivo.
@@ -402,13 +406,12 @@ docker compose up --build
 
 Na primeira execução, o backend constrói o schema, aplica as migrações e carrega
 os CSVs antes de ficar saudável; com esse catálogo, a preparação inicial pode
-levar alguns minutos. Depois, o frontend inicia automaticamente.
+levar alguns minutos. O Compose cria/sincroniza a conta de demonstração e o
+frontend inicia automaticamente já autenticado como `admin`.
 
-Se o `.env` da raiz definir `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_NAME` e
-`INITIAL_ADMIN_PASSWORD`, o backend também cria a conta inicial com papel
-`admin` durante a inicialização. As três variáveis são obrigatórias; sem elas,
-nenhuma conta administrativa é criada automaticamente. O bootstrap pode rodar
-novamente sem duplicar a conta existente. Não há credenciais padrão.
+Em reinicializações, o bootstrap sincroniza o nome e a senha da conta admin
+configurada no Compose; isso garante que as credenciais de demonstração
+continuem funcionando com o volume de banco já existente.
 
 | Serviço | Endereço |
 | --- | --- |
@@ -423,9 +426,9 @@ irreversível para aquele volume, então faça-o somente se realmente quiser
 recomeçar a carga do zero.
 
 No ambiente Compose, `POST /api/v1/auth/sessao-teste` devolve uma sessão da
-primeira conta `admin` preparada, útil para demonstração. Essa rota não existe
-no modo de desenvolvimento local e só funciona se a conta administrativa tiver
-sido configurada.
+conta `admin` preparada para a demonstração. O frontend usa essa rota somente
+no build Docker de demo e inicia autenticado. A rota não existe no modo de
+desenvolvimento local.
 
 ### Execução local sem Docker
 

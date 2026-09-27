@@ -31,11 +31,13 @@ async def iniciar_sessao_de_teste(
 ) -> TokenAcesso:
     """Disponibiliza a conta administrativa apenas no Docker de demonstração."""
 
-    if get_settings().environment != "docker":
+    settings = get_settings()
+    if settings.environment != "docker":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    administrador = await session.scalar(
-        select(User).where(User.role == "admin").order_by(User.created_at, User.id)
-    )
+    consulta = select(User).where(User.role == "admin")
+    if settings.initial_admin_email:
+        consulta = consulta.where(User.email == settings.initial_admin_email)
+    administrador = await session.scalar(consulta.order_by(User.created_at, User.id))
     if administrador is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

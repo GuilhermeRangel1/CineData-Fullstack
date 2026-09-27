@@ -62,6 +62,19 @@ class AuthService:
         )
         if usuario_existente is not None:
             if usuario_existente.role == "admin":
+                precisa_sincronizar = (
+                    usuario_existente.nome != dados.nome
+                    or not verificar_senha(dados.senha, usuario_existente.password_hash)
+                )
+                if precisa_sincronizar:
+                    usuario_existente.nome = dados.nome
+                    usuario_existente.password_hash = gerar_hash_senha(dados.senha)
+                    try:
+                        await self._session.commit()
+                        await self._session.refresh(usuario_existente)
+                    except SQLAlchemyError:
+                        await self._session.rollback()
+                        raise
                 return UsuarioLeitura.model_validate(usuario_existente), False
             raise UsuarioJaExisteError
 

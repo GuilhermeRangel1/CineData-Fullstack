@@ -30,7 +30,11 @@ async def main() -> None:
     async with AsyncSessionLocal() as session:
         usuario, criado = await AuthService(session).criar_administrador_inicial(dados)
     await engine.dispose()
-    mensagem = "Administrador inicial criado" if criado else "Administrador inicial já existe"
+    mensagem = (
+        "Administrador inicial criado"
+        if criado
+        else "Administrador inicial já existe e está sincronizado"
+    )
     print(f"{mensagem}: {usuario.email}")
 
 
