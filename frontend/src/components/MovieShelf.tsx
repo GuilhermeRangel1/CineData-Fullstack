@@ -35,12 +35,31 @@ export function MovieShelf({
   )
   const { data, loading, error, retry } = useResource(loader, revision)
   const rail = useRef<HTMLDivElement>(null)
+  const pageScrollBeforePointer = useRef<number | null>(null)
+  function preparePointerNavigation(button: HTMLButtonElement) {
+    pageScrollBeforePointer.current = window.scrollY
+    button.focus({ preventScroll: true })
+  }
   function scroll(direction: number) {
-    rail.current?.scrollBy({
-      left: direction * rail.current.clientWidth * 0.85,
+    const currentRail = rail.current
+    if (!currentRail) return
+    const pageScroll = pageScrollBeforePointer.current ?? window.scrollY
+    currentRail.scrollTo({
+      left: currentRail.scrollLeft + direction * currentRail.clientWidth * 0.85,
+      top: 0,
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 'instant'
         : 'smooth',
+    })
+    window.requestAnimationFrame(() => {
+      pageScrollBeforePointer.current = null
+      if (window.scrollY !== pageScroll) {
+        const root = document.documentElement
+        const previousBehavior = root.style.scrollBehavior
+        root.style.scrollBehavior = 'auto'
+        window.scrollTo(0, pageScroll)
+        root.style.scrollBehavior = previousBehavior
+      }
     })
   }
   return (
@@ -55,15 +74,21 @@ export function MovieShelf({
             Explorar <Icon name="arrow" />
           </button>
           <button
+            type="button"
             className="icon-button shelf-prev"
             aria-label={`Filmes anteriores: ${title}`}
+            onPointerDown={(event) => preparePointerNavigation(event.currentTarget)}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => scroll(-1)}
           >
             <Icon name="left" />
           </button>
           <button
+            type="button"
             className="icon-button"
             aria-label={`Próximos filmes: ${title}`}
+            onPointerDown={(event) => preparePointerNavigation(event.currentTarget)}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => scroll(1)}
           >
             <Icon name="arrow" />

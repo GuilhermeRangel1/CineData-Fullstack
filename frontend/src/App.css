@@ -191,8 +191,11 @@
   isolation: isolate;
 }
 .hero--editorial {
-  height: min(660px, 80svh);
-  min-height: 610px;
+  height: auto;
+  min-height: 660px;
+}
+.hero--editorial .hero-content {
+  padding-bottom: 128px;
 }
 .hero-still,
 .hero-video,
@@ -424,6 +427,7 @@
 .shelf {
   margin-bottom: 48px;
   min-width: 0;
+  overflow-anchor: none;
 }
 .section-heading {
   display: flex;
@@ -767,6 +771,21 @@
   position: relative;
   top: -1px;
 }
+.tmdb-attribution {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 360px;
+  line-height: 1.5;
+}
+.tmdb-attribution img {
+  display: block;
+  width: 68px;
+  height: auto;
+}
+.tmdb-attribution a {
+  flex: 0 0 auto;
+}
 .footer details {
   max-width: 300px;
 }
@@ -997,8 +1016,7 @@ dialog::backdrop {
     min-height: 660px;
   }
   .hero--editorial {
-    height: min(640px, 78svh);
-    min-height: 590px;
+    min-height: 640px;
   }
   .hero-content {
     padding-top: 120px;
@@ -1065,6 +1083,9 @@ dialog::backdrop {
   .hero-content {
     padding-top: 130px;
     padding-bottom: 100px;
+  }
+  .hero--editorial .hero-content {
+    padding-bottom: 128px;
   }
   .hero h1 {
     font-size: 74px;
