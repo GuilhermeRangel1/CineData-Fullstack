@@ -191,7 +191,8 @@
   isolation: isolate;
 }
 .hero--editorial {
-  height: auto;
+  height: min(660px, 80svh);
+  min-height: 610px;
 }
 .hero-still,
 .hero-video,
@@ -230,7 +231,7 @@
 }
 .hero-content {
   position: relative;
-  padding: clamp(140px, 17vh, 190px) var(--gutter) 125px;
+  padding: clamp(108px, 12vh, 138px) var(--gutter) 72px;
   max-width: 760px;
 }
 .eyebrow {
@@ -262,7 +263,7 @@
   letter-spacing: 0.045em;
 }
 .hero h1.hero-title-long {
-  font-size: clamp(72px, 6.5vw, 98px);
+  font-size: clamp(62px, 6.1vw, 90px);
 }
 .hero-meta {
   display: flex;
@@ -343,8 +344,12 @@
 .hero-credit {
   color: #b5b7bd;
   font-size: 9px;
-  margin-top: 17px;
+  margin-top: 12px;
 }
+.hero--editorial .eyebrow { margin-bottom: 14px; }
+.hero--editorial h1 { margin-bottom: 18px; }
+.hero--editorial .hero-description { margin-top: 16px; margin-bottom: 12px; }
+.hero--editorial .hero-actions { margin-top: 22px; }
 .hero-bottom {
   position: absolute;
   left: var(--gutter);
@@ -991,11 +996,41 @@ dialog::backdrop {
   .hero {
     min-height: 660px;
   }
+  .hero--editorial {
+    height: min(640px, 78svh);
+    min-height: 590px;
+  }
   .hero-content {
-    padding-top: 140px;
+    padding-top: 120px;
   }
   .catalog-toolbar {
     align-items: start;
+  }
+}
+@media (min-width: 701px) and (max-width: 900px) {
+  .topbar {
+    gap: 16px;
+    padding-right: 22px;
+    padding-left: 22px;
+  }
+  .brand-name {
+    font-size: 26px;
+  }
+  .main-nav {
+    flex-shrink: 0;
+    gap: 13px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .main-nav a,
+  .main-nav button,
+  .header-search {
+    white-space: nowrap;
+  }
+  .header-search {
+    flex-shrink: 0;
+    gap: 8px;
+    font-size: 11px;
   }
 }
 @media (max-width: 700px) {
@@ -1024,15 +1059,18 @@ dialog::backdrop {
     min-height: 690px;
     height: auto;
   }
+  .hero--editorial {
+    min-height: 650px;
+  }
   .hero-content {
-    padding-top: 158px;
-    padding-bottom: 135px;
+    padding-top: 130px;
+    padding-bottom: 100px;
   }
   .hero h1 {
     font-size: 74px;
   }
   .hero h1.hero-title-long {
-    font-size: 54px;
+    font-size: 52px;
   }
   .hero-still {
     object-position: 64% center;
@@ -1184,6 +1222,9 @@ dialog::backdrop {
   }
   .hero {
     min-height: 740px;
+  }
+  .hero--editorial {
+    min-height: 690px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

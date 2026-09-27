@@ -63,7 +63,7 @@ export function loadYouTube(): Promise<YouTubeApi> {
 
 export const HOME_TRAILER_ID = 'shW9i6k8cB0'
 export const HOME_TRAILER_URL = `https://www.youtube.com/watch?v=${HOME_TRAILER_ID}`
-export const HOME_STILL = `https://img.youtube.com/vi/${HOME_TRAILER_ID}/maxresdefault.jpg`
+export const HOME_STILL = 'https://image.tmdb.org/t/p/original/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg'
 
 export function youtubeEmbedUrl(url: string): string | null {
   try {

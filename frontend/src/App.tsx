@@ -140,8 +140,8 @@ function App() {
           />
           <MovieShelf
             title="Fora da sua zona de conforto."
-            subtitle="Grandes jornadas. Novos mundos. A próxima aventura."
-            genre="Adventure"
+            subtitle="Futuros distantes, encontros cósmicos e novas fronteiras."
+            genre="Science Fiction"
             revision={revision}
             onOpen={setSelected}
             onExplore={explore}

@@ -204,12 +204,13 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
   }
 
   const status = unavailable
-    ? 'PRÉVIA EM IMAGEM'
+    ? 'PRÉVIA ESTÁTICA'
     : playing
       ? 'TRAILER OFICIAL'
-      : shouldLoad
-        ? 'PREPARANDO TRAILER'
-        : 'PRÉVIA EM IMAGEM'
+      : userPaused.current
+        ? 'TRAILER PAUSADO'
+        : 'CARREGANDO TRAILER'
+  const loadingTrailer = shouldLoad && !playing && !unavailable && !userPaused.current
 
   return (
     <>
@@ -278,7 +279,10 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
                 <Icon name={muted ? 'mute' : 'volume'} />
               </button>
             )}
-            <span>{status}</span>
+            <span className={`playback-status ${loadingTrailer ? 'is-loading' : ''}`} aria-live="polite">
+              <span className="playback-status__indicator" aria-hidden="true" />
+              {status}
+            </span>
           </div>
         </div>
       </section>
