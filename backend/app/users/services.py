@@ -17,9 +17,6 @@ from app.users.schemas import (
 from app.users.security import gerar_hash_senha, verificar_senha
 from app.users.tokens import criar_token_acesso
 
-DEFAULT_ADMIN_AVATAR_URL = "/admin.jpg"
-
-
 class AuthService:
     """Coordena operações locais de conta sem expor hashes de senha."""
 
@@ -67,13 +64,13 @@ class AuthService:
                 precisa_sincronizar = (
                     usuario_existente.nome != dados.nome
                     or not verificar_senha(dados.senha, usuario_existente.password_hash)
-                    or usuario_existente.avatar_url is None
+                    or usuario_existente.avatar_url == "/admin.jpg"
                 )
                 if precisa_sincronizar:
                     usuario_existente.nome = dados.nome
                     usuario_existente.password_hash = gerar_hash_senha(dados.senha)
-                    if usuario_existente.avatar_url is None:
-                        usuario_existente.avatar_url = DEFAULT_ADMIN_AVATAR_URL
+                    if usuario_existente.avatar_url == "/admin.jpg":
+                        usuario_existente.avatar_url = None
                     try:
                         await self._session.commit()
                         await self._session.refresh(usuario_existente)
@@ -94,7 +91,7 @@ class AuthService:
             nome=dados.nome,
             password_hash=gerar_hash_senha(dados.senha),
             role=role,
-            avatar_url=DEFAULT_ADMIN_AVATAR_URL if role == "admin" else None,
+            avatar_url=None,
         )
         self._session.add(usuario)
         try:
