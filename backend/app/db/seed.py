@@ -305,13 +305,16 @@ def _genre(row: dict[str, str | None], row_number: int, file_name: str) -> dict[
 
 
 def _movie(row: dict[str, str | None], row_number: int, file_name: str) -> dict[str, Any]:
+    duration = _optional_int(row, file_name, row_number, "duracao_minutos")
     return {
         "sk_movie_id": _required_text(row, file_name, row_number, "sk_movie_id", 64),
         "id_filme": _required_text(row, file_name, row_number, "id_filme", 50),
         "titulo": _required_text(row, file_name, row_number, "titulo", 500),
         "data_lancamento": _optional_date(row, file_name, row_number, "data_lancamento"),
         "ano_lancamento": _optional_int(row, file_name, row_number, "ano_lancamento"),
-        "duracao_minutos": _optional_int(row, file_name, row_number, "duracao_minutos"),
+        # Zero and negative durations mean “unknown” in source catalogs; keeping
+        # them as NULL avoids presenting impossible runtimes to people.
+        "duracao_minutos": duration if duration is not None and duration > 0 else None,
         "status_filme": _optional_text(row, file_name, row_number, "status_filme", 50),
         "sinopse": _optional_text(row, file_name, row_number, "sinopse", 4000),
         "url_poster": _optional_text(row, file_name, row_number, "url_poster", 2048),

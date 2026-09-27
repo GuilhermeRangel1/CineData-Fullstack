@@ -8,6 +8,7 @@ const genres = [
   ['', 'Todos os filmes'],
   ['Animation', 'Animação'],
   ['Adventure', 'Aventura'],
+  ['Science Fiction', 'Ficção científica'],
   ['Drama', 'Drama'],
   ['Comedy', 'Comédia'],
   ['Thriller', 'Suspense'],
@@ -27,7 +28,7 @@ export function Catalog({
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
-  const [order, setOrder] = useState('recent')
+  const [order, setOrder] = useState('relevance')
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [advanced, setAdvanced] = useState({
     pessoa: '',
@@ -50,9 +51,9 @@ export function Catalog({
       const params = new URLSearchParams({
         pagina: String(page),
         tamanho_pagina: '12',
-        ordenar_por: order === 'recent' ? 'ano_lancamento' : 'titulo',
-        direcao: order === 'recent' ? 'desc' : 'asc',
-        priorizar_capa: 'true',
+        ordenar_por:
+          order === 'recent' ? 'ano_lancamento' : order === 'title' ? 'titulo' : 'relevancia',
+        direcao: order === 'title' ? 'asc' : 'desc',
       })
       if (query) params.set('busca', query)
       if (genre) params.set('genero', genre)
@@ -114,6 +115,7 @@ export function Catalog({
               setPage(1)
             }}
           >
+            <option value="relevance">Mais relevantes</option>
             <option value="recent">Mais recentes</option>
             <option value="title">Título: A–Z</option>
           </select>

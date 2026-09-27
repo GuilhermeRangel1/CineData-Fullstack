@@ -4,7 +4,7 @@ import logging
 from math import ceil
 from uuid import uuid4
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -24,6 +24,7 @@ from app.movies.models import (
     DimMovie,
     DimPerson,
     DimReview,
+    FactMoviePerformance,
     MovieReview,
     PersonType,
 )
@@ -44,6 +45,8 @@ from app.movies.schemas import (
 from app.users.models import User
 
 logger = logging.getLogger(__name__)
+NOTA_PRIOR = 6.0
+VOTOS_PRIOR = 500
 DETALHE_LOAD_OPTIONS = (
     selectinload(DimMovie.genres),
     selectinload(DimMovie.people),
@@ -160,11 +163,37 @@ class CatalogoFilmesService:
         )
         total_itens = total or 0
 
-        campo_ordenacao = getattr(DimMovie, consulta.ordenar_por)
-        ordem_primaria = (
-            campo_ordenacao.asc() if consulta.direcao == "asc" else campo_ordenacao.desc()
-        )
-        ordenacao = [ordem_primaria, DimMovie.titulo.asc(), DimMovie.id_filme.asc()]
+        if consulta.ordenar_por == "relevancia":
+            # A média Bayesiana reduz o efeito de notas perfeitas com poucas
+            # avaliações e favorece filmes reconhecidos sem esconder boas notas.
+            statement = statement.outerjoin(
+                FactMoviePerformance,
+                FactMoviePerformance.sk_movie_id == DimMovie.sk_movie_id,
+            )
+            votos = func.coalesce(FactMoviePerformance.qtd_tmdb, 0)
+            nota = FactMoviePerformance.nota_tmdb
+            nota_ponderada = (nota * votos + NOTA_PRIOR * VOTOS_PRIOR) / (
+                votos + VOTOS_PRIOR
+            )
+            pontuacao_relevancia = case(
+                (nota.is_not(None) & (votos > 0), nota_ponderada),
+                else_=None,
+            )
+            ordenacao = [
+                pontuacao_relevancia.desc().nullslast(),
+                FactMoviePerformance.popularidade.desc().nullslast(),
+                votos.desc(),
+                DimMovie.titulo.asc(),
+                DimMovie.id_filme.asc(),
+            ]
+        else:
+            campo_ordenacao = getattr(DimMovie, consulta.ordenar_por)
+            ordem_primaria = (
+                campo_ordenacao.asc()
+                if consulta.direcao == "asc"
+                else campo_ordenacao.desc()
+            )
+            ordenacao = [ordem_primaria, DimMovie.titulo.asc(), DimMovie.id_filme.asc()]
         if consulta.priorizar_capa:
             # Um backdrop também permite uma capa útil no card, quando não há pôster.
             ordenacao.insert(

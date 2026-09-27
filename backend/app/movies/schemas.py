@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 PapelPessoa = Literal["Ator", "Diretor", "Roteirista"]
-OrdenacaoFilme = Literal["titulo", "ano_lancamento"]
+OrdenacaoFilme = Literal["titulo", "ano_lancamento", "relevancia"]
 DirecaoOrdenacao = Literal["asc", "desc"]
 Visibilidade = Literal["publica", "privada"]
 NomeGenero = Annotated[str, Field(min_length=1, max_length=50)]
@@ -85,7 +85,7 @@ class FilmeCriacao(ContratoFilmes):
     generos: list[NomeGenero] = Field(min_length=1, max_length=20)
     sinopse: str | None = Field(default=None, max_length=4000)
     data_lancamento: date | None = None
-    duracao_minutos: int | None = Field(default=None, ge=0)
+    duracao_minutos: int | None = Field(default=None, ge=1)
     status_filme: str | None = Field(default=None, max_length=50)
     url_poster: str | None = Field(default=None, max_length=2048)
     url_backdrop: str | None = Field(default=None, max_length=2048)
@@ -125,7 +125,7 @@ class FilmeAtualizacao(ContratoFilmes):
     generos: list[NomeGenero] | None = Field(default=None, min_length=1, max_length=20)
     sinopse: str | None = Field(default=None, max_length=4000)
     data_lancamento: date | None = None
-    duracao_minutos: int | None = Field(default=None, ge=0)
+    duracao_minutos: int | None = Field(default=None, ge=1)
     status_filme: str | None = Field(default=None, max_length=50)
     url_poster: str | None = Field(default=None, max_length=2048)
     url_backdrop: str | None = Field(default=None, max_length=2048)
@@ -176,7 +176,7 @@ class FilmeResumo(ContratoFilmes):
 
 class FilmeDetalhe(FilmeResumo):
     data_lancamento: date | None = None
-    duracao_minutos: int | None = Field(default=None, ge=0)
+    duracao_minutos: int | None = Field(default=None, ge=1)
     status_filme: str | None = None
     sinopse: str | None = None
     url_backdrop: str | None = None
@@ -203,7 +203,7 @@ class ConsultaCatalogo(ContratoFilmes):
     nota_minima: float | None = Field(default=None, ge=0, le=10)
     pagina: int = Field(default=1, ge=1)
     tamanho_pagina: int = Field(default=12, ge=1, le=100)
-    ordenar_por: OrdenacaoFilme = "titulo"
+    ordenar_por: OrdenacaoFilme = "relevancia"
     direcao: DirecaoOrdenacao = "asc"
     priorizar_capa: bool = False
     priorizar_trailer: bool = False

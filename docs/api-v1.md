@@ -103,8 +103,8 @@ criado pelo comando de bootstrap da infraestrutura, nunca pelo cadastro público
 | `nota_minima` | - | Nota externa mínima disponível. |
 | `pagina` | `1` | Mínimo `1`. |
 | `tamanho_pagina` | `12` | Entre `1` e `100`. |
-| `ordenar_por` | `titulo` | Aceita `titulo` ou `ano_lancamento`. |
-| `direcao` | `asc` | Aceita `asc` ou `desc`. |
+| `ordenar_por` | `relevancia` | Aceita `relevancia`, `titulo` ou `ano_lancamento`. Relevância ajusta a nota TMDB pelo volume de votos e usa popularidade como desempate. |
+| `direcao` | `asc` | Aceita `asc` ou `desc`; aplicada aos modos `titulo` e `ano_lancamento`. |
 | `priorizar_capa`, `priorizar_trailer`, `somente_com_trailer` | `false` | Ordena por mídia disponível ou restringe a filmes com trailer. |
 
 Em empates, a API ordena por título e ID. Isso evita que itens mudem de página

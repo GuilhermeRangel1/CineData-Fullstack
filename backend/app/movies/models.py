@@ -94,6 +94,12 @@ class DimMovie(Base):
     """Metadados descritivos de um filme."""
 
     __tablename__ = "dim_movies"
+    __table_args__ = (
+        CheckConstraint(
+            "duracao_minutos IS NULL OR duracao_minutos >= 1",
+            name="duracao_minutos_positiva",
+        ),
+    )
 
     sk_movie_id: Mapped[str] = mapped_column(
         String(64), primary_key=True, default=generate_surrogate_key

@@ -1,5 +1,5 @@
 export type PapelPessoa = 'Ator' | 'Diretor' | 'Roteirista'
-export type OrdenacaoFilme = 'titulo' | 'ano_lancamento'
+export type OrdenacaoFilme = 'titulo' | 'ano_lancamento' | 'relevancia'
 export type DirecaoOrdenacao = 'asc' | 'desc'
 
 export interface ErroApi {

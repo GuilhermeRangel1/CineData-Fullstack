@@ -25,11 +25,9 @@ export function MovieShelf({
         new URLSearchParams({
           genero: genre,
           tamanho_pagina: '12',
-          ordenar_por: 'ano_lancamento',
+          ordenar_por: 'relevancia',
           direcao: 'desc',
           priorizar_capa: 'true',
-          priorizar_trailer: 'true',
-          somente_com_trailer: 'true',
         }),
         signal,
       ),

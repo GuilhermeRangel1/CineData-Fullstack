@@ -1,4 +1,4 @@
-# CineData Analytics
+# CineData
 
 Plataforma full-stack de descoberta, avaliação e conversa sobre filmes,
 desenvolvida para a atividade DEV do Visagio Rocket Lab 2026.2. O CineData
@@ -290,6 +290,7 @@ integridade de avaliações, desempenho do mapa e moderação de conteúdo.
 | `0013_unique_user_movie_review` | Verifica duplicatas existentes e cria índice parcial único conta/filme; falha sem apagar dados se encontrar conflitos. |
 | `0014_add_taste_map_synopsis_index` | Cria `movie_synopsis_fts`, preenche-a com sinopses atuais e adiciona triggers de sincronização para otimizar a seleção de candidatos do mapa. |
 | `0015_add_community_moderation` | Adiciona `removida_por_moderacao` a `community_posts` e `community_comments`, permitindo ocultar conteúdo sem remover o contexto da conversa. |
+| `0016_clean_movie_runtime` | Converte durações nulas ou inválidas em desconhecidas e impede que novos valores menores que 1 minuto sejam gravados. |
 
 As migrations ficam em [`backend/migrations/versions/`](backend/migrations/versions/).
 O modelo declarativo correspondente está em `backend/app/movies/models.py`,
@@ -319,6 +320,13 @@ No SQLite, a carga usa WAL, sincronização `NORMAL` e cache de 64 MiB para
 reduzir o custo da importação inicial sem dividir a transação. Depois que o
 catálogo é carregado, as próximas inicializações do Compose pulam o seed quando
 já existem filmes no banco.
+
+A seed contém cerca de 95 mil filmes e não consulta a internet durante a
+inicialização. O importador converte duração zero ou negativa em valor
+desconhecido; a migração `0016` aplica o mesmo tratamento aos bancos existentes.
+O catálogo começa pelos títulos mais relevantes, usando a nota do TMDB ponderada
+pelo número de votos e pela popularidade já importada. Assim, títulos conhecidos
+ganham destaque sem aumentar o volume da seed nem o tempo da primeira carga.
 
 A carga atualiza ou mantém registros pelas chaves existentes, então pode ser
 reexecutada. O banco do Compose fica no volume Docker `cinedata-db` e sobrevive
