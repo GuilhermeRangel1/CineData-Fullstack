@@ -78,7 +78,7 @@ it('pesquisa pessoas e administra pedidos e amizades sem recarregar a página', 
   await screen.findByRole('button', { name: 'Enviar pedido para Bia' })
   await userEvent.click(screen.getByRole('button', { name: 'Enviar pedido para Bia' }))
   expect(await screen.findByText('Pedido enviado')).toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: 'Pedidos enviados' }).closest('section')).toHaveTextContent('1')
+  expect(screen.queryByRole('heading', { name: 'Pedidos enviados' })).not.toBeInTheDocument()
 
   await userEvent.click(within(received).getByRole('button', { name: 'Aceitar' }))
   const friendsSection = screen.getByRole('heading', { name: 'Amigos', level: 2 }).closest('section')!
@@ -101,7 +101,7 @@ it('convida o visitante a entrar antes de abrir a rede', async () => {
   expect(login).toHaveBeenCalledOnce()
 })
 
-it('limita cada bloco a cinco itens e permite revelar a coleção completa', async () => {
+it('limita cada bloco a três itens e permite revelar a coleção completa', async () => {
   const friends = Array.from({ length: 7 }, (_, index) => ({ id: `f${index}`, nome: `Amigo ${index + 1}`, avatar_url: null }))
   const received = Array.from({ length: 6 }, (_, index) => ({ id: `r${index}`, status: 'pendente', direcao: 'recebida', pessoa: { id: `r-user${index}`, nome: `Recebido ${index + 1}`, avatar_url: null }, criada_em: '2026-09-25T12:00:00Z' }))
   const sent = Array.from({ length: 6 }, (_, index) => ({ id: `s${index}`, status: 'pendente', direcao: 'enviada', pessoa: { id: `s-user${index}`, nome: `Enviado ${index + 1}`, avatar_url: null }, criada_em: '2026-09-25T12:00:00Z' }))
@@ -116,22 +116,20 @@ it('limita cada bloco a cinco itens e permite revelar a coleção completa', asy
   render(<FriendshipHub usuario={user} onLoginRequested={vi.fn()} onOpenMovie={vi.fn()} />)
 
   const receivedSection = (await screen.findByRole('heading', { name: 'Pedidos recebidos' })).closest('section')!
-  expect(within(receivedSection).getAllByRole('button', { name: /Ver perfil de Recebido/ })).toHaveLength(5)
+  expect(within(receivedSection).getAllByRole('button', { name: /Ver perfil de Recebido/ })).toHaveLength(3)
   expect(within(receivedSection).queryByText('Recebido 6')).not.toBeInTheDocument()
   await userEvent.click(within(receivedSection).getByRole('button', { name: 'Ver todos os pedidos recebidos (6)' }))
   expect(within(receivedSection).getByText('Recebido 6')).toBeInTheDocument()
 
-  const sentSection = screen.getByRole('heading', { name: 'Pedidos enviados' }).closest('section')!
-  expect(within(sentSection).getAllByRole('button', { name: /Ver perfil de Enviado/ })).toHaveLength(5)
-  expect(within(sentSection).getByRole('button', { name: 'Ver todos os pedidos enviados (6)' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Pedidos enviados' })).not.toBeInTheDocument()
 
   const friendsSection = screen.getByRole('heading', { name: 'Amigos', level: 2 }).closest('section')!
-  expect(within(friendsSection).getAllByRole('button', { name: /Ver perfil de Amigo/ })).toHaveLength(5)
+  expect(within(friendsSection).getAllByRole('button', { name: /Ver perfil de Amigo/ })).toHaveLength(3)
   expect(within(friendsSection).getByRole('button', { name: 'Ver todos os amigos (7)' })).toBeInTheDocument()
 
   await userEvent.type(screen.getByLabelText('Encontrar pessoas'), 'Pe')
   await screen.findByRole('button', { name: 'Ver perfil de Pessoa 1' })
   const searchSection = screen.getByRole('heading', { name: 'Quem vai para a próxima sessão?' }).closest('section')!
-  expect(within(searchSection).getAllByRole('button', { name: /Ver perfil de Pessoa/ })).toHaveLength(5)
+  expect(within(searchSection).getAllByRole('button', { name: /Ver perfil de Pessoa/ })).toHaveLength(3)
   expect(within(searchSection).getByRole('button', { name: 'Ver todos os resultados da busca (7)' })).toBeInTheDocument()
 })

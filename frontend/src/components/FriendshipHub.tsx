@@ -10,7 +10,7 @@ import {
 import type { ContatoAmizade, SolicitacaoAmizade, UsuarioLeitura } from '../types/api'
 import { PublicProfile } from './PublicProfile'
 
-const VISIBLE_ITEMS_LIMIT = 5
+const VISIBLE_ITEMS_LIMIT = 3
 
 export function FriendshipHub({ usuario, onLoginRequested, onOpenMovie }: {
   usuario: UsuarioLeitura | null
@@ -29,7 +29,6 @@ export function FriendshipHub({ usuario, onLoginRequested, onOpenMovie }: {
   const [profile, setProfile] = useState<ContatoAmizade | null>(null)
   const [showAllSearch, setShowAllSearch] = useState(false)
   const [showAllReceived, setShowAllReceived] = useState(false)
-  const [showAllSent, setShowAllSent] = useState(false)
   const [showAllFriends, setShowAllFriends] = useState(false)
 
   useEffect(() => {
@@ -94,10 +93,8 @@ export function FriendshipHub({ usuario, onLoginRequested, onOpenMovie }: {
   }
 
   const received = requests.filter((request) => request.direcao === 'recebida' && request.status === 'pendente')
-  const sent = requests.filter((request) => request.direcao === 'enviada' && request.status === 'pendente')
   const visiblePeople = showAllSearch ? people : people.slice(0, VISIBLE_ITEMS_LIMIT)
   const visibleReceived = showAllReceived ? received : received.slice(0, VISIBLE_ITEMS_LIMIT)
-  const visibleSent = showAllSent ? sent : sent.slice(0, VISIBLE_ITEMS_LIMIT)
   const visibleFriends = showAllFriends ? friends : friends.slice(0, VISIBLE_ITEMS_LIMIT)
 
   if (!usuario) {
@@ -141,8 +138,7 @@ export function FriendshipHub({ usuario, onLoginRequested, onOpenMovie }: {
           </div>}
         </section>
 
-        <div className="friend-columns">
-          <section className="friend-panel" aria-labelledby="received-requests-title">
+        <section className="friend-panel friend-panel--received" aria-labelledby="received-requests-title">
             <div className="friend-section-heading"><div><p className="eyebrow">PARA VOCÊ</p><h2 id="received-requests-title">Pedidos recebidos</h2></div><span className={`friend-notification-badge ${received.length > 0 ? 'has-notifications' : ''}`} aria-label={`${received.length} ${received.length === 1 ? 'pedido pendente' : 'pedidos pendentes'}`}>{received.length}</span></div>
             {received.length === 0 ? <p className="friend-empty">Nenhum convite esperando por você.</p> : <><div className="friend-request-list">{visibleReceived.map((request) => <article className="friend-request" key={request.id}><ProfileTrigger person={request.pessoa} subtitle="Quer adicionar você à rede." onOpen={() => setProfile(request.pessoa)} /><div className="friend-request-actions"><button className="button button-light" disabled={busy} onClick={() => void manage(async () => {
               const updated = await responderSolicitacaoAmizade(request.id, 'aceitar')
@@ -152,13 +148,7 @@ export function FriendshipHub({ usuario, onLoginRequested, onOpenMovie }: {
               const updated = await responderSolicitacaoAmizade(request.id, 'bloquear')
               setRequests((items) => items.map((item) => item.id === updated.id ? updated : item))
             })}>Bloquear</button></div></article>)}</div><CollectionToggle total={received.length} expanded={showAllReceived} label="pedidos recebidos" onToggle={() => setShowAllReceived((value) => !value)} /></>}
-          </section>
-
-          <section className="friend-panel" aria-labelledby="sent-requests-title">
-            <div className="friend-section-heading"><div><p className="eyebrow">EM ANDAMENTO</p><h2 id="sent-requests-title">Pedidos enviados</h2></div><span>{sent.length}</span></div>
-            {sent.length === 0 ? <p className="friend-empty">Quando você enviar um convite, ele aparece aqui.</p> : <><div className="friend-request-list">{visibleSent.map((request) => <article className="friend-request" key={request.id}><ProfileTrigger person={request.pessoa} subtitle="Aguardando resposta." onOpen={() => setProfile(request.pessoa)} /><span className="friend-relation">Enviado</span></article>)}</div><CollectionToggle total={sent.length} expanded={showAllSent} label="pedidos enviados" onToggle={() => setShowAllSent((value) => !value)} /></>}
-          </section>
-        </div>
+        </section>
 
         <section className="friend-panel friend-panel--wide" aria-labelledby="friends-title">
           <div className="friend-section-heading"><div><p className="eyebrow">SUA REDE</p><h2 id="friends-title">Amigos</h2></div><span>{friends.length} {friends.length === 1 ? 'amigo' : 'amigos'}</span></div>
