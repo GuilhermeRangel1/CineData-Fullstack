@@ -7,7 +7,8 @@ análise para quem administra a plataforma.
 
 O projeto é uma aplicação de demonstração executada localmente. Os dados são
 armazenados em SQLite e os serviços podem ser iniciados juntos com Docker
-Compose. Os recursos principais funcionam sem serviços externos.
+Compose. Catálogo, avaliações e áreas sociais usam dados locais; TMDB e YouTube
+são integrações opcionais.
 
 ## Navegação rápida
 
@@ -15,8 +16,8 @@ Compose. Os recursos principais funcionam sem serviços externos.
 | --- | --- |
 | [Como executar](#como-executar) | Inicialização com Docker Compose ou execução local, credenciais de demonstração e configuração. |
 | [Frontend](docs/frontend.md) | Telas, fluxos da interface, responsividade e comportamento de mídia. |
-| [Backend e banco de dados](docs/backend.md) | Tabelas, relações, regras de integridade, migrations e carga dos CSVs. |
-| [API v1](docs/api-v1.md) | Rotas, parâmetros, autenticação, formatos de resposta e erros. |
+| [Backend](docs/api-v1.md) | Rotas, parâmetros, autenticação, formatos de resposta e erros. |
+| [Banco de dados](docs/backend.md) | Tabelas, relações, regras de integridade, migrations e carga dos CSVs. |
 
 ![Página inicial do CineData com destaque para Spider-Man: Across the Spider-Verse](docs/images/home.png)
 
@@ -25,6 +26,16 @@ Compose. Os recursos principais funcionam sem serviços externos.
 O CineData acompanha uma jornada cinéfila: descobrir filmes, registrar opiniões,
 organizar uma coleção pessoal e conversar com outras pessoas. As histórias
 abaixo descrevem o objetivo de cada área e o comportamento implementado.
+
+### Histórias obrigatórias da atividade
+
+| História | Implementação |
+| --- | --- |
+| Cadastrar filmes com título, direção, ano, gênero e sinopse. | Formulário administrativo de filmes. |
+| Navegar e pesquisar filmes no catálogo paginado. | Catálogo local com busca e filtros. |
+| Consultar detalhes e o histórico de notas e resenhas. | Página de detalhes do filme. |
+| Atualizar ou remover filmes individualmente. | Ações disponíveis para `admin`. |
+| Registrar uma avaliação com nota e resenha e consultar a média do filme. | Avaliações autenticadas; a aplicação usa escala de 0 a 10. |
 
 ### Descoberta e catálogo
 
@@ -169,7 +180,7 @@ backend/
     db/              Sessão, importador CSV e tarefas de dados
     integrations/    Cliente para a API TMDB
     movies/          Catálogo, avaliações e modelos relacionais
-    taste_map/       Cálculo do mapa de gostos e recomendações
+    taste_map/       Cálculo do mapa de gostos e similaridade entre filmes
     users/           Contas, segurança, perfis, listas e amizades
   migrations/        Histórico Alembic do schema
   tests/             Testes de API, domínio, segurança e carga
@@ -185,10 +196,10 @@ data/raw/
   dimensions/        CSVs de dimensões do catálogo
   facts/             CSVs de métricas, avaliações e relações
 docs/
+  images/           Capturas de tela da aplicação
   api-v1.md          Contratos e regras da API
   backend.md         Modelo de dados, migrações e carga do catálogo
   frontend.md        Comportamentos detalhados da interface e mídia
-TODO.md              Escopo, etapas e critérios de conclusão
 docker-compose.yml   Execução local dos dois serviços
 ```
 
@@ -197,7 +208,9 @@ docker-compose.yml   Execução local dos dois serviços
 A API FastAPI separa rotas HTTP, regras de domínio e persistência. A lista
 completa de endpoints, parâmetros, respostas e permissões está em
 [docs/api-v1.md](docs/api-v1.md). A documentação interativa fica em
-`http://localhost:8000/docs`; a sessão demo do Compose é omitida da OpenAPI.
+`http://localhost:8000/docs`. A rota interna da sessão de demonstração
+(`POST /api/v1/auth/sessao-teste`) existe somente no Compose e fica fora da
+OpenAPI.
 
 ### Regras de integridade e segurança
 
@@ -238,7 +251,9 @@ dados do TMDB; consulte os [termos da API](https://www.themoviedb.org/api-terms-
    internet. Para trocar as credenciais da demo, altere `INITIAL_ADMIN_EMAIL`,
    `INITIAL_ADMIN_NAME` e `INITIAL_ADMIN_PASSWORD` no `docker-compose.yml`.
    Configure um `JWT_SECRET_KEY` próprio no `.env` da raiz antes de expor o
-   serviço a qualquer rede.
+   serviço a qualquer rede. No modo demo, o frontend inicia automaticamente
+   autenticado como essa conta `admin` se não houver uma sessão salva; uma
+   sessão existente de usuário comum é preservada.
 3. Execute na raiz:
 
 ```powershell
@@ -266,8 +281,8 @@ integração precisa configurar seu próprio token.
 
 Na primeira execução, o backend constrói o schema, aplica as migrações e carrega
 os CSVs antes de ficar saudável; com esse catálogo, a preparação inicial pode
-levar alguns minutos. O Compose cria/sincroniza a conta de demonstração e o
-frontend inicia automaticamente já autenticado como `admin`.
+levar alguns minutos. O Compose cria ou sincroniza a conta de demonstração
+descrita acima.
 
 Em reinicializações, o bootstrap sincroniza o nome e a senha da conta admin
 configurada no Compose; isso garante que as credenciais de demonstração
@@ -284,12 +299,6 @@ Para encerrar sem apagar os dados, use `Ctrl+C` ou `docker compose down`. Para
 apagar também o banco local do Compose, use `docker compose down -v`; isso é
 irreversível para aquele volume, então faça-o somente se realmente quiser
 recomeçar a carga do zero.
-
-No ambiente Compose, `POST /api/v1/auth/sessao-teste` devolve uma sessão da
-conta `admin` preparada para a demonstração. No build Docker de demo, o
-frontend inicia autenticado como admin quando o navegador ainda não tem uma
-sessão salva; uma sessão existente de usuário comum é preservada ao atualizar a
-página. A rota não existe no modo de desenvolvimento local.
 
 ### Execução local sem Docker
 
