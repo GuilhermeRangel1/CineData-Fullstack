@@ -5,8 +5,8 @@ import { Dialog } from './Dialog'
 import { Icon } from './Icon'
 import { PersonAvatar, PublicProfile } from './PublicProfile'
 
-const REACTIONS: Record<TipoReacao, string> = { curtir: 'Curtir', amei: 'Amei', interessante: 'Interessante' }
-const SYMBOLS: Record<TipoReacao, string> = { curtir: '♡', amei: '♥', interessante: '✦' }
+const REACTIONS: Record<TipoReacao, string> = { curtir: 'Fogo', amei: 'Amei', interessante: 'Pipoca', nao_curti: 'Não curti' }
+const SYMBOLS: Record<TipoReacao, string> = { curtir: '🔥', amei: '❤️', interessante: '🍿', nao_curti: '👎' }
 const POLLING_INTERVAL_MS = 5_000
 
 type AlvoModeracao =
@@ -200,7 +200,7 @@ export function CommunityChat({ community, usuario, onClose, onLoginRequested, o
                 </>}
               </div>
               {!post.removida_por_moderacao && <div className="community-reactions" aria-label={`Reações à mensagem de ${post.autor.nome}`}>
-                {(Object.keys(REACTIONS) as TipoReacao[]).map((type) => { const count = post.reacoes.find((reaction) => reaction.tipo === type)?.quantidade ?? 0; const pendingKey = `${post.id}:${type}`; return <button key={type} aria-label={`${REACTIONS[type]}${count ? ` · ${count}` : ''}`} aria-busy={reactionPending === pendingKey} disabled={!participating || reactionPending !== null} onClick={() => void react(post.id, type)}><span aria-hidden="true">{SYMBOLS[type]}</span> {REACTIONS[type]}{count > 0 ? ` · ${count}` : ''}</button> })}
+                {(Object.keys(REACTIONS) as TipoReacao[]).map((type) => { const count = post.reacoes.find((reaction) => reaction.tipo === type)?.quantidade ?? 0; const pendingKey = `${post.id}:${type}`; return <button key={type} title={REACTIONS[type]} aria-label={`${REACTIONS[type]}${count ? ` · ${count}` : ''}`} aria-busy={reactionPending === pendingKey} disabled={!participating || reactionPending !== null} onClick={() => void react(post.id, type)}><span aria-hidden="true">{SYMBOLS[type]}</span>{count > 0 && <span className="reaction-count">{count}</span>}</button> })}
                 {participating && <button className="reaction-remove" disabled={reactionPending !== null} onClick={() => void removeReaction(post.id)}>Remover reação</button>}
               </div>}
               <details className="chat-replies"><summary>{post.comentarios.length ? `${post.comentarios.length} respostas` : 'Responder'}</summary>
@@ -233,7 +233,7 @@ export function CommunityChat({ community, usuario, onClose, onLoginRequested, o
           <div className="form-actions"><button className="button button-outline" data-initial-focus disabled={busy} onClick={() => setModerationTarget(null)}>Cancelar</button><button className="button button-danger" disabled={busy} onClick={() => void confirmModeration()}>{busy ? 'Removendo…' : 'Confirmar remoção'}</button></div>
         </div>
       </Dialog>}
-      {profile && <PublicProfile key={profile.id} person={profile} onClose={() => setProfile(null)} onOpenMovie={onOpenMovie} />}
+      {profile && <PublicProfile key={profile.id} person={profile} viewer={usuario} onClose={() => setProfile(null)} onOpenMovie={onOpenMovie} />}
     </Dialog>
   )
 }

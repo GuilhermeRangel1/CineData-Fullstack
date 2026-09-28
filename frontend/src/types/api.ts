@@ -293,7 +293,7 @@ export interface ComentarioComunidade {
   criado_em: string
 }
 
-export type TipoReacao = 'curtir' | 'amei' | 'interessante'
+export type TipoReacao = 'curtir' | 'amei' | 'interessante' | 'nao_curti'
 
 export interface ReacaoComunidade {
   tipo: TipoReacao

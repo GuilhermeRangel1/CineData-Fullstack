@@ -79,11 +79,11 @@ class ComentarioCriacao(ContratoComunidades):
 
 
 class ReacaoCriacao(ContratoComunidades):
-    tipo: Literal["curtir", "amei", "interessante"] = "curtir"
+    tipo: Literal["curtir", "amei", "interessante", "nao_curti"] = "curtir"
 
 
 class ReacaoResumo(BaseModel):
-    tipo: Literal["curtir", "amei", "interessante"]
+    tipo: Literal["curtir", "amei", "interessante", "nao_curti"]
     quantidade: int = Field(ge=0)
 
 

@@ -20,7 +20,7 @@ from app.db.base import Base
 from app.movies.models import DimMovie
 from app.users.models import User
 
-REACTION_TYPES: tuple[str, ...] = ("curtir", "amei", "interessante")
+REACTION_TYPES: tuple[str, ...] = ("curtir", "amei", "interessante", "nao_curti")
 
 
 def generate_community_id() -> str:

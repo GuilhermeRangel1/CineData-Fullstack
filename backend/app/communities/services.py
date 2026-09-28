@@ -390,6 +390,6 @@ class ComunidadesService:
         quantidades = Counter(reacao.tipo for reacao in publicacao.reactions)
         return [
             ReacaoResumo(tipo=tipo, quantidade=quantidades[tipo])
-            for tipo in ("curtir", "amei", "interessante")
+            for tipo in ("curtir", "amei", "interessante", "nao_curti")
             if quantidades[tipo]
         ]
