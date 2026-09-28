@@ -1,7 +1,7 @@
 export type IconName =
-  'search' | 'play' | 'pause' | 'arrow' | 'left' | 'close' | 'volume' | 'mute' | 'film' | 'filter'
+  'search' | 'play' | 'pause' | 'arrow' | 'left' | 'close' | 'volume' | 'mute' | 'film' | 'filter' | 'userPlus'
 
-const paths: Record<IconName, string> = {
+const paths: Record<Exclude<IconName, 'userPlus'>, string> = {
   search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
   play: 'm8 4 13 8-13 8Z',
   pause: 'M8 5v14M16 5v14',
@@ -15,6 +15,26 @@ const paths: Record<IconName, string> = {
 }
 
 export function Icon({ name }: { name: IconName }) {
+  if (name === 'userPlus') {
+    return (
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="8.5" cy="7" r="4" />
+        <path d="M2.5 21v-1.5A5.5 5.5 0 0 1 8 14h1a5.5 5.5 0 0 1 4.8 2.8" />
+        <path d="M19 8v6m3-3h-6" />
+      </svg>
+    )
+  }
+
   return (
     <svg
       width="20"
