@@ -9,6 +9,15 @@ O projeto é uma aplicação de demonstração executada localmente. Os dados s�
 armazenados em SQLite e os serviços podem ser iniciados juntos com Docker
 Compose. Os recursos principais funcionam sem serviços externos.
 
+## Navegação rápida
+
+| Guia | O que você encontra |
+| --- | --- |
+| [Como executar](#como-executar) | Inicialização com Docker Compose ou execução local, credenciais de demonstração e configuração. |
+| [Frontend](docs/frontend.md) | Telas, fluxos da interface, responsividade e comportamento de mídia. |
+| [Backend e banco de dados](docs/backend.md) | Tabelas, relações, regras de integridade, migrations e carga dos CSVs. |
+| [API v1](docs/api-v1.md) | Rotas, parâmetros, autenticação, formatos de resposta e erros. |
+
 ![Página inicial do CineData com destaque para Spider-Man: Across the Spider-Verse](docs/images/home.png)
 
 ## Funcionalidades
@@ -389,16 +398,6 @@ banco limpo e smoke test com Docker Compose foram verificados no mesmo
 checkpoint. O lint mantém um aviso já existente em `MovieDetail.tsx` sobre
 atualização de estado dentro de efeito. Os números são um retrato dessa
 execução: podem mudar quando novos testes forem adicionados.
-
-## Documentação complementar
-
-- [Backend: dados e persistência](docs/backend.md): modelo relacional, migrações, seed e desempenho.
-- [Convenção e contratos da API](docs/api-v1.md): rotas, parâmetros, autenticação,
-  respostas, erros e regras de acesso.
-- [Interface e mídia](docs/frontend.md): estados e fluxos visuais, responsividade,
-  trailer da home e cobertura dos testes do frontend.
-- [TODO e critérios de entrega](TODO.md): etapas, escopo concluído e itens
-  opcionais do projeto.
 
 ## Limitações conhecidas
 
