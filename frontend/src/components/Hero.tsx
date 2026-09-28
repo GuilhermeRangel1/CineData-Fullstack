@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import {
   HOME_STILL,
   HOME_TRAILER_ID,
-  HOME_TRAILER_URL,
   loadYouTube,
   type YouTubePlayer,
 } from '../lib/youtube'
-import { Dialog } from './Dialog'
 import { Icon } from './Icon'
 
 const DELAY_DE_ABERTURA_MS = 450
@@ -16,15 +14,14 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
   const host = useRef<HTMLDivElement>(null)
   const section = useRef<HTMLElement>(null)
   const player = useRef<YouTubePlayer | null>(null)
+  const mutedPreference = useRef(true)
   const delay = useRef<number | null>(null)
   const revealDelay = useRef<number | null>(null)
-  const userPaused = useRef(false)
   const [shouldLoad, setShouldLoad] = useState(false)
   const [ready, setReady] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
   const [unavailable, setUnavailable] = useState(false)
-  const [trailerOpen, setTrailerOpen] = useState(false)
 
   useEffect(() => {
     function clearDelay() {
@@ -35,13 +32,12 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
       clearDelay()
       if (revealDelay.current !== null) window.clearTimeout(revealDelay.current)
       revealDelay.current = null
-      userPaused.current = false
       setShouldLoad(false)
       setReady(false)
       setPlaying(false)
     }
     function start() {
-      if (paused || trailerOpen || userPaused.current) return
+      if (paused) return
       clearDelay()
       setUnavailable(false)
       delay.current = window.setTimeout(() => {
@@ -62,7 +58,7 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
       clearDelay()
       observer.disconnect()
     }
-  }, [paused, trailerOpen])
+  }, [paused])
 
   useEffect(() => {
     if (!shouldLoad) return
@@ -88,7 +84,7 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
       clearFallbackTimer()
       const iframe = document.createElement('iframe')
       iframe.title = 'Trailer oficial de Spider-Man: Across the Spider-Verse'
-      iframe.src = `https://www.youtube-nocookie.com/embed/${HOME_TRAILER_ID}?autoplay=1&mute=1&controls=0&loop=1&playlist=${HOME_TRAILER_ID}&rel=0`
+      iframe.src = `https://www.youtube-nocookie.com/embed/${HOME_TRAILER_ID}?autoplay=1&mute=1&controls=0&loop=1&playlist=${HOME_TRAILER_ID}&start=0&rel=0`
       iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture'
       iframe.allowFullscreen = true
       iframe.referrerPolicy = 'strict-origin-when-cross-origin'
@@ -127,6 +123,7 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             disablekb: 1,
             modestbranding: 1,
             playsinline: 1,
+            start: 0,
             loop: 1,
             playlist: HOME_TRAILER_ID,
             rel: 0,
@@ -138,8 +135,8 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
               player.current = target
               target.getIframe().title = 'Trailer oficial de Spider-Man: Across the Spider-Verse'
               target.getIframe().tabIndex = -1
-              target.mute()
-              setMuted(true)
+              if (mutedPreference.current) target.mute()
+              else target.unMute()
               target.playVideo()
             },
             onStateChange: ({ data }) => {
@@ -186,31 +183,15 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
     }
   }, [shouldLoad])
 
-  function togglePlayback() {
-    if (playing) {
-      userPaused.current = true
-      player.current?.pauseVideo()
-      setPlaying(false)
-      return
-    }
-    userPaused.current = false
-    player.current?.playVideo()
-  }
-
   function toggleSound() {
-    if (muted) player.current?.unMute()
-    else player.current?.mute()
-    setMuted(!muted)
+    const nextMuted = !mutedPreference.current
+    mutedPreference.current = nextMuted
+    if (nextMuted) player.current?.mute()
+    else player.current?.unMute()
+    setMuted(nextMuted)
   }
 
-  const status = unavailable
-    ? 'PRÉVIA ESTÁTICA'
-    : playing
-      ? 'TRAILER OFICIAL'
-      : userPaused.current
-        ? 'TRAILER PAUSADO'
-        : 'CARREGANDO TRAILER'
-  const loadingTrailer = shouldLoad && !playing && !unavailable && !userPaused.current
+  const loadingTrailer = shouldLoad && !ready && !unavailable
 
   return (
     <>
@@ -247,9 +228,6 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             <span>Aventura</span>
           </div>
           <div className="hero-actions">
-            <button className="button button-light" onClick={() => setTrailerOpen(true)}>
-              <Icon name="play" /> Assistir trailer
-            </button>
             <button className="button button-glass" onClick={onExplore}>
               Explorar animações <Icon name="arrow" />
             </button>
@@ -261,15 +239,6 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
             DESCUBRA OUTRAS HISTÓRIAS <span>↓</span>
           </a>
           <div className="playback-controls">
-            {shouldLoad && !unavailable && (
-              <button
-                className="icon-button"
-                onClick={togglePlayback}
-                aria-label={playing ? 'Pausar vídeo de fundo' : 'Reproduzir vídeo de fundo'}
-              >
-                <Icon name={playing ? 'pause' : 'play'} />
-              </button>
-            )}
             {ready && !unavailable && (
               <button
                 className="icon-button"
@@ -279,38 +248,15 @@ export function Hero({ onExplore, paused = false }: { onExplore: () => void; pau
                 <Icon name={muted ? 'mute' : 'volume'} />
               </button>
             )}
-            <span className={`playback-status ${loadingTrailer ? 'is-loading' : ''}`} aria-live="polite">
-              <span className="playback-status__indicator" aria-hidden="true" />
-              {status}
-            </span>
+            {loadingTrailer && (
+              <span className="playback-status is-loading" aria-live="polite">
+                <span className="playback-status__indicator" aria-hidden="true" />
+                CARREGANDO TRAILER
+              </span>
+            )}
           </div>
         </div>
       </section>
-      {trailerOpen && (
-        <Dialog
-          title="Trailer de Spider-Man: Across the Spider-Verse"
-          className="trailer-dialog"
-          onClose={() => setTrailerOpen(false)}
-        >
-          <h2>
-            Spider-Man: Across the Spider-Verse <span>Trailer oficial</span>
-          </h2>
-          <iframe
-            title="Assistir ao trailer oficial de Spider-Man: Across the Spider-Verse"
-            src={`https://www.youtube-nocookie.com/embed/${HOME_TRAILER_ID}?autoplay=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`}
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            allowFullScreen
-            referrerPolicy="strict-origin-when-cross-origin"
-          />
-          <p>
-            Se o player não estiver disponível,{' '}
-            <a href={HOME_TRAILER_URL} target="_blank" rel="noreferrer">
-              assista no YouTube ↗
-            </a>
-            .
-          </p>
-        </Dialog>
-      )}
     </>
   )
 }
