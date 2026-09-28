@@ -49,7 +49,9 @@ decidir o que compartilho no meu perfil.
 remover filmes e manter uma lista especial de “assistir depois”. Os filmes
 avaliados também aparecem numa coleção automática. A própria conta pode editar
 nome e avatar e consultar dados privados; outras pessoas veem apenas as partes
-públicas do perfil, como avaliações públicas, listas públicas e comunidades.
+públicas do perfil, como avaliações públicas, listas públicas e comunidades. Em
+um perfil público, clicar no nome de uma lista abre a coleção completa; a página
+do perfil mantém uma prévia de até seis filmes.
 
 ### Amizades e comunidades
 
@@ -58,10 +60,13 @@ ideias sobre cinema em espaços compartilhados.
 
 Amizades começam com pesquisa de pessoas e pedidos que o destinatário pode
 aceitar ou recusar; conexões aceitas podem ser removidas. Nas comunidades, a
-pessoa entra para publicar, comentar, mencionar filmes e reagir. Administradores
-criam e mantêm as comunidades. Ao moderar uma publicação ou comentário, o texto
-é removido e substituído por um aviso, preservando o contexto da conversa.
-Enquanto uma conversa está aberta, novas mensagens são carregadas por polling.
+pessoa entra para publicar, comentar, mencionar filmes e reagir com 🔥, ❤️, 🍿 ou
+👎. A aba Amigos mostra pedidos recebidos, busca e conexões; pedidos enviados
+continuam registrados e acessíveis pela API, mas não aparecem nessa aba.
+Administradores criam e mantêm as comunidades. Ao moderar uma publicação ou
+comentário, o texto é removido e substituído por um aviso, preservando o contexto
+da conversa. Enquanto uma conversa está aberta, novas mensagens são carregadas
+por polling.
 
 ### Mapa de gostos
 
@@ -235,7 +240,7 @@ identificador de negócio único exposto pela API.
 | `community_memberships` | Um par comunidade/conta | Associação de participação com chave composta e data de entrada. |
 | `community_posts` | Uma publicação (`id`) | Comunidade, autor, conteúdo, timestamps, filme opcional mencionado e indicador de remoção por moderação. Se o filme for apagado, a publicação permanece sem a referência. |
 | `community_comments` | Um comentário (`id`) | Publicação, autor, conteúdo, data e indicador de remoção por moderação. Comentários pertencem a uma publicação. |
-| `community_reactions` | Um par publicação/conta | Uma reação por pessoa e publicação; tipos permitidos: `curtir`, `amei` e `interessante`. |
+| `community_reactions` | Um par publicação/conta | Uma reação por pessoa e publicação; tipos permitidos: `curtir` (🔥), `amei` (❤️), `interessante` (🍿) e `nao_curti` (👎). |
 
 #### Relações e regras de integridade
 
@@ -292,6 +297,7 @@ integridade de avaliações, desempenho do mapa e moderação de conteúdo.
 | `0015_add_community_moderation` | Adiciona `removida_por_moderacao` a `community_posts` e `community_comments`, permitindo ocultar conteúdo sem remover o contexto da conversa. |
 | `0016_clean_movie_runtime` | Converte durações nulas ou inválidas em desconhecidas e impede que novos valores menores que 1 minuto sejam gravados. |
 | `0017_validate_movie_performance` | Trata notas sem votos como desconhecidas, corrige métricas inconsistentes existentes e protege métricas financeiras e externas com validações no banco. |
+| `0018_add_dislike_reaction` | Permite a reação `nao_curti` nas publicações de comunidades. |
 
 As migrations ficam em [`backend/migrations/versions/`](backend/migrations/versions/).
 O modelo declarativo correspondente está em `backend/app/movies/models.py`,

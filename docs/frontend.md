@@ -22,8 +22,11 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
   esse cache antes de as consultas serem atualizadas, evitando dados obsoletos.
 - Cadastro, login e encerramento de sessão locais pelo cabeçalho. A sessão JWT
   é mantida no navegador e enviada nas escritas da API.
-- Perfil próprio editável com avatar, além de mini perfis públicos com
-  avaliações recentes, listas públicas, comunidades e contagem de amizades.
+- Perfil próprio editável com avatar, além de perfis públicos com avaliações
+  recentes, listas públicas, comunidades e contagem de amizades. Perfis públicos
+  mostram até seis filmes de cada lista como prévia; clicar no nome abre a lista
+  completa em um pop-up. No perfil de outra pessoa, também é possível enviar um
+  pedido de amizade.
 - A navegação principal dá acesso a **Minhas listas**. Contas autenticadas podem
   criar, editar e apagar listas pessoais, definir sua visibilidade e ver os
   filmes como cards com capa. Pelo detalhe de qualquer filme do catálogo, a
@@ -42,13 +45,15 @@ fileiras, cards, catálogo e detalhes. O cliente HTTP fica em
   sessão, a interface convida a entrar. Catálogo, listas, histórico e média são
   consultados novamente após escritas.
 - **Amigos** permite pesquisar contas, enviar e responder solicitações, remover
-  amizades e abrir perfis. Cada bloco limita a prévia e oferece acesso à lista
-  completa.
+  amizades e abrir perfis. A página mostra pedidos recebidos, busca e amigos,
+  com três itens iniciais e acesso para expandir cada coleção. Pedidos enviados
+  continuam disponíveis pela API, mas não aparecem nessa página.
 - **Comunidades** reúne descoberta, entrada e saída, publicações, comentários,
-  menções de filmes e reações. A conversa atualiza por polling enquanto está
-  aberta e visível. Administradores mantêm comunidades e podem remover
-  publicações ou comentários individuais após confirmação. O conteúdo some e
-  um aviso de moderação ocupa seu lugar, sem apagar o restante da conversa.
+  menções de filmes e reações visuais 🔥, ❤️, 🍿 e 👎. A conversa atualiza por
+  polling enquanto está aberta e visível. Administradores mantêm comunidades e
+  podem remover publicações ou comentários individuais após confirmação. O
+  conteúdo some e um aviso de moderação ocupa seu lugar, sem apagar o restante
+  da conversa.
 - **Analytics** é restrito a administradores e consulta agregados do banco para
   atividade recente, gêneros avaliados, filmes e comunidades em alta.
 - **Mapa de gostos** é pessoal e exige login. O backend seleciona candidatos
@@ -85,14 +90,15 @@ no catálogo.
   alternativas locais em CSS.
 
 O trailer usa a API oficial de iframe do YouTube e o domínio
-`youtube-nocookie.com`; nenhum vídeo foi baixado ou versionado. O destaque tenta
-reproduzir sem som, permite pausa e controle de áudio e pausa ao sair da área
-visível ou ao abrir uma janela de detalhes, cadastro ou trailer. Com preferência por movimento
-reduzido, começa estático; a pessoa pode iniciar a reprodução explicitamente.
+`youtube-nocookie.com`; nenhum vídeo foi baixado ou versionado. Na home, o vídeo
+começa automaticamente sem som, entra em loop e pausa quando o destaque sai da
+área visível ou quando outra página está ativa. O controle de som aparece quando
+a reprodução começa; enquanto o vídeo carrega, a interface mostra
+“Carregando trailer”. Com preferência por movimento reduzido, o destaque começa
+estático.
 
 A imagem permanece até o evento de reprodução. Bloqueio de autoplay, falha do
-player ou tempo excedido mantêm a alternativa estática. Na janela do trailer há
-um link para assistir diretamente na fonte oficial. Reprodução, imagens e
+player ou tempo excedido mantêm a alternativa estática. Reprodução, imagens e
 fontes dependem dos serviços externos e da conexão; bloqueadores ou restrições
 do navegador podem impedir o vídeo.
 
